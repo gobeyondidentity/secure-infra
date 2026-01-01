@@ -1,0 +1,59 @@
+#
+# Copyright (c) 2025 NVIDIA CORPORATION AND AFFILIATES.  All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, are permitted
+# provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright notice, this list of
+#       conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright notice, this list of
+#       conditions and the following disclaimer in the documentation and/or other materials
+#       provided with the distribution.
+#     * Neither the name of the NVIDIA CORPORATION nor the names of its contributors may be used
+#       to endorse or promote products derived from this software without specific prior written
+#       permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+# FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NVIDIA CORPORATION BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+# STRICT LIABILITY, OR TOR (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+number_of_ports: 2
+min_supported_nic: ConnectX-7
+mode_args:
+  - vnf
+ports_description:
+  port_0: doca_dev
+  port_1: doca_dev
+description: "This sample demonstrates ESP flow matching using SPI and sequence number (SN).
+              The root pipe matches packets with SN = 2 and a dynamic SPI.
+              Packets with SPI = 5 proceed to a comparison pipe checking if SN < 3, which succeeds.
+              Packets with SPI = 8 check if SN > 3, which fails, resulting in a drop.
+              Sample Command Line: ./build/doca_flow_esp -- -a aux/2,dv_flow_en=2 -a aux/3,dv_flow_en=2 -l 60"
+use_cases:
+  - name: "Flow ESP comparison use case #1"
+    args: ""
+    stages:
+      - name: "Sending packets iteration 1"
+        packets_to_send:
+          - receiving_port: 0
+            packets:
+              - Ether()/IP()/ESP(spi=5, seq=2, data=b'\xa0\xfb\x0e/`\n\xb1\t2\xab\x1f\x94\xb5\xd9\xfe\xe3k\xe8\xd5"\xff\x0e\t_\x0eT\xda\xdd\x08\x9f\xdc\xab\x85M\xc0\xce\xd1\xa8\x98\xc6/l\xbd\x01\xfb7w\xa0&\nj\x8d\x1f0\xe1\xf3\x95\x82A\x1b\x0f\xf33TS/\xa8k]i\xab\xa6\xc8!+~#\xbdN\x82#A\xcf4\xfd4b-\xe5\xa3\x8eRZ\xa5_\x9b\xfb\xba\x99\x03g\xcdf\x04\xb4X\xd6\xb8\xdd\x01l\xa6\x0cc\x1e\x81\x90\xdf\xc1\xc0&v\xe0\xaa\n\x84\xe1H\xf1^\xbb\x11\xae\x10\xac\xab\x8c\x07I\xf1L~\x1f\x85\xd7{C\xf4\x90|3\xcc')
+              - Ether()/IP()/ESP(spi=8, seq=2, data=b" \xb6\x90K\xd9\x87\x91\xc9\x10+U\xad/\x7f<\xcf\x95\xae\x15<\xba\xe8\xf6\xd9\xec4\x86\xda\xd9vx\xc0+\xd8\xe7K\xf8\x02\xcb\xa0\xe9\xe4\x9e\xa3\x0b\xaf\xbd\xf7F\x0e\xb6\xca\xcd\x05\xafQ\x0b\x18'P\xf2\xd3`\x07\x0b\x1e\xac\x9d\xfb0\x83\xc4\xf5G\xca?\xf3m\xba\xba\x7f\x19\xecW@\x1b\xf2Yx\xb2%\xc83\x03\xbf\x0fA\x8f\xc5\xe7\x0f,8\xbfD\xc4\x0f\xec\xb6\x0e\xc7H\x85\xa5\xbdU\xc5h\xc8\xa8v\\l\xa4IdZ>\xf9%H\xd6\xb2\xdf=d")
+          - receiving_port: 1
+            packets:
+              - Ether()/IP()/ESP(spi=5, seq=2, data=b'\xa0\xfb\x0e/`\n\xb1\t2\xab\x1f\x94\xb5\xd9\xfe\xe3k\xe8\xd5"\xff\x0e\t_\x0eT\xda\xdd\x08\x9f\xdc\xab\x85M\xc0\xce\xd1\xa8\x98\xc6/l\xbd\x01\xfb7w\xa0&\nj\x8d\x1f0\xe1\xf3\x95\x82A\x1b\x0f\xf33TS/\xa8k]i\xab\xa6\xc8!+~#\xbdN\x82#A\xcf4\xfd4b-\xe5\xa3\x8eRZ\xa5_\x9b\xfb\xba\x99\x03g\xcdf\x04\xb4X\xd6\xb8\xdd\x01l\xa6\x0cc\x1e\x81\x90\xdf\xc1\xc0&v\xe0\xaa\n\x84\xe1H\xf1^\xbb\x11\xae\x10\xac\xab\x8c\x07I\xf1L~\x1f\x85\xd7{C\xf4\x90|3\xcc')
+              - Ether()/IP()/ESP(spi=8, seq=2, data=b" \xb6\x90K\xd9\x87\x91\xc9\x10+U\xad/\x7f<\xcf\x95\xae\x15<\xba\xe8\xf6\xd9\xec4\x86\xda\xd9vx\xc0+\xd8\xe7K\xf8\x02\xcb\xa0\xe9\xe4\x9e\xa3\x0b\xaf\xbd\xf7F\x0e\xb6\xca\xcd\x05\xafQ\x0b\x18'P\xf2\xd3`\x07\x0b\x1e\xac\x9d\xfb0\x83\xc4\xf5G\xca?\xf3m\xba\xba\x7f\x19\xecW@\x1b\xf2Yx\xb2%\xc83\x03\xbf\x0fA\x8f\xc5\xe7\x0f,8\xbfD\xc4\x0f\xec\xb6\x0e\xc7H\x85\xa5\xbdU\xc5h\xc8\xa8v\\l\xa4IdZ>\xf9%H\xd6\xb2\xdf=d")
+        validation:
+          - type: packet
+            expected_packets:
+              - forwarding_port: 0
+                packets:
+                  - Ether()/IP()/ESP(spi=5, seq=2, data=b'\xa0\xfb\x0e/`\n\xb1\t2\xab\x1f\x94\xb5\xd9\xfe\xe3k\xe8\xd5"\xff\x0e\t_\x0eT\xda\xdd\x08\x9f\xdc\xab\x85M\xc0\xce\xd1\xa8\x98\xc6/l\xbd\x01\xfb7w\xa0&\nj\x8d\x1f0\xe1\xf3\x95\x82A\x1b\x0f\xf33TS/\xa8k]i\xab\xa6\xc8!+~#\xbdN\x82#A\xcf4\xfd4b-\xe5\xa3\x8eRZ\xa5_\x9b\xfb\xba\x99\x03g\xcdf\x04\xb4X\xd6\xb8\xdd\x01l\xa6\x0cc\x1e\x81\x90\xdf\xc1\xc0&v\xe0\xaa\n\x84\xe1H\xf1^\xbb\x11\xae\x10\xac\xab\x8c\x07I\xf1L~\x1f\x85\xd7{C\xf4\x90|3\xcc')
+              - forwarding_port: 1
+                packets:
+                  - Ether()/IP()/ESP(spi=5, seq=2, data=b'\xa0\xfb\x0e/`\n\xb1\t2\xab\x1f\x94\xb5\xd9\xfe\xe3k\xe8\xd5"\xff\x0e\t_\x0eT\xda\xdd\x08\x9f\xdc\xab\x85M\xc0\xce\xd1\xa8\x98\xc6/l\xbd\x01\xfb7w\xa0&\nj\x8d\x1f0\xe1\xf3\x95\x82A\x1b\x0f\xf33TS/\xa8k]i\xab\xa6\xc8!+~#\xbdN\x82#A\xcf4\xfd4b-\xe5\xa3\x8eRZ\xa5_\x9b\xfb\xba\x99\x03g\xcdf\x04\xb4X\xd6\xb8\xdd\x01l\xa6\x0cc\x1e\x81\x90\xdf\xc1\xc0&v\xe0\xaa\n\x84\xe1H\xf1^\xbb\x11\xae\x10\xac\xab\x8c\x07I\xf1L~\x1f\x85\xd7{C\xf4\x90|3\xcc')
