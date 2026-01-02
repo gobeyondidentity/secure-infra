@@ -11,21 +11,14 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(distributionCmd)
-	distributionCmd.AddCommand(distributionHistoryCmd)
+	rootCmd.AddCommand(historyCmd)
 
 	// Flags for history
-	distributionHistoryCmd.Flags().String("target", "", "Filter by DPU name")
-	distributionHistoryCmd.Flags().Int("limit", 20, "Maximum results")
+	historyCmd.Flags().String("target", "", "Filter by DPU name")
+	historyCmd.Flags().Int("limit", 20, "Maximum results")
 }
 
-var distributionCmd = &cobra.Command{
-	Use:   "distribution",
-	Short: "View credential distribution activity",
-	Long:  `Commands to view credential distribution history and attestation gate decisions.`,
-}
-
-var distributionHistoryCmd = &cobra.Command{
+var historyCmd = &cobra.Command{
 	Use:   "history",
 	Short: "Show credential distribution history",
 	Long: `Display the history of credential distribution attempts.
@@ -39,26 +32,26 @@ Attestation status is displayed as:
   none    - no attestation record existed
 
 Examples:
-  bluectl distribution history
-  bluectl distribution history --target bf3-lab-01
-  bluectl distribution history --limit 50
-  bluectl distribution history --target bf3-lab-01 -o json`,
-	RunE: runDistributionHistory,
+  km history
+  km history --target bf3-lab-01
+  km history --limit 50
+  km history --target bf3-lab-01 -o json`,
+	RunE: runHistory,
 }
 
 // DistributionHistoryEntry represents a single distribution record for JSON/YAML output.
 type DistributionHistoryEntry struct {
-	Timestamp            string  `json:"timestamp"`
-	Target               string  `json:"target"`
-	CredentialType       string  `json:"credential_type"`
-	CredentialName       string  `json:"credential_name"`
-	Outcome              string  `json:"outcome"`
-	AttestationStatus    string  `json:"attestation_status"`
-	AttestationAgeSecs   *int    `json:"attestation_age_seconds,omitempty"`
-	InstalledPath        *string `json:"installed_path,omitempty"`
+	Timestamp          string  `json:"timestamp"`
+	Target             string  `json:"target"`
+	CredentialType     string  `json:"credential_type"`
+	CredentialName     string  `json:"credential_name"`
+	Outcome            string  `json:"outcome"`
+	AttestationStatus  string  `json:"attestation_status"`
+	AttestationAgeSecs *int    `json:"attestation_age_seconds,omitempty"`
+	InstalledPath      *string `json:"installed_path,omitempty"`
 }
 
-func runDistributionHistory(cmd *cobra.Command, args []string) error {
+func runHistory(cmd *cobra.Command, args []string) error {
 	targetFilter, _ := cmd.Flags().GetString("target")
 	limit, _ := cmd.Flags().GetInt("limit")
 
@@ -99,7 +92,7 @@ func runDistributionHistory(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(distributions) == 0 {
-		fmt.Println("No distribution history. Use 'bluectl credential distribute' to distribute credentials.")
+		fmt.Println("No distribution history. Use 'km distribute' to distribute credentials.")
 		return nil
 	}
 

@@ -49,6 +49,53 @@ type Host struct {
 	DPUID     *string // Associated DPU (optional)
 }
 
+// Operator represents a user who can manage DPUs.
+type Operator struct {
+	ID          string
+	Email       string
+	DisplayName string
+	Status      string // pending, active, suspended
+	CreatedAt   time.Time
+	LastLogin   *time.Time
+}
+
+// InviteCode represents a one-time code for operator onboarding.
+type InviteCode struct {
+	ID             string
+	CodeHash       string // SHA-256 hash of code
+	OperatorEmail  string
+	TenantID       string
+	Role           string // admin, operator
+	CreatedBy      string
+	CreatedAt      time.Time
+	ExpiresAt      time.Time
+	UsedAt         *time.Time
+	UsedByKeyMaker *string // KeyMaker ID that used this code
+	Status         string  // pending, used, expired, revoked
+}
+
+// OperatorTenant represents an operator's membership in a tenant with a specific role.
+type OperatorTenant struct {
+	OperatorID string
+	TenantID   string
+	Role       string // admin, operator
+	CreatedAt  time.Time
+}
+
+// KeyMaker represents a hardware-bound device credential for an operator.
+type KeyMaker struct {
+	ID                string
+	OperatorID        string
+	Name              string
+	Platform          string // darwin, linux, windows
+	SecureElement     string // tpm, secure_enclave, software
+	DeviceFingerprint string
+	PublicKey         string
+	BoundAt           time.Time
+	LastSeen          *time.Time
+	Status            string // active, revoked
+}
+
 // GRPCAddress returns the gRPC address for this Host Agent.
 func (h *Host) GRPCAddress() string {
 	return fmt.Sprintf("%s:%d", h.Address, h.Port)
@@ -187,6 +234,59 @@ func (s *Store) migrate() error {
 	);
 	CREATE INDEX IF NOT EXISTS idx_distribution_history_dpu ON distribution_history(dpu_name);
 	CREATE INDEX IF NOT EXISTS idx_distribution_history_credential ON distribution_history(credential_name);
+
+	-- Operators
+	CREATE TABLE IF NOT EXISTS operators (
+		id TEXT PRIMARY KEY,
+		email TEXT NOT NULL UNIQUE,
+		display_name TEXT,
+		created_at INTEGER DEFAULT (strftime('%s', 'now')),
+		last_login INTEGER,
+		status TEXT NOT NULL DEFAULT 'pending'
+	);
+	CREATE INDEX IF NOT EXISTS idx_operators_email ON operators(email);
+	CREATE INDEX IF NOT EXISTS idx_operators_status ON operators(status);
+
+	-- Operator-Tenant membership (many-to-many)
+	CREATE TABLE IF NOT EXISTS operator_tenants (
+		operator_id TEXT NOT NULL REFERENCES operators(id) ON DELETE CASCADE,
+		tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+		role TEXT NOT NULL DEFAULT 'operator',
+		created_at INTEGER DEFAULT (strftime('%s', 'now')),
+		PRIMARY KEY (operator_id, tenant_id)
+	);
+
+	-- KeyMakers (bound devices)
+	CREATE TABLE IF NOT EXISTS keymakers (
+		id TEXT PRIMARY KEY,
+		operator_id TEXT NOT NULL REFERENCES operators(id) ON DELETE CASCADE,
+		name TEXT NOT NULL,
+		platform TEXT NOT NULL,
+		secure_element TEXT NOT NULL,
+		device_fingerprint TEXT NOT NULL,
+		public_key TEXT NOT NULL,
+		bound_at INTEGER DEFAULT (strftime('%s', 'now')),
+		last_seen INTEGER,
+		status TEXT NOT NULL DEFAULT 'active'
+	);
+	CREATE INDEX IF NOT EXISTS idx_keymakers_operator ON keymakers(operator_id);
+
+	-- Invite Codes (hashed, never plaintext)
+	CREATE TABLE IF NOT EXISTS invite_codes (
+		id TEXT PRIMARY KEY,
+		code_hash TEXT NOT NULL,
+		operator_email TEXT NOT NULL,
+		tenant_id TEXT NOT NULL REFERENCES tenants(id),
+		role TEXT NOT NULL DEFAULT 'operator',
+		created_by TEXT NOT NULL,
+		created_at INTEGER DEFAULT (strftime('%s', 'now')),
+		expires_at INTEGER NOT NULL,
+		used_at INTEGER,
+		used_by_keymaker TEXT,
+		status TEXT NOT NULL DEFAULT 'pending'
+	);
+	CREATE INDEX IF NOT EXISTS idx_invite_codes_hash ON invite_codes(code_hash);
+	CREATE INDEX IF NOT EXISTS idx_invite_codes_email ON invite_codes(operator_email);
 	`
 	if _, err := s.db.Exec(schema); err != nil {
 		return err
@@ -196,6 +296,7 @@ func (s *Store) migrate() error {
 	migrations := []string{
 		"ALTER TABLE dpus ADD COLUMN tenant_id TEXT REFERENCES tenants(id) ON DELETE SET NULL",
 		"ALTER TABLE dpus ADD COLUMN labels TEXT DEFAULT '{}'",
+		"ALTER TABLE ssh_cas ADD COLUMN tenant_id TEXT REFERENCES tenants(id) ON DELETE SET NULL",
 	}
 
 	for _, m := range migrations {

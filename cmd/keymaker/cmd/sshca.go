@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	credentialCmd.AddCommand(sshCACmd)
+	rootCmd.AddCommand(sshCACmd)
 	sshCACmd.AddCommand(sshCACreateCmd)
 	sshCACmd.AddCommand(sshCAListCmd)
 	sshCACmd.AddCommand(sshCAShowCmd)
@@ -51,12 +51,12 @@ var sshCACreateCmd = &cobra.Command{
 	Long: `Generate a new SSH Certificate Authority key pair.
 
 The private key is stored securely in the local database. The public key
-can be retrieved using 'bluectl credential ssh-ca show <name> --public-key'
+can be retrieved using 'km ssh-ca show <name> --public-key'
 and added to servers' sshd_config TrustedUserCAKeys directive.
 
 Examples:
-  bluectl credential ssh-ca create --name ops-ca
-  bluectl credential ssh-ca create --name prod-ca --type ed25519`,
+  km ssh-ca create --name ops-ca
+  km ssh-ca create --name prod-ca --type ed25519`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name, _ := cmd.Flags().GetString("name")
 		keyType, _ := cmd.Flags().GetString("type")
@@ -98,7 +98,8 @@ Examples:
 		}
 
 		// Store in database (private key will be encrypted by CreateSSHCA)
-		if err := dpuStore.CreateSSHCA(id, name, []byte(pubKeyStr), privKeyPEM, keyType); err != nil {
+		// tenantID is nil - CA can be assigned to tenant later via bluectl
+		if err := dpuStore.CreateSSHCA(id, name, []byte(pubKeyStr), privKeyPEM, keyType, nil); err != nil {
 			return err
 		}
 
@@ -121,7 +122,7 @@ var sshCAListCmd = &cobra.Command{
 		}
 
 		if len(cas) == 0 {
-			fmt.Println("No SSH CAs configured. Use 'bluectl credential ssh-ca create' to create one.")
+			fmt.Println("No SSH CAs configured. Use 'km ssh-ca create' to create one.")
 			return nil
 		}
 
@@ -145,9 +146,9 @@ Use --public-key to output only the public key, suitable for piping to a file
 or configuring sshd_config TrustedUserCAKeys.
 
 Examples:
-  bluectl credential ssh-ca show ops-ca
-  bluectl credential ssh-ca show ops-ca --public-key
-  bluectl credential ssh-ca show ops-ca --public-key > /etc/ssh/trusted_user_ca`,
+  km ssh-ca show ops-ca
+  km ssh-ca show ops-ca --public-key
+  km ssh-ca show ops-ca --public-key > /etc/ssh/trusted_user_ca`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
@@ -207,9 +208,9 @@ that trust the CA. The validity period defaults to 8 hours if not specified.
 Validity formats: "8h" (hours), "24h" (hours), "7d" (days)
 
 Examples:
-  bluectl credential ssh-ca sign ops-ca --principal alice --pubkey ~/.ssh/id_ed25519.pub
-  bluectl credential ssh-ca sign ops-ca -p alice -v 24h --pubkey ~/.ssh/id_ed25519.pub > ~/.ssh/id_ed25519-cert.pub
-  bluectl credential ssh-ca sign ops-ca -p admin -v 7d --pubkey /path/to/key.pub`,
+  km ssh-ca sign ops-ca --principal alice --pubkey ~/.ssh/id_ed25519.pub
+  km ssh-ca sign ops-ca -p alice -v 24h --pubkey ~/.ssh/id_ed25519.pub > ~/.ssh/id_ed25519-cert.pub
+  km ssh-ca sign ops-ca -p admin -v 7d --pubkey /path/to/key.pub`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		caName := args[0]

@@ -14,16 +14,23 @@ func init() {
 	rootCmd.AddCommand(tenantCmd)
 	tenantCmd.AddCommand(tenantListCmd)
 	tenantCmd.AddCommand(tenantAddCmd)
+	tenantCmd.AddCommand(tenantCreateCmd) // Alias for add
 	tenantCmd.AddCommand(tenantRemoveCmd)
 	tenantCmd.AddCommand(tenantShowCmd)
 	tenantCmd.AddCommand(tenantUpdateCmd)
 	tenantCmd.AddCommand(tenantAssignCmd)
+	tenantCmd.AddCommand(tenantAssignDPUCmd) // Alias for assign
 	tenantCmd.AddCommand(tenantUnassignCmd)
 
 	// Add flags for tenant add
 	tenantAddCmd.Flags().StringP("description", "d", "", "Tenant description")
 	tenantAddCmd.Flags().StringP("contact", "c", "", "Contact email")
 	tenantAddCmd.Flags().StringSliceP("tags", "t", nil, "Tags (comma-separated)")
+
+	// Add flags for tenant create (same as add)
+	tenantCreateCmd.Flags().StringP("description", "d", "", "Tenant description")
+	tenantCreateCmd.Flags().StringP("contact", "c", "", "Contact email")
+	tenantCreateCmd.Flags().StringSliceP("tags", "t", nil, "Tags (comma-separated)")
 
 	// Add flags for tenant update
 	tenantUpdateCmd.Flags().StringP("name", "n", "", "New name")
@@ -92,13 +99,41 @@ Examples:
 		contact, _ := cmd.Flags().GetString("contact")
 		tags, _ := cmd.Flags().GetStringSlice("tags")
 
-		id := uuid.New().String()[:8]
+		id := "tnt_" + uuid.New().String()[:8]
 
 		if err := dpuStore.AddTenant(id, name, description, contact, tags); err != nil {
 			return fmt.Errorf("failed to add tenant: %w", err)
 		}
 
 		fmt.Printf("Created tenant '%s' (id: %s)\n", name, id)
+		return nil
+	},
+}
+
+// tenantCreateCmd is an alias for tenantAddCmd
+var tenantCreateCmd = &cobra.Command{
+	Use:   "create <name>",
+	Short: "Create a new tenant",
+	Long: `Create a new tenant to group DPUs.
+
+Examples:
+  bluectl tenant create "Acme Corp"
+  bluectl tenant create "Production" -d "Production environment" -c "ops@example.com"
+  bluectl tenant create "Dev Team" -t staging,dev`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		description, _ := cmd.Flags().GetString("description")
+		contact, _ := cmd.Flags().GetString("contact")
+		tags, _ := cmd.Flags().GetStringSlice("tags")
+
+		id := "tnt_" + uuid.New().String()[:8]
+
+		if err := dpuStore.AddTenant(id, name, description, contact, tags); err != nil {
+			return fmt.Errorf("failed to create tenant: %w", err)
+		}
+
+		fmt.Printf("Tenant '%s' created. ID: %s\n", name, id)
 		return nil
 	},
 }
@@ -231,6 +266,36 @@ var tenantAssignCmd = &cobra.Command{
 Examples:
   bluectl tenant assign "Production" bf3-lab
   bluectl tenant assign acme123 dpu456`,
+	Args: cobra.ExactArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		tenant, err := dpuStore.GetTenant(args[0])
+		if err != nil {
+			return fmt.Errorf("tenant not found: %s", args[0])
+		}
+
+		dpu, err := dpuStore.Get(args[1])
+		if err != nil {
+			return fmt.Errorf("DPU not found: %s", args[1])
+		}
+
+		if err := dpuStore.AssignDPUToTenant(dpu.ID, tenant.ID); err != nil {
+			return fmt.Errorf("failed to assign DPU: %w", err)
+		}
+
+		fmt.Printf("Assigned DPU '%s' to tenant '%s'\n", dpu.Name, tenant.Name)
+		return nil
+	},
+}
+
+// tenantAssignDPUCmd is an alias for tenantAssignCmd with reversed argument order
+var tenantAssignDPUCmd = &cobra.Command{
+	Use:   "assign-dpu <tenant-name-or-id> <dpu-name-or-id>",
+	Short: "Assign a DPU to a tenant",
+	Long: `Assign a DPU to a tenant for grouping and access control.
+
+Examples:
+  bluectl tenant assign-dpu acme bf3-lab
+  bluectl tenant assign-dpu production dpu-01`,
 	Args: cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		tenant, err := dpuStore.GetTenant(args[0])

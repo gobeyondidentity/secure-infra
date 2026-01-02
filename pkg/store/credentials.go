@@ -14,19 +14,21 @@ type SSHCA struct {
 	PublicKey  []byte
 	PrivateKey []byte // Decrypted in memory
 	KeyType    string
+	TenantID   *string
 	CreatedAt  time.Time
 }
 
 // CreateSSHCA stores a new SSH CA with encrypted private key.
-func (s *Store) CreateSSHCA(id, name string, publicKey, privateKey []byte, keyType string) error {
+// tenantID is optional; pass nil or empty string for global CAs.
+func (s *Store) CreateSSHCA(id, name string, publicKey, privateKey []byte, keyType string, tenantID *string) error {
 	encryptedPrivateKey, err := EncryptPrivateKey(privateKey)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt private key: %w", err)
 	}
 
 	_, err = s.db.Exec(
-		`INSERT INTO ssh_cas (id, name, public_key, encrypted_private_key, key_type) VALUES (?, ?, ?, ?, ?)`,
-		id, name, publicKey, encryptedPrivateKey, keyType,
+		`INSERT INTO ssh_cas (id, name, public_key, encrypted_private_key, key_type, tenant_id) VALUES (?, ?, ?, ?, ?, ?)`,
+		id, name, publicKey, encryptedPrivateKey, keyType, tenantID,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create SSH CA: %w", err)
@@ -37,7 +39,7 @@ func (s *Store) CreateSSHCA(id, name string, publicKey, privateKey []byte, keyTy
 // GetSSHCA retrieves an SSH CA by name, decrypting the private key.
 func (s *Store) GetSSHCA(name string) (*SSHCA, error) {
 	row := s.db.QueryRow(
-		`SELECT id, name, public_key, encrypted_private_key, key_type, created_at FROM ssh_cas WHERE name = ?`,
+		`SELECT id, name, public_key, encrypted_private_key, key_type, tenant_id, created_at FROM ssh_cas WHERE name = ?`,
 		name,
 	)
 	return s.scanSSHCA(row)
@@ -46,7 +48,7 @@ func (s *Store) GetSSHCA(name string) (*SSHCA, error) {
 // GetSSHCAByID retrieves an SSH CA by ID, decrypting the private key.
 func (s *Store) GetSSHCAByID(id string) (*SSHCA, error) {
 	row := s.db.QueryRow(
-		`SELECT id, name, public_key, encrypted_private_key, key_type, created_at FROM ssh_cas WHERE id = ?`,
+		`SELECT id, name, public_key, encrypted_private_key, key_type, tenant_id, created_at FROM ssh_cas WHERE id = ?`,
 		id,
 	)
 	return s.scanSSHCA(row)
@@ -55,10 +57,32 @@ func (s *Store) GetSSHCAByID(id string) (*SSHCA, error) {
 // ListSSHCAs returns all SSH CAs (without private keys for listing).
 func (s *Store) ListSSHCAs() ([]*SSHCA, error) {
 	rows, err := s.db.Query(
-		`SELECT id, name, public_key, key_type, created_at FROM ssh_cas ORDER BY name`,
+		`SELECT id, name, public_key, key_type, tenant_id, created_at FROM ssh_cas ORDER BY name`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list SSH CAs: %w", err)
+	}
+	defer rows.Close()
+
+	var cas []*SSHCA
+	for rows.Next() {
+		ca, err := s.scanSSHCAListRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		cas = append(cas, ca)
+	}
+	return cas, rows.Err()
+}
+
+// GetSSHCAsByTenant returns all SSH CAs for a specific tenant (without private keys).
+func (s *Store) GetSSHCAsByTenant(tenantID string) ([]*SSHCA, error) {
+	rows, err := s.db.Query(
+		`SELECT id, name, public_key, key_type, tenant_id, created_at FROM ssh_cas WHERE tenant_id = ? ORDER BY name`,
+		tenantID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list SSH CAs by tenant: %w", err)
 	}
 	defer rows.Close()
 
@@ -114,9 +138,10 @@ func (s *Store) SSHCAExists(name string) (bool, error) {
 func (s *Store) scanSSHCA(row *sql.Row) (*SSHCA, error) {
 	var ca SSHCA
 	var encryptedPrivateKey []byte
+	var tenantID sql.NullString
 	var createdAt int64
 
-	err := row.Scan(&ca.ID, &ca.Name, &ca.PublicKey, &encryptedPrivateKey, &ca.KeyType, &createdAt)
+	err := row.Scan(&ca.ID, &ca.Name, &ca.PublicKey, &encryptedPrivateKey, &ca.KeyType, &tenantID, &createdAt)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("SSH CA not found")
 	}
@@ -129,19 +154,26 @@ func (s *Store) scanSSHCA(row *sql.Row) (*SSHCA, error) {
 		return nil, fmt.Errorf("failed to decrypt private key: %w", err)
 	}
 
+	if tenantID.Valid {
+		ca.TenantID = &tenantID.String
+	}
 	ca.CreatedAt = time.Unix(createdAt, 0)
 	return &ca, nil
 }
 
 func (s *Store) scanSSHCAListRow(rows *sql.Rows) (*SSHCA, error) {
 	var ca SSHCA
+	var tenantID sql.NullString
 	var createdAt int64
 
-	err := rows.Scan(&ca.ID, &ca.Name, &ca.PublicKey, &ca.KeyType, &createdAt)
+	err := rows.Scan(&ca.ID, &ca.Name, &ca.PublicKey, &ca.KeyType, &tenantID, &createdAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan SSH CA: %w", err)
 	}
 
+	if tenantID.Valid {
+		ca.TenantID = &tenantID.String
+	}
 	ca.CreatedAt = time.Unix(createdAt, 0)
 	// PrivateKey intentionally left nil for list operations
 	return &ca, nil

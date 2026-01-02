@@ -15,7 +15,7 @@ func TestSSHCACRUD(t *testing.T) {
 
 	// Test CreateSSHCA
 	t.Run("CreateSSHCA", func(t *testing.T) {
-		err := store.CreateSSHCA("ca1", "test-ca", testPublicKey, testPrivateKey, "ed25519")
+		err := store.CreateSSHCA("ca1", "test-ca", testPublicKey, testPrivateKey, "ed25519", nil)
 		if err != nil {
 			t.Fatalf("CreateSSHCA failed: %v", err)
 		}
@@ -57,7 +57,7 @@ func TestSSHCACRUD(t *testing.T) {
 
 	// Test CreateSSHCA duplicate name
 	t.Run("CreateSSHCA_DuplicateName", func(t *testing.T) {
-		err := store.CreateSSHCA("ca2", "test-ca", testPublicKey, testPrivateKey, "ed25519")
+		err := store.CreateSSHCA("ca2", "test-ca", testPublicKey, testPrivateKey, "ed25519", nil)
 		if err == nil {
 			t.Error("expected error for duplicate name, got nil")
 		}
@@ -93,7 +93,7 @@ func TestSSHCACRUD(t *testing.T) {
 	// Test ListSSHCAs
 	t.Run("ListSSHCAs", func(t *testing.T) {
 		// Add another CA
-		err := store.CreateSSHCA("ca2", "another-ca", testPublicKey, testPrivateKey, "rsa")
+		err := store.CreateSSHCA("ca2", "another-ca", testPublicKey, testPrivateKey, "rsa", nil)
 		if err != nil {
 			t.Fatalf("CreateSSHCA failed: %v", err)
 		}
@@ -138,7 +138,7 @@ func TestSSHCACRUD(t *testing.T) {
 	// Test DeleteSSHCAByID
 	t.Run("DeleteSSHCAByID", func(t *testing.T) {
 		// Create a new CA to delete by ID
-		err := store.CreateSSHCA("ca3", "delete-by-id-ca", testPublicKey, testPrivateKey, "ed25519")
+		err := store.CreateSSHCA("ca3", "delete-by-id-ca", testPublicKey, testPrivateKey, "ed25519", nil)
 		if err != nil {
 			t.Fatalf("CreateSSHCA failed: %v", err)
 		}
@@ -274,7 +274,7 @@ func TestSSHCARoundTripWithEncryption(t *testing.T) {
 	testPrivateKey := []byte("-----BEGIN OPENSSH PRIVATE KEY-----\nencrypted-test-private-key-data\n-----END OPENSSH PRIVATE KEY-----")
 
 	// Create CA with encryption enabled
-	err := store.CreateSSHCA("encrypted-ca", "encrypted-test-ca", testPublicKey, testPrivateKey, "ed25519")
+	err := store.CreateSSHCA("encrypted-ca", "encrypted-test-ca", testPublicKey, testPrivateKey, "ed25519", nil)
 	if err != nil {
 		t.Fatalf("CreateSSHCA failed: %v", err)
 	}

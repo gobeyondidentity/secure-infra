@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	credentialCmd.AddCommand(distributeCmd)
+	rootCmd.AddCommand(distributeCmd)
 	distributeCmd.AddCommand(distributeSSHCACmd)
 
 	// Flags for distribute ssh-ca
@@ -45,8 +45,8 @@ Attestation Requirements:
 - Use --force to bypass stale attestation (logged to audit trail)
 
 Examples:
-  bluectl credential distribute ssh-ca ops-ca --target bf3-lab
-  bluectl credential distribute ssh-ca ops-ca --target bf3-lab --force`,
+  km distribute ssh-ca ops-ca --target bf3-lab
+  km distribute ssh-ca ops-ca --target bf3-lab --force`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		caName := args[0]

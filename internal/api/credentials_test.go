@@ -39,11 +39,11 @@ func TestSSHCAList(t *testing.T) {
 	server, mux := setupTestServer(t)
 
 	// Create SSH CAs directly in the store
-	err := server.store.CreateSSHCA("ca1", "production-ca", []byte("ssh-ed25519 AAAA..."), []byte("private-key-1"), "ed25519")
+	err := server.store.CreateSSHCA("ca1", "production-ca", []byte("ssh-ed25519 AAAA..."), []byte("private-key-1"), "ed25519", nil)
 	if err != nil {
 		t.Fatalf("failed to create SSH CA: %v", err)
 	}
-	err = server.store.CreateSSHCA("ca2", "dev-ca", []byte("ssh-ed25519 BBBB..."), []byte("private-key-2"), "ed25519")
+	err = server.store.CreateSSHCA("ca2", "dev-ca", []byte("ssh-ed25519 BBBB..."), []byte("private-key-2"), "ed25519", nil)
 	if err != nil {
 		t.Fatalf("failed to create SSH CA: %v", err)
 	}
@@ -88,7 +88,7 @@ func TestSSHCAGet(t *testing.T) {
 
 	// Create an SSH CA
 	publicKey := []byte("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...")
-	err := server.store.CreateSSHCA("ca1", "production-ca", publicKey, []byte("private-key"), "ed25519")
+	err := server.store.CreateSSHCA("ca1", "production-ca", publicKey, []byte("private-key"), "ed25519", nil)
 	if err != nil {
 		t.Fatalf("failed to create SSH CA: %v", err)
 	}
@@ -138,7 +138,7 @@ func TestSSHCAListWithDistributionCount(t *testing.T) {
 	server, mux := setupTestServer(t)
 
 	// Create an SSH CA
-	err := server.store.CreateSSHCA("ca1", "prod-ca", []byte("ssh-ed25519 AAAA..."), []byte("private-key"), "ed25519")
+	err := server.store.CreateSSHCA("ca1", "prod-ca", []byte("ssh-ed25519 AAAA..."), []byte("private-key"), "ed25519", nil)
 	if err != nil {
 		t.Fatalf("failed to create SSH CA: %v", err)
 	}
