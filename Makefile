@@ -105,6 +105,8 @@ release: $(BIN_DIR)
 	@echo "  $(BIN_DIR)/bluectl-linux-amd64"
 	@GOOS=linux GOARCH=amd64 go build -o $(BIN_DIR)/km-linux-amd64 ./cmd/keymaker
 	@echo "  $(BIN_DIR)/km-linux-amd64"
+	@GOOS=linux GOARCH=amd64 go build -o $(BIN_DIR)/host-agent-linux-amd64 ./cmd/host-agent
+	@echo "  $(BIN_DIR)/host-agent-linux-amd64"
 	@echo ""
 	@echo "linux/arm64 (BlueField DPU):"
 	@GOOS=linux GOARCH=arm64 go build -o $(BIN_DIR)/agent-linux-arm64 ./cmd/agent
