@@ -334,6 +334,26 @@ func (s *Store) migrate() error {
 
 	CREATE INDEX IF NOT EXISTS idx_authorizations_operator ON authorizations(operator_id);
 	CREATE INDEX IF NOT EXISTS idx_authorizations_tenant ON authorizations(tenant_id);
+
+	-- Trust Relationships (M2M trust)
+	CREATE TABLE IF NOT EXISTS trust_relationships (
+		id TEXT PRIMARY KEY,
+		source_dpu_id TEXT NOT NULL,
+		source_dpu_name TEXT NOT NULL,
+		target_dpu_id TEXT NOT NULL,
+		target_dpu_name TEXT NOT NULL,
+		tenant_id TEXT NOT NULL,
+		trust_type TEXT NOT NULL,
+		bidirectional INTEGER NOT NULL DEFAULT 0,
+		status TEXT NOT NULL DEFAULT 'active',
+		suspend_reason TEXT,
+		created_at INTEGER NOT NULL,
+		updated_at INTEGER NOT NULL,
+		FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+	);
+	CREATE INDEX IF NOT EXISTS idx_trust_tenant ON trust_relationships(tenant_id);
+	CREATE INDEX IF NOT EXISTS idx_trust_source ON trust_relationships(source_dpu_id);
+	CREATE INDEX IF NOT EXISTS idx_trust_target ON trust_relationships(target_dpu_id);
 	`
 	if _, err := s.db.Exec(schema); err != nil {
 		return err

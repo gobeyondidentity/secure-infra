@@ -91,6 +91,13 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/authorizations/{id}", s.handleGetAuthorization)
 	mux.HandleFunc("DELETE /api/v1/authorizations/{id}", s.handleDeleteAuthorization)
 	mux.HandleFunc("POST /api/v1/authorizations/check", s.handleCheckAuthorization)
+
+	// Trust routes
+	mux.HandleFunc("POST /api/v1/trust", s.handleCreateTrust)
+	mux.HandleFunc("GET /api/v1/trust", s.handleListTrust)
+	mux.HandleFunc("GET /api/v1/trust/{id}", s.handleGetTrust)
+	mux.HandleFunc("DELETE /api/v1/trust/{id}", s.handleDeleteTrust)
+	mux.HandleFunc("PATCH /api/v1/trust/{id}/status", s.handleUpdateTrustStatus)
 }
 
 // ----- DPU Types -----
