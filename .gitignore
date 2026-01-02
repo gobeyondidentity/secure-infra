@@ -34,3 +34,4 @@ dist/
 /dpuemu/dpuemu
 bin/
 keymaker.db
+claude.md
