@@ -33,3 +33,4 @@ dist/
 /bluectl
 /dpuemu/dpuemu
 bin/
+keymaker.db

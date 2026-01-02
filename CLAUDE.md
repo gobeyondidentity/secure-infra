@@ -238,6 +238,9 @@ go build -o bin/km ./cmd/keymaker
 go build -o bin/host-agent ./cmd/host-agent
 go build -o bin/dpuemu ./dpuemu/cmd/dpuemu
 
+# Cross-compile agent for BlueField DPU (ARM64)
+GOOS=linux GOARCH=arm64 go build -o bin/agent-arm64 ./cmd/agent
+
 # Test (required before merge)
 go test ./...
 

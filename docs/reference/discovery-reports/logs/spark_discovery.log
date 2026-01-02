@@ -1,0 +1,2530 @@
+[0;32mStarting B200 Discovery Script (Verified Edition)[0m
+Log file: /home/nmelo/b200_discovery_spark-b3e4_20251218_161049.log
+Started at: Thu Dec 18 04:10:49 PM EST 2025
+Running as: nmelo
+
+
+===============================================================================
+  PHASE 1: QUICK SYSTEM SNAPSHOT
+  2025-12-18 16:10:49
+===============================================================================
+
+
+--- Basic System Info ---
+
+[CMD] Hostname: hostname
+spark-b3e4
+
+[CMD] Kernel: uname -a
+Linux spark-b3e4 6.14.0-1013-nvidia #13-Ubuntu SMP PREEMPT_DYNAMIC Wed Oct 29 06:01:19 UTC 2025 aarch64 aarch64 aarch64 GNU/Linux
+
+[CMD] OS Release: cat /etc/os-release
+PRETTY_NAME="Ubuntu 24.04.3 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04.3 LTS (Noble Numbat)"
+VERSION_CODENAME=noble
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=noble
+LOGO=ubuntu-logo
+
+[CMD] Architecture: uname -m
+aarch64
+
+[CMD] Uptime: uptime
+ 16:10:49 up 17:13,  4 users,  load average: 0.16, 0.13, 0.12
+
+[CMD] Current user: whoami
+nmelo
+
+[CMD] User groups: groups
+nmelo adm sudo audio dip plugdev users lpadmin ollama docker
+
+
+--- Kernel Type Analysis ---
+
+[INFO] Checking if NVIDIA-optimized kernel vs generic kernel
+[OK] NVIDIA-optimized kernel detected: 6.14.0-1013-nvidia
+     Benefits: GPU-aware scheduling, optimized memory management
+
+
+--- Virtualization Detection ---
+
+[CMD] Virtualization: systemd-detect-virt
+none
+[WARN] Command returned non-zero exit code
+
+[CMD] Hypervisor info: cat /sys/hypervisor/type
+cat: /sys/hypervisor/type: No such file or directory
+[WARN] Command returned non-zero exit code
+
+[CMD] DMI product: cat /sys/class/dmi/id/product_name
+NVIDIA_DGX_Spark
+
+[CMD] CPU flags (vmx/svm): grep -E vmx|svm /proc/cpuinfo
+
+--- Quick GPU Check ---
+
+[CMD] nvidia-smi overview: nvidia-smi
+Thu Dec 18 16:10:49 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.95.05              Driver Version: 580.95.05      CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GB10                    On  |   0000000F:01:00.0 Off |                  N/A |
+| N/A   38C    P8              5W /  N/A  | Not Supported          |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            5495      G   /usr/bin/gnome-shell                    266MiB |
+|    0   N/A  N/A            5991      G   /usr/bin/Xwayland                         8MiB |
++-----------------------------------------------------------------------------------------+
+
+[CMD] GPU count and names: nvidia-smi -L
+GPU 0: NVIDIA GB10 (UUID: GPU-637effba-9969-68b1-b30e-badef4b3de88)
+
+
+--- Memory Overview ---
+
+[CMD] Memory: free -h
+               total        used        free      shared  buff/cache   available
+Mem:           119Gi       6.8Gi        61Gi        55Mi        52Gi       112Gi
+Swap:           15Gi       256Ki        15Gi
+
+[CMD] Swap: swapon --show
+NAME      TYPE SIZE USED PRIO
+/swap.img file  16G 256K   -2
+
+
+===============================================================================
+  PHASE 2: B200 BLACKWELL CRITICAL CHECKS
+  2025-12-18 16:10:49
+===============================================================================
+
+
+--- Driver Type Verification (B200 REQUIRES nvidia-open) ---
+
+[CRITICAL] B200/Blackwell ONLY works with nvidia-open kernel modules
+[CRITICAL] Proprietary driver does NOT support Blackwell architecture
+
+[FILE] /proc/driver/nvidia/version:
+NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  580.95.05  Release Build  (dvs-builder@U22-I3-AF08-06-3)  Tue Sep 23 09:46:53 UTC 2025
+GCC version:  gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04) 
+
+[CMD] Kernel modules (nvidia): lsmod
+nvidia_uvm           1900544  8
+nvidia_drm            131072  16
+nvidia_modeset       1957888  8 nvidia_drm
+nvidia              14635008  128 nvidia_uvm,nvidia_modeset
+video                  81920  1 nvidia_modeset
+drm_ttm_helper         16384  1 nvidia_drm
+filename:       /lib/modules/6.14.0-1013-nvidia/kernel/nvidia-580-open/nvidia.ko
+version:        580.95.05
+license:        Dual MIT/GPL
+[WARN] Could not confirm nvidia-open - B200 requires open kernel modules
+
+
+--- DKMS Status (Kernel Module Build System) ---
+
+[INFO] DKMS manages kernel module compilation for different kernels
+[CMD] DKMS status: dkms status
+iser/25.07.OFED.25.07.0.9.7.1, 6.14.0-1013-nvidia, aarch64: installed (Original modules exist)
+isert/25.07.OFED.25.07.0.9.7.1, 6.14.0-1013-nvidia, aarch64: installed (Original modules exist)
+kernel-mft-dkms/4.33.0.169, 6.11.0-1016-nvidia, arm64: installed
+kernel-mft-dkms/4.33.0.169, 6.14.0-1013-nvidia, aarch64: installed
+kernel-mft-dkms/4.33.0.169, 6.14.0-1015-nvidia, aarch64: installed
+knem/1.1.4.90mlnx3, 6.11.0-1016-nvidia, arm64: installed
+knem/1.1.4.90mlnx3, 6.14.0-1013-nvidia, aarch64: installed
+knem/1.1.4.90mlnx3, 6.14.0-1015-nvidia, aarch64: installed
+mlnx-ofed-kernel/25.07.OFED.25.07.0.9.7.1, 6.11.0-1016-nvidia, aarch64: installed (Original modules exist)
+mlnx-ofed-kernel/25.07.OFED.25.07.0.9.7.1, 6.14.0-1013-nvidia, aarch64: installed (Original modules exist)
+srp/25.07.OFED.25.07.0.9.7.1, 6.14.0-1013-nvidia, aarch64: installed (Original modules exist)
+xpmem/2.7.4, 6.11.0-1016-nvidia, aarch64: installed
+xpmem/2.7.4, 6.14.0-1013-nvidia, aarch64: installed
+xpmem/2.7.4, 6.14.0-1015-nvidia, aarch64: installed
+
+[CMD] DKMS nvidia modules: dkms status
+iser/25.07.OFED.25.07.0.9.7.1, 6.14.0-1013-nvidia, aarch64: installed (Original modules exist)
+isert/25.07.OFED.25.07.0.9.7.1, 6.14.0-1013-nvidia, aarch64: installed (Original modules exist)
+kernel-mft-dkms/4.33.0.169, 6.11.0-1016-nvidia, arm64: installed
+kernel-mft-dkms/4.33.0.169, 6.14.0-1013-nvidia, aarch64: installed
+kernel-mft-dkms/4.33.0.169, 6.14.0-1015-nvidia, aarch64: installed
+knem/1.1.4.90mlnx3, 6.11.0-1016-nvidia, arm64: installed
+knem/1.1.4.90mlnx3, 6.14.0-1013-nvidia, aarch64: installed
+knem/1.1.4.90mlnx3, 6.14.0-1015-nvidia, aarch64: installed
+mlnx-ofed-kernel/25.07.OFED.25.07.0.9.7.1, 6.11.0-1016-nvidia, aarch64: installed (Original modules exist)
+mlnx-ofed-kernel/25.07.OFED.25.07.0.9.7.1, 6.14.0-1013-nvidia, aarch64: installed (Original modules exist)
+srp/25.07.OFED.25.07.0.9.7.1, 6.14.0-1013-nvidia, aarch64: installed (Original modules exist)
+xpmem/2.7.4, 6.11.0-1016-nvidia, aarch64: installed
+xpmem/2.7.4, 6.14.0-1013-nvidia, aarch64: installed
+xpmem/2.7.4, 6.14.0-1015-nvidia, aarch64: installed
+
+--- Kernel Logs (NVIDIA driver initialization) ---
+
+[INFO] Checking kernel logs for NVIDIA driver messages
+[CMD] dmesg nvidia (last 30): dmesg
+Dec 17 22:57:17 spark-b3e4 kernel: usb usb10: Manufacturer: Linux 6.14.0-1013-nvidia xhci-hcd
+Dec 17 22:57:17 spark-b3e4 kernel: usb usb11: Manufacturer: Linux 6.14.0-1013-nvidia xhci-hcd
+Dec 17 22:57:17 spark-b3e4 kernel: usb usb12: Manufacturer: Linux 6.14.0-1013-nvidia xhci-hcd
+Dec 17 22:57:17 spark-b3e4 systemd[1]: /etc/systemd/system/nvidia-cdi-refresh.service:26: Ignoring unknown escape sequences: "/(nvidia|nvidia-current)\.ko[:]"
+Dec 17 22:57:18 spark-b3e4 kernel: Backport based on https://:@git-nbu.nvidia.com/r/a/mlnx_ofed/mlnx-ofa_kernel-4.0.git eb6cb58
+Dec 17 22:57:18 spark-b3e4 kernel: compat.git: https://:@git-nbu.nvidia.com/r/a/mlnx_ofed/mlnx-ofa_kernel-4.0.git
+Dec 17 22:57:18 spark-b3e4 kernel: input: NVIDIA HDMI/DP,pcm=3 as /devices/platform/NVDA2014:00/sound/card2/input3
+Dec 17 22:57:18 spark-b3e4 kernel: input: NVIDIA HDMI/DP,pcm=7 as /devices/platform/NVDA2014:00/sound/card2/input4
+Dec 17 22:57:18 spark-b3e4 kernel: input: NVIDIA HDMI/DP,pcm=8 as /devices/platform/NVDA2014:00/sound/card2/input5
+Dec 17 22:57:18 spark-b3e4 kernel: input: NVIDIA HDMI/DP,pcm=9 as /devices/platform/NVDA2014:00/sound/card2/input6
+Dec 17 22:57:18 spark-b3e4 kernel: nvidia-nvlink: Nvlink Core is being initialized, major device number 503
+Dec 17 22:57:18 spark-b3e4 kernel: nvidia 000f:01:00.0: Adding to iommu group 16
+Dec 17 22:57:18 spark-b3e4 kernel: nvidia 000f:01:00.0: vgaarb: VGA decodes changed: olddecodes=io+mem,decodes=none:owns=none
+Dec 17 22:57:21 spark-b3e4 kernel: NVRM: loading NVIDIA UNIX Open Kernel Module for aarch64  580.95.05  Release Build  (dvs-builder@U22-I3-AF08-06-3)  Tue Sep 23 09:46:53 UTC 2025
+Dec 17 22:57:21 spark-b3e4 kernel: nvidia-modeset: Loading NVIDIA UNIX Open Kernel Mode Setting Driver for aarch64  580.95.05  Release Build  (dvs-builder@U22-I3-AF08-06-3)  Tue Sep 23 09:36:29 UTC 2025
+Dec 17 22:57:23 spark-b3e4 kernel: [drm] [nvidia-drm] [GPU ID 0x000f0100] Loading driver
+Dec 17 22:57:24 spark-b3e4 kernel: [drm] [nvidia-drm] [GPU ID 0x000f0100] Encoder with NvKmsKapiDisplay 0x00000001 already exists.
+Dec 17 22:57:24 spark-b3e4 kernel: [drm] Initialized nvidia-drm 0.0.0 for 000f:01:00.0 on minor 1
+Dec 17 22:57:24 spark-b3e4 kernel: nvidia 000f:01:00.0: [drm] fb0: nvidia-drmdrmfb frame buffer device
+Dec 18 13:16:07 spark-b3e4 kernel: nvidia 000f:01:00.0: Using 40-bit DMA addresses
+
+--- Fabric Manager Status (REQUIRED for NVSwitch on B200) ---
+
+[INFO] B200 HGX systems require Fabric Manager + NVLSM for NVSwitch operation
+
+[SERVICE] nvidia-fabricmanager:
+inactive
+inactive/not found
+[SKIP] Service not found
+
+[SERVICE] nvidia-nvlsm:
+inactive
+inactive/not found
+[SKIP] Service not found
+
+[SERVICE] nvidia-persistenced:
+active
+● nvidia-persistenced.service - NVIDIA Persistence Daemon
+     Loaded: loaded (/usr/lib/systemd/system/nvidia-persistenced.service; enabled; preset: enabled)
+    Drop-In: /etc/systemd/system/nvidia-persistenced.service.d
+             └─nv-persistence-override.conf
+     Active: active (running) since Wed 2025-12-17 22:57:23 EST; 17h ago
+   Main PID: 2091 (nvidia-persiste)
+      Tasks: 1 (limit: 153562)
+     Memory: 16.1M (peak: 73.1M)
+        CPU: 2.314s
+     CGroup: /system.slice/nvidia-persistenced.service
+             └─2091 /usr/bin/nvidia-persistenced --persistence-mode --verbose
+
+Dec 17 22:57:18 spark-b3e4 systemd[1]: Starting nvidia-persistenced.service - NVIDIA Persistence Daemon...
+Dec 17 22:57:18 spark-b3e4 nvidia-persistenced[2091]: Verbose syslog connection opened
+Dec 17 22:57:18 spark-b3e4 nvidia-persistenced[2091]: Started (2091)
+Dec 17 22:57:21 spark-b3e4 nvidia-persistenced[2091]: device 000f:01:00.0 - registered
+Dec 17 22:57:23 spark-b3e4 nvidia-persistenced[2091]: device 000f:01:00.0 - persistence mode enabled.
+Dec 17 22:57:23 spark-b3e4 nvidia-persistenced[2091]: device 000f:01:00.0 - NUMA memory onlined.
+Dec 17 22:57:23 spark-b3e4 nvidia-persistenced[2091]: Local RPC services initialized
+Dec 17 22:57:23 spark-b3e4 systemd[1]: Started nvidia-persistenced.service - NVIDIA Persistence Daemon.
+
+[CMD] Fabric Manager version: nv-fabricmanager --version
+[SKIP] Command not found: nv-fabricmanager
+
+[SKIP] File/dir not found: /usr/share/nvidia/nvswitch/fabricmanager.cfg
+
+
+--- Driver and CUDA Version Check ---
+
+[INFO] B200 requires: Driver 570.133.20+, CUDA 12.8+ for SM_100
+
+[CMD] nvidia-smi driver info: nvidia-smi --query-gpu=driver_version --format=csv,noheader
+[CMD] CUDA version from nvidia-smi: nvidia-smi --query-gpu=name,driver_version --format=csv
+name, driver_version
+[CMD] nvcc version: nvcc --version
+[SKIP] Command not found: nvcc
+
+
+===============================================================================
+  PHASE 3: DEEP GPU ANALYSIS
+  2025-12-18 16:10:54
+===============================================================================
+
+
+--- Full GPU Query ---
+
+[CMD] nvidia-smi full query: nvidia-smi -q
+
+==============NVSMI LOG==============
+
+Timestamp                                 : Thu Dec 18 16:10:54 2025
+Driver Version                            : 580.95.05
+CUDA Version                              : 13.0
+
+Attached GPUs                             : 1
+GPU 0000000F:01:00.0
+    Product Name                          : NVIDIA GB10
+    Product Brand                         : NVIDIA RTX
+    Product Architecture                  : Blackwell
+    Display Mode                          : Requested functionality has been deprecated
+    Display Attached                      : No
+    Display Active                        : Disabled
+    Persistence Mode                      : Enabled
+    Addressing Mode                       : ATS
+    MIG Mode
+        Current                           : N/A
+        Pending                           : N/A
+    Accounting Mode                       : Disabled
+    Accounting Mode Buffer Size           : 4000
+    Driver Model
+        Current                           : N/A
+        Pending                           : N/A
+    Serial Number                         : N/A
+    GPU UUID                              : GPU-637effba-9969-68b1-b30e-badef4b3de88
+    GPU PDI                               : 0x215f65f34fe59c2c
+    Minor Number                          : 0
+    VBIOS Version                         : 9A.0B.0F.00.1D
+    MultiGPU Board                        : No
+    Board ID                              : 0xf0100
+    Board Part Number                     : N/A
+    GPU Part Number                       : 2E12-275-A1
+    FRU Part Number                       : N/A
+    Platform Info
+        Chassis Serial Number             : 
+        Slot Number                       : 0
+        Tray Index                        : 0
+        Host ID                           : 1
+        Peer Type                         : Direct Connected
+        Module Id                         : 1
+        GPU Fabric GUID                   : 0x0000000000000000
+    Inforom Version
+        Image Version                     : N/A
+        OEM Object                        : N/A
+        ECC Object                        : N/A
+        Power Management Object           : N/A
+    Inforom BBX Object Flush
+        Latest Timestamp                  : N/A
+        Latest Duration                   : N/A
+    GPU Operation Mode
+        Current                           : N/A
+        Pending                           : N/A
+    GPU C2C Mode                          : Enabled
+    GPU Virtualization Mode
+        Virtualization Mode               : None
+        Host VGPU Mode                    : N/A
+        vGPU Heterogeneous Mode           : N/A
+    GPU Recovery Action                   : None
+    GSP Firmware Version                  : 580.95.05
+    IBMNPU
+        Relaxed Ordering Mode             : N/A
+    PCI
+        Bus                               : 0x01
+        Device                            : 0x00
+        Domain                            : 0x000F
+        Base Classcode                    : 0x3
+        Sub Classcode                     : 0x0
+        Device Id                         : 0x2E1210DE
+        Bus Id                            : 0000000F:01:00.0
+        Sub System Id                     : 0x000010DE
+        GPU Link Info
+            PCIe Generation
+                Max                       : 1
+                Current                   : 1
+                Device Current            : 1
+                Device Max                : 5
+                Host Max                  : 5
+            Link Width
+                Max                       : 16x
+                Current                   : 1x
+        Bridge Chip
+            Type                          : N/A
+            Firmware                      : N/A
+        Replays Since Reset               : 0
+        Replay Number Rollovers           : 0
+        Tx Throughput                     : N/A
+        Rx Throughput                     : N/A
+        Atomic Caps Outbound              : FETCHADD_32 FETCHADD_64 SWAP_32 SWAP_64 CAS_32 CAS_64 
+        Atomic Caps Inbound               : N/A
+    Fan Speed                             : N/A
+    Performance State                     : P8
+    Clocks Event Reasons
+        Idle                              : Not Active
+        Applications Clocks Setting       : Not Active
+        SW Power Cap                      : Not Active
+        HW Slowdown                       : Not Active
+            HW Thermal Slowdown           : Not Active
+            HW Power Brake Slowdown       : Not Active
+        Sync Boost                        : Not Active
+        SW Thermal Slowdown               : Not Active
+        Display Clock Setting             : Not Active
+    Clocks Event Reasons Counters
+        SW Power Capping                  : 30538567411 us
+        Sync Boost                        : 0 us
+        SW Thermal Slowdown               : 0 us
+        HW Thermal Slowdown               : 0 us
+        HW Power Braking                  : 0 us
+    Sparse Operation Mode                 : N/A
+    FB Memory Usage
+        Total                             : N/A
+        Reserved                          : N/A
+        Used                              : N/A
+        Free                              : N/A
+    BAR1 Memory Usage
+        Total                             : N/A
+        Used                              : N/A
+        Free                              : N/A
+    Conf Compute Protected Memory Usage
+        Total                             : 0 MiB
+        Used                              : 0 MiB
+        Free                              : 0 MiB
+    Compute Mode                          : Default
+    Utilization
+        GPU                               : 0 %
+        Memory                            : 0 %
+        Encoder                           : 0 %
+        Decoder                           : 0 %
+        JPEG                              : 0 %
+        OFA                               : 0 %
+    Encoder Stats
+        Active Sessions                   : 0
+        Average FPS                       : 0
+        Average Latency                   : 0
+    FBC Stats
+        Active Sessions                   : 0
+        Average FPS                       : 0
+        Average Latency                   : 0
+    DRAM Encryption Mode
+        Current                           : N/A
+        Pending                           : N/A
+    ECC Mode
+        Current                           : N/A
+        Pending                           : N/A
+    ECC Errors
+        Volatile
+            SRAM Correctable              : N/A
+            SRAM Uncorrectable Parity     : N/A
+            SRAM Uncorrectable SEC-DED    : N/A
+            DRAM Correctable              : N/A
+            DRAM Uncorrectable            : N/A
+        Aggregate
+            SRAM Correctable              : N/A
+            SRAM Uncorrectable Parity     : N/A
+            SRAM Uncorrectable SEC-DED    : N/A
+            DRAM Correctable              : N/A
+            DRAM Uncorrectable            : N/A
+            SRAM Threshold Exceeded       : N/A
+        Aggregate Uncorrectable SRAM Sources
+            SRAM L2                       : N/A
+            SRAM SM                       : N/A
+            SRAM Microcontroller          : N/A
+            SRAM PCIE                     : N/A
+            SRAM Other                    : N/A
+        Channel Repair Pending            : N/A
+        TPC Repair Pending                : N/A
+    Retired Pages
+        Single Bit ECC                    : N/A
+        Double Bit ECC                    : N/A
+        Pending Page Blacklist            : N/A
+    Remapped Rows                         : N/A
+    Temperature
+        GPU Current Temp                  : 38 C
+        GPU T.Limit Temp                  : 57 C
+        GPU Shutdown T.Limit Temp         : -5 C
+        GPU Slowdown T.Limit Temp         : -2 C
+        GPU Max Operating T.Limit Temp    : 0 C
+        GPU Target Temperature            : N/A
+        Memory Current Temp               : N/A
+        Memory Max Operating T.Limit Temp : N/A
+    GPU Power Readings
+        Average Power Draw                : 5.08 W
+        Instantaneous Power Draw          : 5.10 W
+        Current Power Limit               : N/A
+        Requested Power Limit             : N/A
+        Default Power Limit               : N/A
+        Min Power Limit                   : N/A
+        Max Power Limit                   : N/A
+    GPU Memory Power Readings 
+        Average Power Draw                : N/A
+        Instantaneous Power Draw          : N/A
+    Module Power Readings
+        Average Power Draw                : N/A
+        Instantaneous Power Draw          : N/A
+        Current Power Limit               : N/A
+        Requested Power Limit             : N/A
+        Default Power Limit               : N/A
+        Min Power Limit                   : N/A
+        Max Power Limit                   : N/A
+    Power Smoothing                       : N/A
+    Workload Power Profiles
+        Requested Profiles                : N/A
+        Enforced Profiles                 : N/A
+    Clocks
+        Graphics                          : 208 MHz
+        SM                                : 208 MHz
+        Memory                            : N/A
+        Video                             : 598 MHz
+    Applications Clocks
+        Graphics                          : 2418 MHz
+        Memory                            : N/A
+    Default Applications Clocks
+        Graphics                          : 2418 MHz
+        Memory                            : N/A
+    Deferred Clocks
+        Memory                            : N/A
+    Max Clocks
+        Graphics                          : 3003 MHz
+        SM                                : 3003 MHz
+        Memory                            : N/A
+        Video                             : 3003 MHz
+    Max Customer Boost Clocks
+        Graphics                          : N/A
+    Clock Policy
+        Auto Boost                        : N/A
+        Auto Boost Default                : N/A
+    Fabric
+        State                             : N/A
+        Status                            : N/A
+        CliqueId                          : N/A
+        ClusterUUID                       : N/A
+        Health
+            Summary                       : N/A
+            Bandwidth                     : N/A
+            Route Recovery in progress    : N/A
+            Route Unhealthy               : N/A
+            Access Timeout Recovery       : N/A
+            Incorrect Configuration       : N/A
+    Processes
+        GPU instance ID                   : N/A
+        Compute instance ID               : N/A
+        Process ID                        : 5495
+            Type                          : G
+            Name                          : /usr/bin/gnome-shell
+            Used GPU Memory               : 266 MiB
+        GPU instance ID                   : N/A
+        Compute instance ID               : N/A
+        Process ID                        : 5991
+            Type                          : G
+            Name                          : /usr/bin/Xwayland
+            Used GPU Memory               : 8 MiB
+    Capabilities
+        EGM                               : disabled
+
+
+
+--- GPU Topology (NVLink 5.0 / NVSwitch 4.0) ---
+
+[INFO] B200 NVLink 5.0: 18 links per GPU, 50GB/s per link, 1.8TB/s total
+[INFO] HGX B200: 2 NVSwitch chips + 8 GPUs, 9 NVLinks per GPU to each switch
+
+[CMD] Topology matrix: nvidia-smi topo -m
+	[4mGPU0	NIC0	NIC1	NIC2	NIC3	CPU Affinity	NUMA Affinity	GPU NUMA ID[0m
+GPU0	 X 	NODE	NODE	NODE	NODE	0-19	0		N/A
+NIC0	NODE	 X 	PIX	NODE	NODE				
+NIC1	NODE	PIX	 X 	NODE	NODE				
+NIC2	NODE	NODE	NODE	 X 	PIX				
+NIC3	NODE	NODE	NODE	PIX	 X 				
+
+Legend:
+
+  X    = Self
+  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+  PIX  = Connection traversing at most a single PCIe bridge
+  NV#  = Connection traversing a bonded set of # NVLinks
+
+NIC Legend:
+
+  NIC0: mlx5_0
+  NIC1: mlx5_1
+  NIC2: mlx5_2
+  NIC3: mlx5_3
+
+
+[CMD] Topology with PCIe: nvidia-smi topo -mp
+	[4mGPU0	NIC0	NIC1	NIC2	NIC3	CPU Affinity	NUMA Affinity	GPU NUMA ID[0m
+GPU0	 X 	NODE	NODE	NODE	NODE	0-19	0		N/A
+NIC0	NODE	 X 	PIX	NODE	NODE				
+NIC1	NODE	PIX	 X 	NODE	NODE				
+NIC2	NODE	NODE	NODE	 X 	PIX				
+NIC3	NODE	NODE	NODE	PIX	 X 				
+
+Legend:
+
+  X    = Self
+  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+  PIX  = Connection traversing at most a single PCIe bridge
+
+NIC Legend:
+
+  NIC0: mlx5_0
+  NIC1: mlx5_1
+  NIC2: mlx5_2
+  NIC3: mlx5_3
+
+
+
+--- NVLink Status (Critical for B200 Performance) ---
+
+[CMD] NVLink status: nvidia-smi nvlink -s
+
+[CMD] NVLink capabilities: nvidia-smi nvlink -c
+
+[CMD] NVLink error counters: nvidia-smi nvlink -e
+
+
+--- GPU Clocks and Power ---
+
+[CMD] Clock speeds: nvidia-smi -q -d CLOCK
+
+==============NVSMI LOG==============
+
+Timestamp                                 : Thu Dec 18 16:10:55 2025
+Driver Version                            : 580.95.05
+CUDA Version                              : 13.0
+
+Attached GPUs                             : 1
+GPU 0000000F:01:00.0
+    Clocks
+        Graphics                          : 208 MHz
+        SM                                : 208 MHz
+        Memory                            : N/A
+        Video                             : 598 MHz
+    Applications Clocks
+        Graphics                          : 2418 MHz
+        Memory                            : N/A
+    Default Applications Clocks
+        Graphics                          : 2418 MHz
+        Memory                            : N/A
+    Deferred Clocks
+        Memory                            : N/A
+    Max Clocks
+        Graphics                          : 3003 MHz
+        SM                                : 3003 MHz
+        Memory                            : N/A
+        Video                             : 3003 MHz
+    Max Customer Boost Clocks
+        Graphics                          : N/A
+    SM Clock Samples
+        Duration                          : N/A
+        Number of Samples                 : N/A
+        Max                               : N/A
+        Min                               : N/A
+        Avg                               : N/A
+    Memory Clock Samples
+        Duration                          : N/A
+        Number of Samples                 : N/A
+        Max                               : N/A
+        Min                               : N/A
+        Avg                               : N/A
+    Clock Policy
+        Auto Boost                        : N/A
+        Auto Boost Default                : N/A
+
+
+[CMD] Power readings: nvidia-smi -q -d POWER
+
+==============NVSMI LOG==============
+
+Timestamp                                 : Thu Dec 18 16:10:55 2025
+Driver Version                            : 580.95.05
+CUDA Version                              : 13.0
+
+Attached GPUs                             : 1
+GPU 0000000F:01:00.0
+    GPU Power Readings
+        Average Power Draw                : 5.14 W
+        Instantaneous Power Draw          : 5.18 W
+        Current Power Limit               : N/A
+        Requested Power Limit             : N/A
+        Default Power Limit               : N/A
+        Min Power Limit                   : N/A
+        Max Power Limit                   : N/A
+    Power Samples
+        Duration                          : Not Found
+        Number of Samples                 : Not Found
+        Max                               : Not Found
+        Min                               : Not Found
+        Avg                               : Not Found
+    GPU Memory Power Readings 
+        Average Power Draw                : N/A
+        Instantaneous Power Draw          : N/A
+    Module Power Readings
+        Average Power Draw                : N/A
+        Instantaneous Power Draw          : N/A
+        Current Power Limit               : N/A
+        Requested Power Limit             : N/A
+        Default Power Limit               : N/A
+        Min Power Limit                   : N/A
+        Max Power Limit                   : N/A
+
+
+[CMD] Performance state: nvidia-smi -q -d PERFORMANCE
+
+==============NVSMI LOG==============
+
+Timestamp                                 : Thu Dec 18 16:10:55 2025
+Driver Version                            : 580.95.05
+CUDA Version                              : 13.0
+
+Attached GPUs                             : 1
+GPU 0000000F:01:00.0
+    Performance State                     : P8
+    Clocks Event Reasons
+        Idle                              : Not Active
+        Applications Clocks Setting       : Not Active
+        SW Power Cap                      : Active
+        HW Slowdown                       : Not Active
+            HW Thermal Slowdown           : Not Active
+            HW Power Brake Slowdown       : Not Active
+        Sync Boost                        : Not Active
+        SW Thermal Slowdown               : Not Active
+        Display Clock Setting             : Not Active
+    Clocks Event Reasons Counters
+        SW Power Capping                  : 30539563942 us
+        Sync Boost                        : 0 us
+        SW Thermal Slowdown               : 0 us
+        HW Thermal Slowdown               : 0 us
+        HW Power Braking                  : 0 us
+    Sparse Operation Mode                 : N/A
+
+
+
+--- GPU Memory (B200: 180GB HBM3e expected) ---
+
+[CMD] Memory info: nvidia-smi -q -d MEMORY
+
+==============NVSMI LOG==============
+
+Timestamp                                 : Thu Dec 18 16:10:55 2025
+Driver Version                            : 580.95.05
+CUDA Version                              : 13.0
+
+Attached GPUs                             : 1
+GPU 0000000F:01:00.0
+    FB Memory Usage
+        Total                             : N/A
+        Reserved                          : N/A
+        Used                              : N/A
+        Free                              : N/A
+    BAR1 Memory Usage
+        Total                             : N/A
+        Used                              : N/A
+        Free                              : N/A
+    Conf Compute Protected Memory Usage
+        Total                             : 0 MiB
+        Used                              : 0 MiB
+        Free                              : 0 MiB
+
+
+[CMD] ECC status: nvidia-smi -q -d ECC
+
+==============NVSMI LOG==============
+
+Timestamp                                 : Thu Dec 18 16:10:55 2025
+Driver Version                            : 580.95.05
+CUDA Version                              : 13.0
+
+Attached GPUs                             : 1
+GPU 0000000F:01:00.0
+    ECC Mode
+        Current                           : N/A
+        Pending                           : N/A
+    ECC Errors
+        Volatile
+            SRAM Correctable              : N/A
+            SRAM Uncorrectable Parity     : N/A
+            SRAM Uncorrectable SEC-DED    : N/A
+            DRAM Correctable              : N/A
+            DRAM Uncorrectable            : N/A
+        Aggregate
+            SRAM Correctable              : N/A
+            SRAM Uncorrectable Parity     : N/A
+            SRAM Uncorrectable SEC-DED    : N/A
+            DRAM Correctable              : N/A
+            DRAM Uncorrectable            : N/A
+            SRAM Threshold Exceeded       : N/A
+        Aggregate Uncorrectable SRAM Sources
+            SRAM L2                       : N/A
+            SRAM SM                       : N/A
+            SRAM Microcontroller          : N/A
+            SRAM PCIE                     : N/A
+            SRAM Other                    : N/A
+        Channel Repair Pending            : N/A
+        TPC Repair Pending                : N/A
+
+
+[CMD] Retired pages: nvidia-smi -q -d PAGE_RETIREMENT
+
+==============NVSMI LOG==============
+
+Timestamp                                 : Thu Dec 18 16:10:55 2025
+Driver Version                            : 580.95.05
+CUDA Version                              : 13.0
+
+Attached GPUs                             : 1
+GPU 0000000F:01:00.0
+    Retired Pages
+        Single Bit ECC                    : N/A
+        Double Bit ECC                    : N/A
+        Pending Page Blacklist            : N/A
+
+
+
+--- MIG Configuration ---
+
+[CMD] MIG mode: nvidia-smi -q -d MIG
+Failed to parse --display/-d flags
+[WARN] Command returned non-zero exit code
+
+[CMD] MIG devices: nvidia-smi mig -lgi
+No MIG-supported devices found.
+[WARN] Command returned non-zero exit code
+
+
+--- Compute Mode and Processes ---
+
+[CMD] Compute mode: nvidia-smi -q -d COMPUTE
+
+==============NVSMI LOG==============
+
+Timestamp                                 : Thu Dec 18 16:10:55 2025
+Driver Version                            : 580.95.05
+CUDA Version                              : 13.0
+
+Attached GPUs                             : 1
+GPU 0000000F:01:00.0
+    Compute Mode                          : Default
+
+
+[CMD] Running processes: nvidia-smi pmon -c 1
+# gpu         pid   type     sm    mem    enc    dec    jpg    ofa    command 
+# Idx           #    C/G      %      %      %      %      %      %    name 
+    0       5495     G      -      -      -      -      -      -    gnome-shell    
+    0       5991     G      -      -      -      -      -      -    Xwayland       
+
+
+--- PCIe Configuration (B200: Gen5 x16 expected) ---
+
+[CMD] GPU PCIe info: nvidia-smi -q -d PCIE
+Failed to parse --display/-d flags
+[WARN] Command returned non-zero exit code
+
+[CMD] PCIe link gen/width: nvidia-smi --query-gpu=pcie.link.gen.current,pcie.link.width.current --format=csv
+pcie.link.gen.current, pcie.link.width.current
+1, 1
+
+
+--- All GPU Properties ---
+
+[CMD] GPU properties CSV: nvidia-smi --query-gpu=name,driver_version,pstate,memory.total,memory.used,memory.free,compute_mode,gpu_bus_id,gpu_uuid --format=csv
+name, driver_version, pstate, memory.total [MiB], memory.used [MiB], memory.free [MiB], compute_mode, pci.bus_id, uuid
+NVIDIA GB10, 580.95.05, P8, [N/A], [N/A], [N/A], Default, 0000000F:01:00.0, GPU-637effba-9969-68b1-b30e-badef4b3de88
+
+
+--- DCGM (Data Center GPU Manager) ---
+
+[CMD] DCGM discovery: dcgmi discovery -l
+1 GPU found.
++--------+----------------------------------------------------------------------+
+| GPU ID | Device Information                                                   |
++--------+----------------------------------------------------------------------+
+| 0      | Name: NVIDIA GB10                                                    |
+|        | PCI Bus ID: 0000000F:01:00.0                                         |
+|        | Device UUID: GPU-637effba-9969-68b1-b30e-badef4b3de88                |
++--------+----------------------------------------------------------------------+
+0 NvSwitches found.
++-----------+
+| Switch ID |
++-----------+
++-----------+
+0 CPUs found.
++--------+----------------------------------------------------------------------+
+| CPU ID | Device Information                                                   |
++--------+----------------------------------------------------------------------+
++--------+----------------------------------------------------------------------+
+
+[CMD] DCGM health: dcgmi health -c
+Error: Health watches not enabled. Please enable watches. 
+[WARN] Command returned non-zero exit code
+
+[CMD] DCGM diag quick: dcgmi diag -r 1
+Detected unsupported Cuda version
+[WARN] Command returned non-zero exit code
+
+
+===============================================================================
+  PHASE 4: INFINIBAND / RDMA NETWORKING
+  2025-12-18 16:10:55
+===============================================================================
+
+
+--- OFED Version (Lambda includes MLNX_OFED) ---
+
+[INFO] Lambda Labs includes OFED for InfiniBand/RDMA support
+[INFO] MLNX_OFED transitioning to DOCA-OFED (Jan 2025+)
+
+[CMD] OFED version: ofed_info -s
+OFED-internal-25.07-0.9.7:
+
+[CMD] OFED full info: ofed_info
+OFED-internal-25.07-0.9.7:
+
+clusterkit:
+mlnx_ofed_clusterkit/clusterkit-1.15.472-1.20250722.023d2d0.src.rpm
+
+dpcp:
+/sw/release/sw_acceleration/dpcp/dpcp-1.1.53-1.src.rpm
+
+hcoll:
+mlnx_ofed_hcol/hcoll-4.8.3232-1.20250722.eb38d647.src.rpm
+
+ibarr:
+https://github.com/Mellanox/ip2gid master
+commit 44ac1948d0d604c723bc36ade0af02c54e7fc7d2
+
+ibdump:
+https://github.com/Mellanox/ibdump master
+commit af4ab87f4e00e692d642644600800e7e6afff4e2
+
+ibsim:
+mlnx_ofed_ibsim/ibsim-0.12.1.tar.gz
+
+ibutils2:
+ibutils2/ibutils2-2.1.1-0.22300.MLNX20250720.g13bb9fedb.tar.gz
+
+iser:
+https://git-nbu.nvidia.com/r/a/mlnx_ofed/mlnx-ofa_kernel-4.0.git mlnx_ofed_25_07
+commit d8393aeda3110998e0bcff87dfc6bbd47e55e9ab
+
+[CMD] DOCA version: doca_version
+[SKIP] Command not found: doca_version
+
+
+--- InfiniBand Device Status ---
+
+[CMD] IB status: ibstat
+CA 'mlx5_0'
+	CA type: MT4129
+	Number of ports: 1
+	Firmware version: 28.45.4028
+	Hardware version: 0
+	Node GUID: 0x4cbb4703002db3e5
+	System image GUID: 0x4cbb4703002db3e5
+	Port 1:
+		State: Down
+		Physical state: Disabled
+		Rate: 40
+		Base lid: 0
+		LMC: 0
+		SM lid: 0
+		Capability mask: 0x00010000
+		Port GUID: 0x4ebb47fffe2db3e5
+		Link layer: Ethernet
+CA 'mlx5_1'
+	CA type: MT4129
+	Number of ports: 1
+	Firmware version: 28.45.4028
+	Hardware version: 0
+	Node GUID: 0x4cbb4703002db3e6
+	System image GUID: 0x4cbb4703002db3e5
+	Port 1:
+		State: Active
+		Physical state: LinkUp
+		Rate: 100
+		Base lid: 0
+		LMC: 0
+		SM lid: 0
+		Capability mask: 0x00010000
+		Port GUID: 0x4ebb47fffe2db3e6
+		Link layer: Ethernet
+CA 'mlx5_2'
+	CA type: MT4129
+	Number of ports: 1
+	Firmware version: 28.45.4028
+	Hardware version: 0
+	Node GUID: 0x4cbb4703002db3e9
+	System image GUID: 0x4cbb4703002db3e5
+	Port 1:
+		State: Down
+		Physical state: Disabled
+		Rate: 40
+		Base lid: 0
+		LMC: 0
+		SM lid: 0
+		Capability mask: 0x00010000
+		Port GUID: 0x4ebb47fffe2db3e9
+		Link layer: Ethernet
+CA 'mlx5_3'
+	CA type: MT4129
+	Number of ports: 1
+	Firmware version: 28.45.4028
+	Hardware version: 0
+	Node GUID: 0x4cbb4703002db3ea
+	System image GUID: 0x4cbb4703002db3e5
+	Port 1:
+		State: Active
+		Physical state: LinkUp
+		Rate: 100
+		Base lid: 0
+		LMC: 0
+		SM lid: 0
+		Capability mask: 0x00010000
+		Port GUID: 0x4ebb47fffe2db3ea
+		Link layer: Ethernet
+
+[CMD] IB device info: ibv_devinfo
+hca_id:	mlx5_0
+	transport:			InfiniBand (0)
+	fw_ver:				28.45.4028
+	node_guid:			4cbb:4703:002d:b3e5
+	sys_image_guid:			4cbb:4703:002d:b3e5
+	vendor_id:			0x02c9
+	vendor_part_id:			4129
+	hw_ver:				0x0
+	board_id:			NVD0000000087
+	phys_port_cnt:			1
+		port:	1
+			state:			PORT_DOWN (1)
+			max_mtu:		4096 (5)
+			active_mtu:		1024 (3)
+			sm_lid:			0
+			port_lid:		0
+			port_lmc:		0x00
+			link_layer:		Ethernet
+
+hca_id:	mlx5_1
+	transport:			InfiniBand (0)
+	fw_ver:				28.45.4028
+	node_guid:			4cbb:4703:002d:b3e6
+	sys_image_guid:			4cbb:4703:002d:b3e5
+	vendor_id:			0x02c9
+	vendor_part_id:			4129
+	hw_ver:				0x0
+	board_id:			NVD0000000087
+	phys_port_cnt:			1
+		port:	1
+			state:			PORT_ACTIVE (4)
+			max_mtu:		4096 (5)
+			active_mtu:		4096 (5)
+			sm_lid:			0
+			port_lid:		0
+			port_lmc:		0x00
+			link_layer:		Ethernet
+
+hca_id:	mlx5_2
+	transport:			InfiniBand (0)
+	fw_ver:				28.45.4028
+	node_guid:			4cbb:4703:002d:b3e9
+	sys_image_guid:			4cbb:4703:002d:b3e5
+	vendor_id:			0x02c9
+	vendor_part_id:			4129
+	hw_ver:				0x0
+	board_id:			NVD0000000087
+	phys_port_cnt:			1
+		port:	1
+			state:			PORT_DOWN (1)
+			max_mtu:		4096 (5)
+			active_mtu:		1024 (3)
+			sm_lid:			0
+			port_lid:		0
+			port_lmc:		0x00
+			link_layer:		Ethernet
+
+hca_id:	mlx5_3
+	transport:			InfiniBand (0)
+	fw_ver:				28.45.4028
+	node_guid:			4cbb:4703:002d:b3ea
+	sys_image_guid:			4cbb:4703:002d:b3e5
+	vendor_id:			0x02c9
+	vendor_part_id:			4129
+	hw_ver:				0x0
+	board_id:			NVD0000000087
+	phys_port_cnt:			1
+		port:	1
+			state:			PORT_ACTIVE (4)
+			max_mtu:		4096 (5)
+			active_mtu:		1024 (3)
+			sm_lid:			0
+			port_lid:		0
+			port_lmc:		0x00
+			link_layer:		Ethernet
+
+
+[CMD] IB devices list: ibv_devices
+    device          	   node GUID
+    ------          	----------------
+    mlx5_0          	4cbb4703002db3e5
+    mlx5_1          	4cbb4703002db3e6
+    mlx5_2          	4cbb4703002db3e9
+    mlx5_3          	4cbb4703002db3ea
+
+[CMD] IB link info: iblinkinfo
+ibwarn: [118153] get_smi_gsi_pair: Can't open SMI UMAD port (Input/output error) (mlx5_1:1)
+ibwarn: [118153] mad_rpc_open_port2: can't open UMAD port ((null):0)
+Failed to open (null) port 0
+[WARN] Command returned non-zero exit code
+
+
+--- RDMA Configuration ---
+
+[CMD] RDMA devices: rdma link show
+link mlx5_0/1 state DOWN physical_state DISABLED netdev enp1s0f0np0 
+link mlx5_1/1 state ACTIVE physical_state LINK_UP netdev enp1s0f1np1 
+link mlx5_2/1 state DOWN physical_state DISABLED netdev enP2p1s0f0np0 
+link mlx5_3/1 state ACTIVE physical_state LINK_UP netdev enP2p1s0f1np1 
+
+[CMD] RDMA system: rdma system show
+netns shared copy-on-fork on
+
+[DIR] /sys/class/infiniband:
+total 0
+drwxr-xr-x  2 root root 0 Dec 18 16:10 .
+drwxr-xr-x 87 root root 0 Dec 17 22:57 ..
+lrwxrwxrwx  1 root root 0 Dec 17 22:57 mlx5_0 -> ../../devices/pci0000:00/0000:00:00.0/0000:01:00.0/infiniband/mlx5_0
+lrwxrwxrwx  1 root root 0 Dec 17 22:57 mlx5_1 -> ../../devices/pci0000:00/0000:00:00.0/0000:01:00.1/infiniband/mlx5_1
+lrwxrwxrwx  1 root root 0 Dec 17 22:57 mlx5_2 -> ../../devices/pci0002:00/0002:00:00.0/0002:01:00.0/infiniband/mlx5_2
+lrwxrwxrwx  1 root root 0 Dec 17 22:57 mlx5_3 -> ../../devices/pci0002:00/0002:00:00.0/0002:01:00.1/infiniband/mlx5_3
+
+
+--- GPUDirect RDMA (nvidia-peermem) ---
+
+[INFO] nvidia-peermem enables direct GPU-to-NIC transfers for InfiniBand
+[CMD] Peer memory status: cat /sys/kernel/mm/memory_peers/nv_mem/version
+cat: /sys/kernel/mm/memory_peers/nv_mem/version: No such file or directory
+[WARN] Command returned non-zero exit code
+
+
+--- Network Interfaces ---
+
+[CMD] IP addresses: ip addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+2: enP7s7: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN group default qlen 1000
+    link/ether 4c:bb:47:2d:b3:e4 brd ff:ff:ff:ff:ff:ff
+    altname enP7p1s0
+4: enp1s0f0np0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN group default qlen 1000
+    link/ether 4c:bb:47:2d:b3:e5 brd ff:ff:ff:ff:ff:ff
+7: enp1s0f1np1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq state UP group default qlen 1000
+    link/ether 4c:bb:47:2d:b3:e6 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.100.10/24 brd 192.168.100.255 scope global noprefixroute enp1s0f1np1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::4ebb:47ff:fe2d:b3e6/64 scope link 
+       valid_lft forever preferred_lft forever
+8: wlP9s9: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether f8:3d:c6:af:ba:0e brd ff:ff:ff:ff:ff:ff
+    altname wlP9p1s0
+    inet 192.168.1.141/24 brd 192.168.1.255 scope global dynamic noprefixroute wlP9s9
+       valid_lft 68439sec preferred_lft 68439sec
+    inet6 fd1c:3717:6d65:ea42:df08:2c9f:7967:d339/64 scope global temporary dynamic 
+       valid_lft 1695sec preferred_lft 1695sec
+    inet6 fd1c:3717:6d65:ea42:542a:6408:44a5:6620/64 scope global dynamic mngtmpaddr noprefixroute 
+       valid_lft 1695sec preferred_lft 1695sec
+    inet6 fe80::69c0:a770:4376:dd5f/64 scope link noprefixroute 
+       valid_lft forever preferred_lft forever
+9: enP2p1s0f0np0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN group default qlen 1000
+    link/ether 4c:bb:47:2d:b3:e9 brd ff:ff:ff:ff:ff:ff
+10: tailscale0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1280 qdisc fq_codel state UNKNOWN group default qlen 500
+    link/none 
+    inet 100.85.204.118/32 scope global tailscale0
+       valid_lft forever preferred_lft forever
+    inet6 fd7a:115c:a1e0::2301:cc84/128 scope global 
+       valid_lft forever preferred_lft forever
+    inet6 fe80::943c:fe7c:8df7:327/64 scope link stable-privacy 
+       valid_lft forever preferred_lft forever
+11: enP2p1s0f1np1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 4c:bb:47:2d:b3:ea brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::8bc9:849e:f:320a/64 scope link noprefixroute 
+       valid_lft forever preferred_lft forever
+12: docker0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 0e:7f:79:cc:8b:86 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::c7f:79ff:fecc:8b86/64 scope link 
+       valid_lft forever preferred_lft forever
+13: br-e67c3ce2e10f: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default 
+    link/ether 4a:3a:68:19:de:72 brd ff:ff:ff:ff:ff:ff
+    inet 172.18.0.1/16 brd 172.18.255.255 scope global br-e67c3ce2e10f
+       valid_lft forever preferred_lft forever
+14: veth020eb1e@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master docker0 state UP group default 
+    link/ether 02:8a:e8:ba:f5:0e brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet6 fe80::8a:e8ff:feba:f50e/64 scope link 
+       valid_lft forever preferred_lft forever
+15: vethef82ba0@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master docker0 state UP group default 
+    link/ether 62:6f:24:50:0d:60 brd ff:ff:ff:ff:ff:ff link-netnsid 1
+    inet6 fe80::606f:24ff:fe50:d60/64 scope link 
+       valid_lft forever preferred_lft forever
+
+[CMD] Network interfaces: ip link show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: enP7s7: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN mode DEFAULT group default qlen 1000
+    link/ether 4c:bb:47:2d:b3:e4 brd ff:ff:ff:ff:ff:ff
+    altname enP7p1s0
+4: enp1s0f0np0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN mode DEFAULT group default qlen 1000
+    link/ether 4c:bb:47:2d:b3:e5 brd ff:ff:ff:ff:ff:ff
+7: enp1s0f1np1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq state UP mode DEFAULT group default qlen 1000
+    link/ether 4c:bb:47:2d:b3:e6 brd ff:ff:ff:ff:ff:ff
+8: wlP9s9: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DORMANT group default qlen 1000
+    link/ether f8:3d:c6:af:ba:0e brd ff:ff:ff:ff:ff:ff
+    altname wlP9p1s0
+9: enP2p1s0f0np0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN mode DEFAULT group default qlen 1000
+    link/ether 4c:bb:47:2d:b3:e9 brd ff:ff:ff:ff:ff:ff
+10: tailscale0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1280 qdisc fq_codel state UNKNOWN mode DEFAULT group default qlen 500
+    link/none 
+11: enP2p1s0f1np1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000
+    link/ether 4c:bb:47:2d:b3:ea brd ff:ff:ff:ff:ff:ff
+12: docker0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT group default 
+    link/ether 0e:7f:79:cc:8b:86 brd ff:ff:ff:ff:ff:ff
+13: br-e67c3ce2e10f: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT group default 
+    link/ether 4a:3a:68:19:de:72 brd ff:ff:ff:ff:ff:ff
+14: veth020eb1e@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master docker0 state UP mode DEFAULT group default 
+    link/ether 02:8a:e8:ba:f5:0e brd ff:ff:ff:ff:ff:ff link-netnsid 0
+15: vethef82ba0@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master docker0 state UP mode DEFAULT group default 
+    link/ether 62:6f:24:50:0d:60 brd ff:ff:ff:ff:ff:ff link-netnsid 1
+
+[CMD] Routing table: ip route
+default via 192.168.1.1 dev wlP9s9 proto dhcp src 192.168.1.141 metric 600 
+172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1 
+172.18.0.0/16 dev br-e67c3ce2e10f proto kernel scope link src 172.18.0.1 linkdown 
+192.168.1.0/24 dev wlP9s9 proto kernel scope link src 192.168.1.141 metric 600 
+192.168.100.0/24 dev enp1s0f1np1 proto kernel scope link src 192.168.100.10 metric 100 
+
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+2: enP7s7: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN mode DEFAULT group default qlen 1000
+4: enp1s0f0np0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN mode DEFAULT group default qlen 1000
+7: enp1s0f1np1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq state UP mode DEFAULT group default qlen 1000
+8: wlP9s9: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DORMANT group default qlen 1000
+9: enP2p1s0f0np0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN mode DEFAULT group default qlen 1000
+10: tailscale0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1280 qdisc fq_codel state UNKNOWN mode DEFAULT group default qlen 500
+11: enP2p1s0f1np1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000
+12: docker0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT group default 
+13: br-e67c3ce2e10f: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT group default 
+14: veth020eb1e@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master docker0 state UP mode DEFAULT group default 
+15: vethef82ba0@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master docker0 state UP mode DEFAULT group default 
+	Speed: Unknown!
+	Duplex: Unknown! (255)
+	Link detected: no (No cable)
+	Speed: 100000Mb/s
+	Duplex: Full
+	Link detected: yes
+
+===============================================================================
+  PHASE 5: SYSTEM HARDWARE
+  2025-12-18 16:10:55
+===============================================================================
+
+
+--- CPU Information ---
+
+[CMD] lscpu: lscpu
+Architecture:                            aarch64
+CPU op-mode(s):                          64-bit
+Byte Order:                              Little Endian
+CPU(s):                                  20
+On-line CPU(s) list:                     0-19
+Vendor ID:                               ARM
+Model name:                              Cortex-X925
+Model:                                   1
+Thread(s) per core:                      1
+Core(s) per socket:                      10
+Socket(s):                               1
+Stepping:                                r0p1
+CPU(s) scaling MHz:                      102%
+CPU max MHz:                             4004.0000
+CPU min MHz:                             1378.0000
+BogoMIPS:                                2000.00
+Flags:                                   fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svepmull svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti ecv afp wfxt
+Model name:                              Cortex-A725
+Model:                                   1
+Thread(s) per core:                      1
+Core(s) per socket:                      10
+Socket(s):                               1
+Stepping:                                r0p1
+CPU(s) scaling MHz:                      108%
+CPU max MHz:                             2860.0000
+CPU min MHz:                             338.0000
+BogoMIPS:                                2000.00
+Flags:                                   fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svepmull svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti ecv afp wfxt
+L1d cache:                               1.3 MiB (20 instances)
+L1i cache:                               1.3 MiB (20 instances)
+L2 cache:                                25 MiB (20 instances)
+L3 cache:                                24 MiB (2 instances)
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-19
+Vulnerability Gather data sampling:      Not affected
+Vulnerability Ghostwrite:                Not affected
+Vulnerability Indirect target selection: Not affected
+Vulnerability Itlb multihit:             Not affected
+Vulnerability L1tf:                      Not affected
+Vulnerability Mds:                       Not affected
+Vulnerability Meltdown:                  Not affected
+Vulnerability Mmio stale data:           Not affected
+Vulnerability Reg file data sampling:    Not affected
+Vulnerability Retbleed:                  Not affected
+Vulnerability Spec rstack overflow:      Not affected
+Vulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl
+Vulnerability Spectre v1:                Mitigation; __user pointer sanitization
+Vulnerability Spectre v2:                Mitigation; CSV2, BHB
+Vulnerability Srbds:                     Not affected
+Vulnerability Tsa:                       Not affected
+Vulnerability Tsx async abort:           Not affected
+Vulnerability Vmscape:                   Not affected
+
+
+--- NUMA Topology (GPU-CPU affinity) ---
+
+[CMD] numactl hardware: numactl --hardware
+available: 1 nodes (0)
+node 0 cpus: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
+node 0 size: 122570 MB
+node 0 free: 62557 MB
+node distances:
+node   0 
+  0:  10 
+
+[CMD] numactl show: numactl --show
+policy: default
+preferred node: current
+physcpubind: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 
+cpubind: 0 
+nodebind: 0 
+membind: 0 
+preferred: 
+
+[CMD] NUMA info from lscpu: lscpu
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-19
+
+--- Memory Hardware ---
+
+[CMD] dmidecode memory: sudo dmidecode -t memory
+# dmidecode 3.5
+Getting SMBIOS data from sysfs.
+SMBIOS 3.3.0 present.
+
+Handle 0x0010, DMI type 16, 23 bytes
+Physical Memory Array
+	Location: System Board Or Motherboard
+	Use: System Memory
+	Error Correction Type: None
+	Maximum Capacity: 128 GB
+	Error Information Handle: No Error
+	Number Of Devices: 1
+
+Handle 0x0011, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0010
+	Error Information Handle: Not Provided
+	Total Width: 32 bits
+	Data Width: 32 bits
+	Size: 128 GB
+	Form Factor: Chip
+	Set: None
+	Locator: DIMM0
+	Bank Locator: BANK 0
+	Type: LPDDR5
+	Type Detail: Unknown
+	Speed: 8533 MT/s
+	Manufacturer: SK Hynix
+	Serial Number: None
+	Asset Tag: None
+	Part Number: None
+	Rank: Unknown
+	Configured Memory Speed: 8533 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: Unknown
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Bank 7, Hex 0x00
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 128 GB
+	Cache Size: None
+	Logical Size: None
+
+
+[FILE] /proc/meminfo:
+MemTotal:       125511740 kB
+MemFree:        64058104 kB
+MemAvailable:   118240280 kB
+Buffers:          112396 kB
+Cached:         54811464 kB
+SwapCached:           60 kB
+Active:         47447444 kB
+Inactive:       10279728 kB
+Active(anon):     313808 kB
+Inactive(anon):  2577144 kB
+Active(file):   47133636 kB
+Inactive(file):  7702584 kB
+Unevictable:      207184 kB
+Mlocked:          207184 kB
+SwapTotal:      16777212 kB
+SwapFree:       16776956 kB
+Zswap:                 0 kB
+Zswapped:              0 kB
+Dirty:              1592 kB
+Writeback:             0 kB
+AnonPages:       3010616 kB
+Mapped:          1047824 kB
+Shmem:             56520 kB
+KReclaimable:     470580 kB
+Slab:             976416 kB
+SReclaimable:     470580 kB
+SUnreclaim:       505836 kB
+KernelStack:       19904 kB
+ShadowCallStack:    5008 kB
+PageTables:        45792 kB
+SecPageTables:      2724 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:    79533080 kB
+Committed_AS:   11393784 kB
+VmallocTotal:   135288315904 kB
+VmallocUsed:      152224 kB
+VmallocChunk:          0 kB
+Percpu:            18400 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:         0 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+FileHugePages:         0 kB
+FilePmdMapped:         0 kB
+CmaTotal:         131072 kB
+CmaFree:           67696 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+Hugetlb:               0 kB
+
+
+--- PCIe Devices ---
+
+[CMD] All PCIe devices: lspci
+0000:00:00.0 PCI bridge: NVIDIA Corporation Device 22ce (rev 01)
+0000:01:00.0 Ethernet controller: Mellanox Technologies MT2910 Family [ConnectX-7]
+0000:01:00.1 Ethernet controller: Mellanox Technologies MT2910 Family [ConnectX-7]
+0002:00:00.0 PCI bridge: NVIDIA Corporation Device 22ce (rev 01)
+0002:01:00.0 Ethernet controller: Mellanox Technologies MT2910 Family [ConnectX-7]
+0002:01:00.1 Ethernet controller: Mellanox Technologies MT2910 Family [ConnectX-7]
+0004:00:00.0 PCI bridge: NVIDIA Corporation Device 22ce (rev 01)
+0004:01:00.0 Non-Volatile memory controller: Samsung Electronics Co Ltd Device a810
+0007:00:00.0 PCI bridge: NVIDIA Corporation Device 22d0 (rev 01)
+0007:01:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. Device 8127 (rev 05)
+0009:00:00.0 PCI bridge: NVIDIA Corporation Device 22d0 (rev 01)
+0009:01:00.0 Network controller: MEDIATEK Corp. Device 7925
+000f:00:00.0 PCI bridge: NVIDIA Corporation Device 22d1
+000f:01:00.0 VGA compatible controller: NVIDIA Corporation Device 2e12 (rev a1)
+
+[CMD] NVIDIA PCIe detailed: lspci -d 10de: -vvv
+0000:00:00.0 PCI bridge: NVIDIA Corporation Device 22ce (rev 01) (prog-if 00 [Normal decode])
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0
+	Interrupt: pin A routed to IRQ 329
+	IOMMU group: 0
+	Bus: primary=00, secondary=01, subordinate=0f, sec-latency=0
+	I/O behind bridge: 0000f000-00000fff [disabled] [32-bit]
+	Memory behind bridge: 67100000-672fffff [size=2M] [32-bit]
+	Prefetchable memory behind bridge: 7500000000-7505ffffff [size=96M] [32-bit]
+	Secondary status: 66MHz- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- <SERR- <PERR-
+	BridgeCtl: Parity- SERR+ NoISA- VGA- VGA16- MAbort- >Reset- FastB2B-
+		PriDiscTmr- SecDiscTmr- DiscTmrStat- DiscTmrSERREn-
+	Capabilities: <access denied>
+	Kernel driver in use: pcieport
+
+0002:00:00.0 PCI bridge: NVIDIA Corporation Device 22ce (rev 01) (prog-if 00 [Normal decode])
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0
+	Interrupt: pin A routed to IRQ 332
+	IOMMU group: 1
+	Bus: primary=00, secondary=01, subordinate=0f, sec-latency=0
+	I/O behind bridge: 0000f000-00000fff [disabled] [32-bit]
+	Memory behind bridge: 5d100000-5d2fffff [size=2M] [32-bit]
+	Prefetchable memory behind bridge: 3d00000000-3d05ffffff [size=96M] [32-bit]
+	Secondary status: 66MHz- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- <SERR- <PERR-
+	BridgeCtl: Parity- SERR+ NoISA- VGA- VGA16- MAbort- >Reset- FastB2B-
+		PriDiscTmr- SecDiscTmr- DiscTmrStat- DiscTmrSERREn-
+	Capabilities: <access denied>
+	Kernel driver in use: pcieport
+
+0004:00:00.0 PCI bridge: NVIDIA Corporation Device 22ce (rev 01) (prog-if 00 [Normal decode])
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0
+	Interrupt: pin A routed to IRQ 335
+	IOMMU group: 2
+	Bus: primary=00, secondary=01, subordinate=0f, sec-latency=0
+	I/O behind bridge: 20000-20fff [size=4K] [16-bit]
+	Memory behind bridge: 62100000-622fffff [size=2M] [32-bit]
+	Prefetchable memory behind bridge: 5900000000-59001fffff [size=2M] [32-bit]
+	Secondary status: 66MHz- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- <SERR- <PERR-
+	BridgeCtl: Parity- SERR+ NoISA- VGA- VGA16- MAbort- >Reset- FastB2B-
+		PriDiscTmr- SecDiscTmr- DiscTmrStat- DiscTmrSERREn-
+	Capabilities: <access denied>
+	Kernel driver in use: pcieport
+
+0007:00:00.0 PCI bridge: NVIDIA Corporation Device 22d0 (rev 01) (prog-if 00 [Normal decode])
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0
+	Interrupt: pin A routed to IRQ 338
+	IOMMU group: 3
+	Bus: primary=00, secondary=01, subordinate=0f, sec-latency=0
+	I/O behind bridge: 40000-41fff [size=8K] [16-bit]
+	Memory behind bridge: 6e900000-6eafffff [size=2M] [32-bit]
+	Prefetchable memory behind bridge: 9f00000000-9f001fffff [size=2M] [32-bit]
+	Secondary status: 66MHz- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- <SERR- <PERR-
+	BridgeCtl: Parity- SERR+ NoISA- VGA- VGA16- MAbort- >Reset- FastB2B-
+		PriDiscTmr- SecDiscTmr- DiscTmrStat- DiscTmrSERREn-
+	Capabilities: <access denied>
+	Kernel driver in use: pcieport
+
+0009:00:00.0 PCI bridge: NVIDIA Corporation Device 22d0 (rev 01) (prog-if 00 [Normal decode])
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0
+	Interrupt: pin A routed to IRQ 341
+	IOMMU group: 4
+	Bus: primary=00, secondary=01, subordinate=0f, sec-latency=0
+	I/O behind bridge: 60000-60fff [size=4K] [16-bit]
+	Memory behind bridge: 73900000-73bfffff [size=3M] [32-bit]
+	Prefetchable memory behind bridge: bb00000000-bb001fffff [size=2M] [32-bit]
+	Secondary status: 66MHz- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- <SERR- <PERR-
+	BridgeCtl: Parity- SERR+ NoISA- VGA- VGA16- MAbort- >Reset- FastB2B-
+		PriDiscTmr- SecDiscTmr- DiscTmrStat- DiscTmrSERREn-
+	Capabilities: <access denied>
+	Kernel driver in use: pcieport
+
+000f:00:00.0 PCI bridge: NVIDIA Corporation Device 22d1 (prog-if 00 [Normal decode])
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR+ FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0
+	Interrupt: pin ? routed to IRQ 343
+	IOMMU group: 5
+	Bus: primary=00, secondary=01, subordinate=01, sec-latency=0
+	I/O behind bridge: 0000f000-00000fff [disabled] [32-bit]
+	Memory behind bridge: fff00000-000fffff [disabled] [32-bit]
+	Prefetchable memory behind bridge: 24000000-27ffffff [size=64M] [32-bit]
+	Secondary status: 66MHz- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- <SERR- <PERR-
+	BridgeCtl: Parity- SERR+ NoISA- VGA- VGA16- MAbort- >Reset- FastB2B-
+		PriDiscTmr- SecDiscTmr- DiscTmrStat- DiscTmrSERREn-
+	Capabilities: <access denied>
+	Kernel driver in use: pcieport
+
+000f:01:00.0 VGA compatible controller: NVIDIA Corporation Device 2e12 (rev a1) (prog-if 00 [VGA controller])
+	Subsystem: NVIDIA Corporation Device 0000
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0
+	Interrupt: pin A routed to IRQ 394
+	IOMMU group: 16
+	Region 0: Memory at 24000000 (64-bit, prefetchable) [size=64M]
+	Capabilities: <access denied>
+	Kernel driver in use: nvidia
+	Kernel modules: nvidiafb, nvidia_drm, nvidia
+
+
+[CMD] PCIe tree: lspci -tv
+-[0000:00]---00.0-[01-0f]--+-00.0  Mellanox Technologies MT2910 Family [ConnectX-7]
+                           \-00.1  Mellanox Technologies MT2910 Family [ConnectX-7]
+-[0002:00]---00.0-[01-0f]--+-00.0  Mellanox Technologies MT2910 Family [ConnectX-7]
+                           \-00.1  Mellanox Technologies MT2910 Family [ConnectX-7]
+-[0004:00]---00.0-[01-0f]----00.0  Samsung Electronics Co Ltd Device a810
+-[0007:00]---00.0-[01-0f]----00.0  Realtek Semiconductor Co., Ltd. Device 8127
+-[0009:00]---00.0-[01-0f]----00.0  MEDIATEK Corp. Device 7925
+-[000f:00]---00.0-[01]----00.0  NVIDIA Corporation Device 2e12
+
+
+--- Storage ---
+
+[CMD] Block devices: lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT,MODEL
+NAME          SIZE TYPE FSTYPE   MOUNTPOINT                          MODEL
+loop0       174.6M loop squashfs /snap/chromium/3318                 
+loop1           4K loop squashfs /snap/bare/5                        
+loop2       174.6M loop squashfs /snap/chromium/3323                 
+loop3        61.9M loop squashfs /snap/core24/1226                   
+loop4        68.9M loop squashfs /snap/core22/2140                   
+loop5        68.9M loop squashfs /snap/core22/2164                   
+loop6        61.9M loop squashfs /snap/core24/1238                   
+loop7        47.6M loop squashfs /snap/cups/1135                     
+loop9        47.6M loop squashfs /snap/cups/1132                     
+loop10       10.2M loop squashfs /snap/firmware-updater/168          
+loop11      235.1M loop squashfs /snap/firefox/7474                  
+loop12       17.8M loop squashfs /snap/firmware-updater/211          
+loop13       91.7M loop squashfs /snap/gtk-common-themes/1535        
+loop14      493.6M loop squashfs /snap/gnome-42-2204/228             
+loop15        614M loop squashfs /snap/gnome-46-2404/147             
+loop16      174.6M loop squashfs /snap/mesa-2404/1166                
+loop17       12.2M loop squashfs /snap/snap-store/1217               
+loop18       44.3M loop squashfs /snap/snapd/25585                   
+loop19         10M loop squashfs /snap/snap-store/1271               
+loop20        552K loop squashfs /snap/snapd-desktop-integration/316 
+loop21      218.5M loop squashfs /snap/thunderbird/876               
+loop22      219.4M loop squashfs /snap/thunderbird/916               
+loop23      234.7M loop squashfs /snap/firefox/7563                  
+nvme0n1       3.7T disk                                              SAMSUNG MZALC4T0HBL1-00B07
+├─nvme0n1p1   298M part vfat     /boot/efi                           
+└─nvme0n1p2   3.7T part ext4     /                                   
+
+[CMD] Disk usage: df -h
+Filesystem      Size  Used Avail Use% Mounted on
+tmpfs            12G  3.2M   12G   1% /run
+efivarfs        256K   22K  235K   9% /sys/firmware/efi/efivars
+/dev/nvme0n1p2  3.7T  1.4T  2.2T  38% /
+tmpfs            60G     0   60G   0% /dev/shm
+tmpfs           5.0M   16K  5.0M   1% /run/lock
+/dev/nvme0n1p1  298M  7.4M  291M   3% /boot/efi
+tmpfs            12G  116K   12G   1% /run/user/1000
+
+[CMD] NVMe devices: nvme list
+Node                  Generic               SN                   Model                                    Namespace  Usage                      Format           FW Rev  
+--------------------- --------------------- -------------------- ---------------------------------------- ---------- -------------------------- ---------------- --------
+/dev/nvme0n1          /dev/ng0n1            S8C2NG0Y726863       SAMSUNG MZALC4T0HBL1-00B07               0x1          1.55  TB /   4.10  TB    512   B +  0 B   NXHB202Q
+
+
+--- IOMMU Configuration ---
+
+23
+[CMD] Kernel cmdline: cat /proc/cmdline
+BOOT_IMAGE=/boot/vmlinuz-6.14.0-1013-nvidia root=UUID=d27bfd26-ff30-400e-9eca-9cdf73de9406 ro init_on_alloc=0 console=tty0 plymouth.ignore-serial-consoles plymouth.use-simpledrm earlycon=uart,mmio32,0x16A00000 nvidia-drm.modeset=1 console=tty0 console=ttyS0,921600 crashkernel=1G-:0M quiet splash pci=pcie_bus_safe vt.handoff=7
+
+
+--- Huge Pages (GPU Memory Performance) ---
+
+[INFO] Huge pages can improve GPU memory mapping performance
+[CMD] Huge pages config: grep -i huge /proc/meminfo
+AnonHugePages:         0 kB
+ShmemHugePages:        0 kB
+FileHugePages:         0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+Hugetlb:               0 kB
+
+[CMD] Transparent huge pages: cat /sys/kernel/mm/transparent_hugepage/enabled
+always [madvise] never
+
+[CMD] THP defrag: cat /sys/kernel/mm/transparent_hugepage/defrag
+always defer defer+madvise [madvise] never
+
+
+--- Cgroups Configuration ---
+
+[INFO] cgroups v2 is preferred for modern container runtimes
+[CMD] Cgroups version: stat -fc %T /sys/fs/cgroup
+cgroup2fs
+
+cgroup2 on /sys/fs/cgroup type cgroup2 (rw,nosuid,nodev,noexec,relatime,nsdelegate,memory_recursiveprot)
+[FILE] /sys/fs/cgroup/cgroup.controllers:
+cpuset cpu io memory hugetlb pids rdma misc dmem
+
+
+===============================================================================
+  PHASE 6: CUDA AND NVIDIA SOFTWARE STACK
+  2025-12-18 16:10:55
+===============================================================================
+
+
+--- CUDA Installations ---
+
+[CMD] CUDA version (nvcc): nvcc --version
+[SKIP] Command not found: nvcc
+
+[SKIP] File/dir not found: /usr/local/cuda/version.txt
+
+[FILE] /usr/local/cuda/version.json:
+{
+   "cuda" : {
+      "name" : "CUDA SDK",
+      "version" : "13.0.2"
+   },
+   "cuda_cccl" : {
+      "name" : "CUDA C++ Core Compute Libraries",
+      "version" : "13.0.85"
+   },
+   "cuda_crt" : {
+      "name" : "CUDA crt Compiler for CUDA applications",
+      "version" : "13.0.88"
+   },
+   "cuda_ctadvisor" : {
+      "name" : "CUDA Compile Time Advisor",
+      "version" : "13.0.85"
+   },
+   "cuda_cudart" : {
+      "name" : "CUDA Runtime (cudart)",
+      "version" : "13.0.96"
+   },
+   "cuda_culibos" : {
+      "name" : "CUDA DEV culibos is a Math Libraries",
+      "version" : "13.0.85"
+   },
+   "cuda_cuobjdump" : {
+      "name" : "cuobjdump",
+      "version" : "13.0.85"
+   },
+   "cuda_cupti" : {
+      "name" : "CUPTI",
+      "version" : "13.0.85"
+   },
+   "cuda_cuxxfilt" : {
+      "name" : "CUDA cu++ filt",
+      "version" : "13.0.85"
+   },
+   "cuda_gdb" : {
+      "name" : "CUDA GDB",
+      "version" : "13.0.85"
+   },
+   "cuda_nvcc" : {
+      "name" : "CUDA NVCC",
+      "version" : "13.0.88"
+   },
+   "cuda_nvdisasm" : {
+      "name" : "CUDA nvdisasm",
+      "version" : "13.0.85"
+   },
+   "cuda_nvml_dev" : {
+      "name" : "CUDA NVML Headers",
+      "version" : "13.0.87"
+   },
+   "cuda_nvprune" : {
+      "name" : "CUDA nvprune",
+      "version" : "13.0.85"
+   },
+   "cuda_nvrtc" : {
+      "name" : "CUDA NVRTC",
+      "version" : "13.0.88"
+   },
+   "cuda_nvtx" : {
+      "name" : "CUDA NVTX",
+      "version" : "13.0.85"
+   },
+   "cuda_profiler_api" : {
+      "name" : "CUDA Profiler API",
+      "version" : "13.0.85"
+   },
+   "cuda_sandbox_dev" : {
+      "name" : "NVIDIA Sandbox Utils",
+      "version" : "13.0.85"
+   },
+   "cuda_sanitizer_api" : {
+      "name" : "CUDA Compute Sanitizer API",
+      "version" : "13.0.85"
+   },
+   "fabricmanager" : {
+      "name" : "Fabric Manager",
+      "version" : "580.95.05"
+   },
+   "imex" : {
+      "name" : "Mapping GPU memory over NVLink",
+      "version" : "580.95.05"
+   },
+   "libcublas" : {
+      "name" : "CUDA cuBLAS",
+      "version" : "13.1.0.3"
+   },
+   "libcufft" : {
+      "name" : "CUDA cuFFT",
+      "version" : "12.0.0.61"
+   },
+   "libcufile" : {
+      "name" : "GPUDirect Storage (cufile)",
+      "version" : "1.15.1.6"
+   },
+   "libcurand" : {
+      "name" : "CUDA cuRAND",
+      "version" : "10.4.0.35"
+   },
+   "libcusolver" : {
+      "name" : "CUDA cuSOLVER",
+      "version" : "12.0.4.66"
+   },
+   "libcusparse" : {
+      "name" : "CUDA cuSPARSE",
+      "version" : "12.6.3.3"
+   },
+   "libnpp" : {
+      "name" : "CUDA NPP",
+      "version" : "13.0.1.2"
+   },
+   "libnvfatbin" : {
+      "name" : "Fatbin interaction library",
+      "version" : "13.0.85"
+   },
+   "libnvidia_nscq" : {
+      "name" : "NvSwitch Library",
+      "version" : "580.95.05"
+   },
+   "libnvjitlink" : {
+      "name" : "JIT Linker Library",
+      "version" : "13.0.88"
+   },
+   "libnvjpeg" : {
+      "name" : "CUDA nvJPEG",
+      "version" : "13.0.1.86"
+   },
+   "libnvptxcompiler" : {
+      "name" : "CUDA PTX compiler",
+      "version" : "13.0.88"
+   },
+   "libnvvm" : {
+      "name" : "NVVM",
+      "version" : "13.0.88"
+   },
+   "nsight_compute" : {
+      "name" : "Nsight Compute",
+      "version" : "2025.3.1.4"
+   },
+   "nsight_systems" : {
+      "name" : "Nsight Systems",
+      "version" : "2025.3.2.474"
+   },
+   "nvidia_driver" : {
+      "name" : "NVIDIA Linux Driver",
+      "version" : "580.95.05"
+   },
+   "nvidia_fs" : {
+      "name" : "NVIDIA file-system",
+      "version" : "2.26.6"
+   }
+}
+
+lrwxrwxrwx  1 root  root    22 Sep 12 18:10 cuda -> /etc/alternatives/cuda
+lrwxrwxrwx  1 root  root    25 Sep 12 18:10 cuda-13 -> /etc/alternatives/cuda-13
+drwxr-xr-x 12 root  root  4096 Nov 13 17:12 cuda-13.0
+
+--- NVIDIA Libraries ---
+
+	libvncclient.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libvncclient.so.1
+	librte_gpu_cuda.so.23 (libc6,AArch64) => /opt/mellanox/dpdk/lib/aarch64-linux-gnu/librte_gpu_cuda.so.23
+	librte_gpu_cuda.so (libc6,AArch64) => /opt/mellanox/dpdk/lib/aarch64-linux-gnu/librte_gpu_cuda.so
+	libpcsamplingutil.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libpcsamplingutil.so
+	libnvtx3interop.so.1 (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvtx3interop.so.1
+	libnvtx3interop.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvtx3interop.so
+	libnvrtc.so.13 (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvrtc.so.13
+	libnvrtc.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvrtc.so
+	libnvrtc-builtins.so.13.0 (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvrtc-builtins.so.13.0
+	libnvrtc-builtins.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvrtc-builtins.so
+	libnvperf_target.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvperf_target.so
+	libnvperf_host.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvperf_host.so
+	libnvjpeg.so.13 (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvjpeg.so.13
+	libnvjpeg.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvjpeg.so
+	libnvidia-wayland-client.so.590.44.01 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-wayland-client.so.590.44.01
+	libnvidia-tls.so.580.95.05 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-tls.so.580.95.05
+	libnvidia-rtcore.so.580.95.05 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-rtcore.so.580.95.05
+	libnvidia-ptxjitcompiler.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-ptxjitcompiler.so.1
+	libnvidia-ptxjitcompiler.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-ptxjitcompiler.so
+	libnvidia-opticalflow.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-opticalflow.so.1
+	libnvidia-opticalflow.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-opticalflow.so
+	libnvidia-opencl.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-opencl.so.1
+	libnvidia-nvvm70.so.4 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-nvvm70.so.4
+	libnvidia-nvvm70.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-nvvm70.so
+	libnvidia-nvvm.so.4 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-nvvm.so.4
+	libnvidia-nvvm.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-nvvm.so
+	libnvidia-ngx.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-ngx.so.1
+	libnvidia-ml.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-ml.so.1
+	libnvidia-ml.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-ml.so
+	libnvidia-gtk3.so.590.44.01 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-gtk3.so.590.44.01
+[CMD] cuDNN version header: grep -E CUDNN_MAJOR|CUDNN_MINOR|CUDNN_PATCHLEVEL /usr/include/cudnn_version.h
+grep: /usr/include/cudnn_version.h: No such file or directory
+[WARN] Command returned non-zero exit code
+
+[CMD] NCCL version header: grep -E NCCL_MAJOR|NCCL_MINOR|NCCL_PATCH /usr/include/nccl.h
+grep: /usr/include/nccl.h: No such file or directory
+[WARN] Command returned non-zero exit code
+
+
+--- NVIDIA Packages ---
+
+[CMD] NVIDIA dpkg packages: dpkg -l
+ii  cuda-nsight-compute-13-0                         13.0.2-1                                      arm64        NVIDIA Nsight Compute
+ii  cuda-nsight-systems-13-0                         13.0.2-1                                      arm64        NVIDIA Nsight Systems
+ii  cuda-nvtx-13-0                                   13.0.85-1                                     arm64        NVIDIA Tools Extension
+ii  datacenter-gpu-manager                           1:3.3.9                                       arm64        NVIDIA® Datacenter GPU Management Tools
+ii  dgx-dashboard                                    0.22.0                                        arm64        NVIDIA DGX Dashboard
+ii  dgx-oobe                                         0.17.26                                       arm64        NVIDIA DGX OOBE Core Services
+ii  dgx-oobe-desktop                                 0.4.0-0.4.0                                   arm64        NVIDIA DGX OOBE Desktop Viewer
+ii  dgx-spark-oobe-customize                         0.17.9                                        arm64        NVIDIA DGX Spark OOBE Customizations
+ii  doca-host                                        3.1.0-091000-25.07-ubuntu2404                 arm64        Software package including drivers, libraries and tools installed on the host server to support NVIDIA networking platforms
+ii  dpa-gdbserver                                    25.07.2812                                    arm64        Nvidia DPA gdbserver tool.
+ii  dpa-stats                                        25.07.0151                                    arm64        Nvidia DPA performance counters library and tools.
+ii  flexio-samples                                   25.07.2812                                    all          Nvidia host and DPA sdk samples.
+ii  flexio-sdk                                       25.07.2812                                    arm64        Nvidia host and DPA sdk libs.
+ii  hpc-sdk-repo                                     25.10-2                                       arm64        NVIDIA HPC SDK repository configuration files
+ii  ibarr:arm64                                      0.1.5-1.2507097                               arm64        Nvidia address and route userspace resolution services for Infiniband
+ii  libnvhws-dev:arm64                               25.07.6-1                                     arm64        HW Steering development library for Nvidia NICs - Dev headers
+ii  libnvhws1:arm64                                  25.07.6-1                                     arm64        HW Steering development library for Nvidia NICs
+ii  libnvidia-cfg1-580:arm64                         580.95.05-0ubuntu0.24.04.2                    arm64        NVIDIA binary OpenGL/GLX configuration library
+ii  libnvidia-common-580                             580.95.05-0ubuntu0.24.04.2                    all          Shared files used by the NVIDIA libraries
+ii  libnvidia-compute-580:arm64                      580.95.05-0ubuntu0.24.04.2                    arm64        NVIDIA libcompute package
+ii  libnvidia-container-tools                        1.18.1-1                                      arm64        NVIDIA container runtime library (command-line tools)
+ii  libnvidia-container1:arm64                       1.18.1-1                                      arm64        NVIDIA container runtime library
+ii  libnvidia-decode-580:arm64                       580.95.05-0ubuntu0.24.04.2                    arm64        NVIDIA Video Decoding runtime libraries
+ii  libnvidia-egl-wayland1:arm64                     1:1.1.20-1ubuntu1                             arm64        Wayland EGL External Platform library -- shared library
+ii  libnvidia-encode-580:arm64                       580.95.05-0ubuntu0.24.04.2                    arm64        NVENC Video Encoding runtime library
+ii  libnvidia-extra-580:arm64                        580.95.05-0ubuntu0.24.04.2                    arm64        Extra libraries for the NVIDIA driver
+ii  libnvidia-fbc1-580:arm64                         580.95.05-0ubuntu0.24.04.2                    arm64        NVIDIA OpenGL-based Framebuffer Capture runtime library
+ii  libnvidia-gl-580:arm64                           580.95.05-0ubuntu0.24.04.2                    arm64        NVIDIA OpenGL/GLX/EGL/GLES GLVND libraries and Vulkan ICD
+ii  linux-headers-6.11.0-1016-nvidia                 6.11.0-1016.16                                arm64        Linux kernel headers for version 6.11.0 on ARMv8 SMP
+ii  linux-headers-6.14.0-1013-nvidia                 6.14.0-1013.13                                arm64        Linux kernel headers for version 6.14.0
+iF  linux-headers-6.14.0-1015-nvidia                 6.14.0-1015.15                                arm64        Linux kernel headers for version 6.14.0
+iU  linux-headers-nvidia-hwe-24.04                   6.14.0-1015.15                                arm64        NVIDIA Linux kernel headers
+ii  linux-image-6.11.0-1016-nvidia                   6.11.0-1016.16                                arm64        Signed kernel image nvidia
+ii  linux-image-6.14.0-1013-nvidia                   6.14.0-1013.13                                arm64        Signed kernel image nvidia
+iF  linux-image-6.14.0-1015-nvidia                   6.14.0-1015.15                                arm64        Signed kernel image nvidia
+ii  linux-image-nvidia-hwe-24.04                     6.14.0-1015.15                                arm64        NVIDIA Linux kernel image
+ii  linux-modules-6.11.0-1016-nvidia                 6.11.0-1016.16                                arm64        Linux kernel extra modules for version 6.11.0 on ARMv8 SMP
+ii  linux-modules-6.14.0-1013-nvidia                 6.14.0-1013.13                                arm64        Linux kernel extra modules for version 6.14.0
+ii  linux-modules-6.14.0-1015-nvidia                 6.14.0-1015.15                                arm64        Linux kernel extra modules for version 6.14.0
+[CMD] CUDA dpkg packages: dpkg -l
+ii  cuda-cccl-13-0                                   13.0.85-1                                     arm64        CUDA CCCL
+ii  cuda-command-line-tools-13-0                     13.0.2-1                                      arm64        CUDA command-line tools
+ii  cuda-compiler-13-0                               13.0.2-1                                      arm64        CUDA compiler
+ii  cuda-compute-repo-lowpri                         25.10-2                                       arm64        CUDA compute repository configuration files (low priority)
+ii  cuda-crt-13-0                                    13.0.88-1                                     arm64        CUDA crt
+ii  cuda-cudart-13-0                                 13.0.96-1                                     arm64        CUDA Runtime native Libraries
+ii  cuda-cudart-dev-13-0                             13.0.96-1                                     arm64        CUDA Runtime native dev links, headers
+ii  cuda-culibos-dev-13-0                            13.0.85-1                                     arm64        CUDA DEV culibos is a Math Libraries fork of the cuos library
+ii  cuda-cuobjdump-13-0                              13.0.85-1                                     arm64        CUDA cuobjdump
+ii  cuda-cupti-13-0                                  13.0.85-1                                     arm64        CUDA profiling tools runtime libs.
+ii  cuda-cupti-dev-13-0                              13.0.85-1                                     arm64        CUDA profiling tools interface.
+ii  cuda-cuxxfilt-13-0                               13.0.85-1                                     arm64        CUDA cuxxfilt
+ii  cuda-documentation-13-0                          13.0.85-1                                     arm64        CUDA documentation
+ii  cuda-driver-dev-13-0                             13.0.96-1                                     arm64        CUDA Driver native dev stub library
+ii  cuda-gdb-13-0                                    13.0.85-1                                     arm64        CUDA-GDB
+ii  cuda-libraries-13-0                              13.0.2-1                                      arm64        CUDA Libraries 13.0 meta-package
+ii  cuda-libraries-dev-13-0                          13.0.2-1                                      arm64        CUDA Libraries 13.0 development meta-package
+ii  cuda-nsight-compute-13-0                         13.0.2-1                                      arm64        NVIDIA Nsight Compute
+ii  cuda-nsight-systems-13-0                         13.0.2-1                                      arm64        NVIDIA Nsight Systems
+
+--- NVIDIA Container Toolkit ---
+
+[CMD] nvidia-container-cli: nvidia-container-cli info
+NVRM version:   580.95.05
+CUDA version:   13.0
+
+Device Index:   0
+Device Minor:   0
+Model:          NVIDIA GB10
+Brand:          NvidiaRTX
+GPU UUID:       GPU-637effba-9969-68b1-b30e-badef4b3de88
+Bus Location:   0000000f:01:00.0
+Architecture:   12.1
+
+[FILE] /etc/nvidia-container-runtime/config.toml:
+#accept-nvidia-visible-devices-as-volume-mounts = false
+#accept-nvidia-visible-devices-envvar-when-unprivileged = true
+disable-require = false
+supported-driver-capabilities = "compat32,compute,display,graphics,ngx,utility,video"
+#swarm-resource = "DOCKER_RESOURCE_GPU"
+
+[nvidia-container-cli]
+#debug = "/var/log/nvidia-container-toolkit.log"
+environment = []
+#ldcache = "/etc/ld.so.cache"
+ldconfig = "@/sbin/ldconfig.real"
+load-kmods = true
+#no-cgroups = false
+#path = "/usr/bin/nvidia-container-cli"
+#root = "/run/nvidia/driver"
+#user = "root:video"
+
+[nvidia-container-runtime]
+#debug = "/var/log/nvidia-container-runtime.log"
+log-level = "info"
+mode = "auto"
+runtimes = ["docker-runc", "runc", "crun"]
+
+[nvidia-container-runtime.modes]
+
+[nvidia-container-runtime.modes.cdi]
+annotation-prefixes = ["cdi.k8s.io/"]
+default-kind = "nvidia.com/gpu"
+spec-dirs = ["/etc/cdi", "/var/run/cdi"]
+
+[nvidia-container-runtime.modes.csv]
+mount-spec-path = "/etc/nvidia-container-runtime/host-files-for-container.d"
+
+[nvidia-container-runtime.modes.legacy]
+cuda-compat-mode = "ldconfig"
+
+[nvidia-container-runtime-hook]
+path = "nvidia-container-runtime-hook"
+skip-mode-detection = false
+
+[nvidia-ctk]
+path = "nvidia-ctk"
+
+
+--- Environment Variables ---
+
+[CMD] CUDA env vars: env
+DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+
+===============================================================================
+  PHASE 7: ML FRAMEWORKS - BLACKWELL COMPATIBILITY
+  2025-12-18 16:10:55
+===============================================================================
+
+
+--- Python Environments ---
+
+[CMD] Python version: python3 --version
+Python 3.12.3
+
+[CMD] Python path: which python3
+/usr/bin/python3
+
+[CMD] Pip version: pip3 --version
+pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12)
+
+[CMD] Conda info: conda info
+[SKIP] Command not found: conda
+
+[CMD] Conda envs: conda env list
+[SKIP] Command not found: conda
+
+
+--- PyTorch Blackwell/SM_100 Compatibility Check ---
+
+[CRITICAL] B200 requires PyTorch with SM_100 (compute capability 10.0) support
+[CRITICAL] Standard PyTorch releases do NOT support B200 - need nightly or NGC builds
+
+PyTorch version: 2.9.1+cpu
+CUDA available: False
+CUDA version (torch): None
+cuDNN version: None
+GPU count: 0
+
+CUDA arch list: []
+[WARN] SM_100 NOT in arch list - this PyTorch may not work with B200
+[WARN] Consider: pip install torch --pre --index-url https://download.pytorch.org/whl/nightly
+
+--- TensorFlow ---
+
+[SKIP] TensorFlow not available
+
+--- JAX ---
+
+[SKIP] JAX not available
+
+--- vLLM Blackwell Support ---
+
+[INFO] vLLM on B200 requires NGC PyTorch or nightly builds
+[INFO] Recent vLLM includes CUTLASS attention (3.6x faster on B200)
+
+[SKIP] vLLM not available
+
+--- TensorRT / TensorRT-LLM ---
+
+TensorRT import failed: No module named 'tensorrt'
+TensorRT-LLM not found
+
+--- FlashAttention / FlashInfer (Blackwell Optimized) ---
+
+flash-attn not installed
+flashinfer not installed (provides Blackwell-optimized attention)
+
+--- Other ML Libraries ---
+
+Installed ML libraries:
+  transformers: 4.57.3
+  accelerate: 1.12.0
+  safetensors: 0.7.0
+  sentencepiece: 0.2.1
+  tokenizers: 0.22.1
+  numpy: 1.26.4
+  scipy: 1.11.4
+  huggingface_hub: 0.36.0
+
+--- Full Pip Package List ---
+
+[CMD] Pip list: pip3 list
+Package                 Version
+----------------------- ---------------
+accelerate              1.12.0
+anyio                   4.11.0
+appdirs                 1.4.4
+apturl                  0.5.2
+argcomplete             3.6.3
+attrs                   23.2.0
+Automat                 22.10.0
+Babel                   2.10.3
+bcc                     0.29.1
+bcrypt                  3.2.2
+beautifulsoup4          4.12.3
+blinker                 1.7.0
+boto3                   1.34.46
+botocore                1.34.46
+Brlapi                  0.8.5
+Brotli                  1.1.0
+certifi                 2023.11.17
+chardet                 5.2.0
+click                   8.1.6
+cloud-init              25.2
+colorama                0.4.6
+command-not-found       0.3
+configobj               5.0.8
+constantly              23.10.4
+contourpy               1.0.7
+cryptography            41.0.7
+cssselect               1.2.0
+cupshelpers             1.0
+cycler                  0.11.0
+dbus-python             1.3.2
+decorator               5.1.1
+defer                   1.0.6
+distro                  1.9.0
+distro-info             1.7+build1
+dnspython               2.6.1
+doca-sosreport          4.9.0
+dpa-resource-mgmt       25.7.151
+duplicity               2.1.4
+fasteners               0.18
+filelock                3.20.0
+fonttools               4.46.0
+freetype-py             2.4.0
+fs                      2.4.16
+fsspec                  2025.10.0
+gyp                     0.1
+h11                     0.16.0
+hf-xet                  1.2.0
+html5lib                1.1
+httpcore                1.0.9
+httplib2                0.20.4
+httpx                   0.28.1
+huggingface-hub         0.36.0
+hyperlink               21.0.0
+idna                    3.6
+incremental             22.10.0
+Jinja2                  3.1.2
+jmespath                1.0.1
+jsonpatch               1.32
+jsonpointer             2.0
+jsonschema              4.10.3
+kiwisolver              0.0.0
+language-selector       0.1
+launchpadlib            1.11.0
+lazr.restfulclient      0.14.6
+lazr.uri                1.0.6
+libevdev                0.5
+louis                   3.29.0
+lxml                    5.2.1
+lz4                     4.0.2+dfsg
+Mako                    1.3.2.dev0
+Markdown                3.5.2
+markdown-it-py          3.0.0
+MarkupSafe              2.1.5
+matplotlib              3.6.3
+mdurl                   0.1.2
+meson                   1.3.2
+monotonic               1.6
+mpmath                  1.3.0
+netaddr                 0.8.0
+netifaces               0.11.0
+networkx                3.6.1
+numpy                   1.26.4
+oauthlib                3.2.2
+olefile                 0.46
+ovs                     3.1.57
+packaging               24.0
+paramiko                2.12.0
+pexpect                 4.9.0
+pillow                  10.2.0
+pip                     24.0
+pipx                    1.8.0
+platformdirs            4.5.1
+prometheus-client       0.19.0
+psutil                  5.9.8
+ptyprocess              0.7.0
+pyasn1                  0.4.8
+pyasn1-modules          0.2.8
+safetensors             0.7.0
+torch                   2.9.1
+transformers            4.57.3
+
+===============================================================================
+  PHASE 8: CONTAINER AND ORCHESTRATION
+  2025-12-18 16:11:01
+===============================================================================
+
+
+--- Docker ---
+
+[CMD] Docker version: docker version
+Client: Docker Engine - Community
+ Version:           28.5.1
+ API version:       1.51
+ Go version:        go1.24.8
+ Git commit:        e180ab8
+ Built:             Wed Oct  8 12:18:19 2025
+ OS/Arch:           linux/arm64
+ Context:           default
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          28.5.1
+  API version:      1.51 (minimum version 1.24)
+  Go version:       go1.24.8
+  Git commit:       f8215cc
+  Built:            Wed Oct  8 12:18:19 2025
+  OS/Arch:          linux/arm64
+  Experimental:     false
+ containerd:
+  Version:          v1.7.28
+  GitCommit:        b98a3aace656320842a23f4a392a33f46af97866
+ runc:
+  Version:          1.3.0
+  GitCommit:        v1.3.0-0-g4ca628d1
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+
+[CMD] Docker info: docker info
+Client: Docker Engine - Community
+ Version:    28.5.1
+ Context:    default
+ Debug Mode: false
+ Plugins:
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.29.1
+    Path:     /usr/libexec/docker/cli-plugins/docker-buildx
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.40.0
+    Path:     /usr/libexec/docker/cli-plugins/docker-compose
+
+Server:
+ Containers: 6
+  Running: 3
+  Paused: 0
+  Stopped: 3
+ Images: 19
+ Server Version: 28.5.1
+ Storage Driver: overlay2
+  Backing Filesystem: extfs
+  Supports d_type: true
+  Using metacopy: false
+  Native Overlay Diff: true
+  userxattr: false
+ Logging Driver: json-file
+ Cgroup Driver: systemd
+ Cgroup Version: 2
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Discovered Devices:
+  cdi: nvidia.com/gpu=0
+  cdi: nvidia.com/gpu=GPU-637effba-9969-68b1-b30e-badef4b3de88
+  cdi: nvidia.com/gpu=all
+ Swarm: inactive
+ Runtimes: runc io.containerd.runc.v2 nvidia
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: b98a3aace656320842a23f4a392a33f46af97866
+ runc version: v1.3.0-0-g4ca628d1
+ init version: de40ad0
+ Security Options:
+  apparmor
+  seccomp
+[FILE] /etc/docker/daemon.json:
+{
+    "runtimes": {
+        "nvidia": {
+            "args": [],
+            "path": "nvidia-container-runtime"
+        }
+    }
+}
+[CHECK] Docker default runtime:
+        "nvidia": {
+            "path": "nvidia-container-runtime"
+[CMD] Docker images: docker images
+REPOSITORY                                                TAG                                       IMAGE ID       CREATED         SIZE
+nvcr.io/nvidia/nemo                                       25.11.nemotron_3_nano                     0ab799f89ec1   4 days ago      36GB
+ghcr.io/open-webui/open-webui                             main                                      53dd7b466cd5   2 weeks ago     3.88GB
+localhost:5000/doca-hello                                 latest                                    f26481dab04e   2 weeks ago     12.2GB
+localhost:5000/doca                                       3.2.0-devel                               2bfa6d01cb88   4 weeks ago     12.2GB
+nvcr.io/nvidia/doca/doca                                  3.2.0-devel-cuda13.0.0-ubuntu24.04-host   2bfa6d01cb88   4 weeks ago     12.2GB
+project-llama3-finetune                                   latest                                    bcac6e039961   4 weeks ago     18.3GB
+project-nemotron-finetune                                 latest                                    1f410c63a57e   4 weeks ago     34.3GB
+project-nvidia-ai-workbench-onboarding                    latest                                    761cec750a97   4 weeks ago     1.73GB
+nvcr.io/nvidia/vllm                                       25.11-py3                                 d33d4cadbe0f   5 weeks ago     14.1GB
+ghcr.io/open-webui/open-webui                             <none>                                    08bfbda4511e   5 weeks ago     3.86GB
+lmsysorg/sglang                                           spark                                     918c8f94f419   6 weeks ago     25.5GB
+nvcr.io/nvidia/pytorch                                    25.10-py3                                 b3dc3add3c9d   2 months ago    18.6GB
+nvcr.io/nim/nvidia/nvidia-nemotron-nano-9b-v2-dgx-spark   1.0.0-variant                             81fd112fdd0f   2 months ago    22.3GB
+nvcr.io/nvidia/tensorrt-llm/release                       spark-single-gpu-dev                      474ca9e2e7b2   2 months ago    37.1GB
+nvcr.io/nvidia/pytorch                                    25.09-py3                                 8cd4d4cfc0dd   3 months ago    18.1GB
+nvcr.io/nvidia/pytorch                                    25.01-py3                                 7f05f4683263   11 months ago   22GB
+nvcr.io/nvidia/k8s/dcgm-exporter                          3.3.9-3.6.1-ubuntu22.04                   22e1f002bb11   13 months ago   1.14GB
+nvcr.io/nvidia/nemo                                       24.01.framework                           2ab389f66639   22 months ago   37.7GB
+[CMD] Running containers: docker ps
+CONTAINER ID   IMAGE                                                      COMMAND                  CREATED       STATUS                  PORTS                                         NAMES
+174a44ff304d   ghcr.io/open-webui/open-webui:main                         "bash start.sh"          3 days ago    Up 17 hours (healthy)                                                 open-webui
+85327d6c0870   nvcr.io/nvidia/k8s/dcgm-exporter:3.3.9-3.6.1-ubuntu22.04   "/usr/local/dcgm/dcg…"   2 weeks ago   Up 17 hours             0.0.0.0:9400->9400/tcp, [::]:9400->9400/tcp   dcgm-exporter
+9d0e45e1d6a3   registry:2                                                 "/entrypoint.sh /etc…"   2 weeks ago   Up 17 hours             0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp   registry
+
+
+--- Podman (Alternative Container Runtime) ---
+
+[CMD] Podman version: podman version
+[SKIP] Command not found: podman
+
+[CMD] Podman info: podman info
+[SKIP] Command not found: podman
+
+
+--- Kubernetes ---
+
+[CMD] kubectl version: kubectl version --client
+[SKIP] Command not found: kubectl
+
+
+--- Slurm ---
+
+[CMD] Slurm version: sinfo --version
+[SKIP] Command not found: sinfo
+
+[CMD] Slurm nodes: sinfo
+[SKIP] Command not found: sinfo
+
+
+===============================================================================
+  PHASE 9: PERFORMANCE BASELINE TESTS
+  2025-12-18 16:11:02
+===============================================================================
+
+
+--- Disk I/O Baseline (Model Loading Speed) ---
+
+[INFO] Testing disk write/read speed (affects model loading time)
+
+
+
+--- GPU Utilization Baseline ---
+
+[CMD] GPU stats 5 samples: nvidia-smi dmon -c 5 -s pucvmet
+# gpu    pwr  gtemp  mtemp     sm    mem    enc    dec    jpg    ofa   mclk   pclk  pviol  tviol     fb   bar1   ccpm  sbecc  dbecc    pci  rxpci  txpci 
+# Idx      W      C      C      %      %      %      %      %      %    MHz    MHz      %   bool     MB     MB     MB   errs   errs   errs   MB/s   MB/s 
+    0      5     38      -      0      0      0      0      0      0      -    208      0      0      -      -      0      -      -      0      -      - 
+    0      5     38      -      0      0      0      0      0      0      -    208     71      0      -      -      0      -      -      0      -      - 
+    0      5     38      -      0      0      0      0      0      0      -    208     28      0      -      -      0      -      -      0      -      - 
+    0      5     38      -      0      0      0      0      0      0      -    208     74      0      -      -      0      -      -      0      -      - 
+    0      5     38      -      0      0      0      0      0      0      -    208     26      0      -      -      0      -      -      0      -      - 
+
+
+--- GPU Memory Bandwidth Test ---
+
+
+--- FP16 Matrix Multiplication (Transformer Workload) ---
+
+
+--- NVLink Bandwidth Test (Multi-GPU) ---
+
+Only 0 GPU(s), need 2+ for NVLink test
+
+===============================================================================
+  PHASE 10: ADDITIONAL DISCOVERY
+  2025-12-18 16:11:08
+===============================================================================
+
+
+--- Pre-loaded Models ---
+
+[CMD] Hugging Face cache: ls -la /home/nmelo/.cache/huggingface/
+total 28
+drwxrwxr-x  5 nmelo nmelo 4096 Dec 15 13:18 .
+drwx------ 21 nmelo nmelo 4096 Dec 15 18:50 ..
+-rw-rw-r--  1 nmelo nmelo    0 Nov 14 14:33 .check_for_update_done
+drwxrwxr-x  9 nmelo nmelo 4096 Dec 15 19:09 hub
+drwxr-xr-x  3 nmelo nmelo 4096 Dec 15 13:18 modules
+-rw-rw-r--  1 nmelo nmelo   59 Nov 14 14:33 stored_tokens
+-rw-rw-r--  1 nmelo nmelo   37 Nov 14 14:33 token
+drwxrwxr-x  4 nmelo nmelo 4096 Dec 15 12:11 xet
+[CMD] HF hub models: ls /home/nmelo/.cache/huggingface/hub/
+models--meta-llama--Llama-3.1-8B-Instruct
+models--meta-llama--Llama-4-Scout-17B-16E-Instruct
+models--nvidia--NVIDIA-Nemotron-3-Nano-30B-A3B-BF16
+models--nvidia--NVIDIA-Nemotron-3-Nano-30B-A3B-FP8
+models--Qwen--Qwen2.5-1.5B-Instruct
+models--unsloth--Nemotron-3-Nano-30B-A3B-GGUF
+
+[CMD] Torch hub cache: ls -la /home/nmelo/.cache/torch/
+ls: cannot access '/home/nmelo/.cache/torch/': No such file or directory
+[WARN] Command returned non-zero exit code
+
+
+--- Lambda Stack Specific ---
+
+[CMD] Lambda Stack packages: dpkg -l
+[SKIP] File/dir not found: /etc/lambda-stack-version
+
+
+--- Brev Specific ---
+
+[INFO] Brev (acquired by NVIDIA mid-2024) acts as multi-cloud GPU aggregator
+[CMD] Brev CLI: brev version
+[SKIP] Command not found: brev
+
+[CMD] Brev workspace info: brev ls
+[SKIP] Command not found: brev
+
+[SKIP] File/dir not found: /home/nmelo/.brev/config.yaml
+
+[DIR] /home/nmelo/.brev:
+total 16
+drwxr-xr-x  2 nmelo nmelo 4096 Dec 15 11:47 .
+drwxr-x--- 45 nmelo nmelo 4096 Dec 18 16:10 ..
+-rw-------  1 nmelo nmelo 1493 Dec 15 14:08 credentials.json
+-rw-rw-r--  1 nmelo nmelo   67 Dec 15 11:47 onboarding_step.json
+
+[CMD] Brev agent processes: pgrep -a brev
+[WARN] Command returned non-zero exit code
+
+[CMD] Brev services: systemctl list-units
+[CMD] Brev directories: ls -la /opt/brev* /etc/brev* /home/nmelo/.brev
+ls: cannot access '/opt/brev*': No such file or directory
+ls: cannot access '/etc/brev*': No such file or directory
+/home/nmelo/.brev:
+total 16
+drwxr-xr-x  2 nmelo nmelo 4096 Dec 15 11:47 .
+drwxr-x--- 45 nmelo nmelo 4096 Dec 18 16:10 ..
+-rw-------  1 nmelo nmelo 1493 Dec 15 14:08 credentials.json
+-rw-rw-r--  1 nmelo nmelo   67 Dec 15 11:47 onboarding_step.json
+[WARN] Command returned non-zero exit code
+
+[CMD] SSH authorized keys (Brev injected): cat /home/nmelo/.ssh/authorized_keys
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP8KEbYsaOJ4pG44vvg4BAJQ3ElZteKubMzkQdqPWqFk nmelo@Nelsons-MacBo
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINqZJW6xzVG5By4NB5DYS525J41jYiOGdqJ57q6OHTD3 nmelo@NMBP14.local 
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJaE4tIS0fbn31ggVvt7MOPNgdwQg15QccvaFCtOYM0f nmelo@dgx-spark
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDmLO1Pg0gAknjn0JQuJ4dHw4TWmct8q02TIivOKpP7x nmelo@wsl
+
+--- Cloud Provider Backend Detection ---
+
+[INFO] Detecting underlying cloud provider (Lambda, CoreWeave, etc.)
+[CMD] Cloud metadata check: curl -s --connect-timeout 2 http://169.254.169.254/latest/meta-data/instance-type
+[WARN] Command returned non-zero exit code
+
+
+--- Jupyter Environment ---
+
+[CMD] JupyterLab: jupyter lab --version
+[SKIP] Command not found: jupyter
+
+[CMD] Jupyter kernels: jupyter kernelspec list
+[SKIP] Command not found: jupyter
+
+
+--- System Services (GPU-related) ---
+
+[CMD] GPU services: systemctl list-units --type=service
+  dgx-dashboard-admin.service                           loaded active running NVIDIA DGX Dashboard Admin Service
+  dgx-dashboard.service                                 loaded active running NVIDIA DGX Dashboard Service
+  docker.service                                        loaded active running Docker Application Container Engine
+  nvidia-dcgm.service                                   loaded active running NVIDIA DCGM service
+  nvidia-dgx-telemetry.service                          loaded active running NVIDIA DGX Telemetry Service
+  nvidia-nvme-interrupt-coalescing.service              loaded active exited  Configure NVMe Interrupt Coalescing
+  nvidia-persistenced.service                           loaded active running NVIDIA Persistence Daemon
+
+--- Kernel Modules ---
+
+[CMD] Loaded nvidia modules: lsmod
+nvidia_uvm           1900544  8
+nvidia_drm            131072  16
+nvidia_modeset       1957888  8 nvidia_drm
+nvidia              14635008  129 nvidia_uvm,nvidia_modeset
+video                  81920  1 nvidia_modeset
+drm_ttm_helper         16384  1 nvidia_drm
+182
+
+--- System Limits ---
+
+[CMD] ulimit -a: ulimit -a
+real-time non-blocking time  (microseconds, -R) unlimited
+core file size              (blocks, -c) 0
+data seg size               (kbytes, -d) unlimited
+scheduling priority                 (-e) 0
+file size                   (blocks, -f) unlimited
+pending signals                     (-i) 511876
+max locked memory           (kbytes, -l) unlimited
+max memory size             (kbytes, -m) unlimited
+open files                          (-n) 500000
+pipe size                (512 bytes, -p) 8
+POSIX message queues         (bytes, -q) 819200
+real-time priority                  (-r) 0
+stack size                  (kbytes, -s) 8192
+cpu time                   (seconds, -t) unlimited
+max user processes                  (-u) 511876
+virtual memory              (kbytes, -v) unlimited
+file locks                          (-x) unlimited
+
+[CMD] Max open files: cat /proc/sys/fs/file-max
+9223372036854775807
+
+
+--- Instance Metadata (Cloud) ---
+
+[CMD] Cloud provider metadata: curl -s --connect-timeout 2 http://169.254.169.254/latest/meta-data/
+[WARN] Command returned non-zero exit code
+
+
+===============================================================================
+  DISCOVERY COMPLETE
+  2025-12-18 16:11:12
+===============================================================================
+
+
+===============================================================================
+  DISCOVERY COMPLETE
+  Finished at: Thu Dec 18 04:11:12 PM EST 2025
+  Log file: /home/nmelo/b200_discovery_spark-b3e4_20251218_161049.log
+===============================================================================
+
+=== QUICK SUMMARY ===
+
+System: spark-b3e4 - 6.14.0-1013-nvidia
+OS: Ubuntu 24.04.3 LTS
+
+name, memory.total [MiB], driver_version
+NVIDIA GB10, [N/A], 580.95.05
+
+CUDA Toolkit: 
+PyTorch: 2.9.1+cpu
+Python: 3.12.3
+
+=== B200 BLACKWELL VALIDATION ===
+[CHECK] Verify nvidia-open driver
+[CHECK] Fabric Manager status
+[WARN] PyTorch may lack B200 support
+
+Log saved to: /home/nmelo/b200_discovery_spark-b3e4_20251218_161049.log
+To compare instances: diff <log1> <log2>

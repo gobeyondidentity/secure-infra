@@ -1,0 +1,3842 @@
+[0;32mStarting B200 Discovery Script v2 (Enhanced Edition)[0m
+Log file: /home/nmelo/b200_discovery_v2_spark-b3e4_20251218_162826.log
+Started at: Thu Dec 18 04:28:26 PM EST 2025
+Running as: nmelo
+
+
+===============================================================================
+  PHASE 1: SYSTEM IDENTIFICATION & OEM DISCOVERY
+  2025-12-18 16:28:26
+===============================================================================
+
+
+--- Basic System Info ---
+
+[CMD] Hostname: hostname
+spark-b3e4
+
+[CMD] Kernel: uname -a
+Linux spark-b3e4 6.14.0-1013-nvidia #13-Ubuntu SMP PREEMPT_DYNAMIC Wed Oct 29 06:01:19 UTC 2025 aarch64 aarch64 aarch64 GNU/Linux
+
+[CMD] OS Release: cat /etc/os-release
+PRETTY_NAME="Ubuntu 24.04.3 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04.3 LTS (Noble Numbat)"
+VERSION_CODENAME=noble
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=noble
+LOGO=ubuntu-logo
+
+[CMD] Architecture: uname -m
+aarch64
+
+[CMD] Uptime: uptime
+ 16:28:26 up 17:31,  4 users,  load average: 0.16, 0.15, 0.12
+
+[CMD] Current user: whoami
+nmelo
+
+[CMD] User groups: groups
+nmelo adm sudo audio dip plugdev users lpadmin ollama docker
+
+
+--- OEM/Vendor Identification (Critical for Supply Chain) ---
+
+[INFO] Identifying hardware vendor - reveals Lambda's OEM supplier
+[SUDO] System manufacturer: sudo dmidecode -t system
+# dmidecode 3.5
+Getting SMBIOS data from sysfs.
+SMBIOS 3.3.0 present.
+
+Handle 0x0001, DMI type 1, 27 bytes
+System Information
+	Manufacturer: NVIDIA
+	Product Name: NVIDIA_DGX_Spark
+	Version: A.7
+	Serial Number: 1983925006880
+	UUID: d79ed518-bfde-11d3-8000-4cbb472db3e5
+	Wake-up Type: Power Switch
+	SKU Number: 0000
+	Family: DGX Spark
+
+Handle 0x0005, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: 675-54242-0000-000
+
+Handle 0x0007, DMI type 32, 11 bytes
+System Boot Information
+	Status: No errors detected
+
+
+[SUDO] BIOS/UEFI info: sudo dmidecode -t bios
+# dmidecode 3.5
+Getting SMBIOS data from sysfs.
+SMBIOS 3.3.0 present.
+
+Handle 0x0000, DMI type 0, 26 bytes
+BIOS Information
+	Vendor: American Megatrends International, LLC.
+	Version: 5.36_0ACUM018
+	Release Date: 08/06/2025
+	Address: 0xF0000
+	Runtime Size: 64 kB
+	ROM Size: 32 MB
+	Characteristics:
+		PCI is supported
+		BIOS is upgradeable
+		BIOS shadowing is allowed
+		Boot from CD is supported
+		Selectable boot is supported
+		BIOS ROM is socketed
+		ACPI is supported
+		BIOS boot specification is supported
+		Targeted content distribution is supported
+		UEFI is supported
+	BIOS Revision: 5.36
+
+Handle 0x0006, DMI type 13, 22 bytes
+BIOS Language Information
+	Language Description Format: Long
+	Installable Languages: 1
+		en|US|iso8859-1
+	Currently Installed Language: en|US|iso8859-1
+
+
+[SUDO] Baseboard info: sudo dmidecode -t baseboard
+# dmidecode 3.5
+Getting SMBIOS data from sysfs.
+SMBIOS 3.3.0 present.
+
+Handle 0x0002, DMI type 2, 15 bytes
+Base Board Information
+	Manufacturer: NVIDIA
+	Product Name: P4242
+	Version: A04
+	Serial Number: 1983925006880
+	Asset Tag: NONE
+	Features:
+		Board is a hosting board
+		Board is replaceable
+	Location In Chassis: BOTTOM
+	Chassis Handle: 0x0003
+	Type: Motherboard
+	Contained Object Handles: 0
+
+
+[SUDO] Chassis info: sudo dmidecode -t chassis
+# dmidecode 3.5
+Getting SMBIOS data from sysfs.
+SMBIOS 3.3.0 present.
+
+Handle 0x0003, DMI type 3, 22 bytes
+Chassis Information
+	Manufacturer: NVIDIA
+	Type: Main Server Chassis
+	Lock: Not Present
+	Version: A04
+	Serial Number: 1983925006880
+	Asset Tag: None
+	Boot-up State: Safe
+	Power Supply State: Safe
+	Thermal State: Safe
+	Security Status: None
+	OEM Information: 0x00000000
+	Height: Unspecified
+	Number Of Power Cords: 1
+	Contained Elements: 0
+	SKU Number: P4242
+
+
+[SUMMARY] Quick OEM identification:
+[CMD] Product name: cat /sys/class/dmi/id/product_name
+NVIDIA_DGX_Spark
+
+[CMD] Board vendor: cat /sys/class/dmi/id/board_vendor
+NVIDIA
+
+[CMD] Board name: cat /sys/class/dmi/id/board_name
+P4242
+
+[CMD] BIOS vendor: cat /sys/class/dmi/id/bios_vendor
+American Megatrends International, LLC.
+
+[CMD] BIOS version: cat /sys/class/dmi/id/bios_version
+5.36_0ACUM018
+
+[CMD] BIOS date: cat /sys/class/dmi/id/bios_date
+08/06/2025
+
+
+--- Memory Module Details ---
+
+[INFO] Identifying RAM manufacturer, speed, and configuration
+[SUDO] Memory modules: sudo dmidecode -t memory
+# dmidecode 3.5
+Getting SMBIOS data from sysfs.
+SMBIOS 3.3.0 present.
+
+Handle 0x0010, DMI type 16, 23 bytes
+Physical Memory Array
+	Location: System Board Or Motherboard
+	Use: System Memory
+	Error Correction Type: None
+	Maximum Capacity: 128 GB
+	Error Information Handle: No Error
+	Number Of Devices: 1
+
+Handle 0x0011, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0010
+	Error Information Handle: Not Provided
+	Total Width: 32 bits
+	Data Width: 32 bits
+	Size: 128 GB
+	Form Factor: Chip
+	Set: None
+	Locator: DIMM0
+	Bank Locator: BANK 0
+	Type: LPDDR5
+	Type Detail: Unknown
+	Speed: 8533 MT/s
+	Manufacturer: SK Hynix
+	Serial Number: None
+	Asset Tag: None
+	Part Number: None
+	Rank: Unknown
+	Configured Memory Speed: 8533 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: Unknown
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Bank 7, Hex 0x00
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 128 GB
+	Cache Size: None
+	Logical Size: None
+
+
+
+--- Kernel Type Analysis ---
+
+[OK] NVIDIA-optimized kernel detected: 6.14.0-1013-nvidia
+
+===============================================================================
+  PHASE 2: VIRTUALIZATION & HYPERVISOR ANALYSIS
+  2025-12-18 16:28:26
+===============================================================================
+
+
+--- Virtualization Detection ---
+
+[CMD] Virtualization type: systemd-detect-virt
+none
+[WARN] Command returned non-zero exit code
+
+[CMD] virt-what: virt-what
+[SKIP] Command not found: virt-what
+
+[SKIP] File/dir not found: /sys/hypervisor/type
+
+[CMD] Hypervisor properties: cat /sys/hypervisor/properties/*
+cat: '/sys/hypervisor/properties/*': No such file or directory
+[WARN] Command returned non-zero exit code
+
+
+--- VM Performance Metrics ---
+
+[INFO] Checking for CPU steal time (VM overhead indicator)
+[CMD] vmstat (5 samples): vmstat 1 5
+procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
+ 1  0    256 63914188 142008 55517856    0    0  1024   102 2214    1  0  0 100  0  0  0
+ 0  0    256 63913684 142008 55517924    0    0     0     8 2562 3118  0  0 100  0  0  0
+ 0  0    256 63913684 142020 55517920    0    0     0   152 2608 3349  0  0 100  0  0  0
+ 0  0    256 63913684 142020 55517952    0    0     0     0 3239 4366  0  0 100  0  0  0
+ 0  0    256 63913684 142020 55517952    0    0     0     0 2395 3304  0  0 100  0  0  0
+
+[NOTE] 'st' column shows steal time - CPU cycles taken by hypervisor
+[CMD] CPU steal from /proc/stat: grep -E ^cpu  /proc/stat
+cpu  310267 162 183626 125388293 28804 0 3847 0 0 0
+
+[INFO] Large steal time indicates noisy neighbor or oversold host
+
+--- IOMMU/Passthrough Configuration ---
+
+[CMD] Kernel cmdline: cat /proc/cmdline
+BOOT_IMAGE=/boot/vmlinuz-6.14.0-1013-nvidia root=UUID=d27bfd26-ff30-400e-9eca-9cdf73de9406 ro init_on_alloc=0 console=tty0 plymouth.ignore-serial-consoles plymouth.use-simpledrm earlycon=uart,mmio32,0x16A00000 nvidia-drm.modeset=1 console=tty0 console=ttyS0,921600 crashkernel=1G-:0M quiet splash pci=pcie_bus_safe vt.handoff=7
+
+[CMD] IOMMU dmesg: dmesg
+24
+[INFO] GPU IOMMU group (passthrough isolation):
+  GPU 000f:01:00.0 in IOMMU group 16
+
+
+--- Clock Source (VM Timing) ---
+
+[CMD] Current clocksource: cat /sys/devices/system/clocksource/clocksource0/current_clocksource
+arch_sys_counter
+
+[CMD] Available clocksources: cat /sys/devices/system/clocksource/clocksource0/available_clocksource
+arch_sys_counter 
+
+
+===============================================================================
+  PHASE 3: BARE METAL SPECIFIC (DGX Spark / Physical Servers)
+  2025-12-18 16:28:30
+===============================================================================
+
+
+--- IPMI/BMC Access (Bare Metal Only) ---
+
+[INFO] IPMI available on physical servers, not in VMs
+[CMD] IPMI MC info: ipmitool mc info
+Could not open device at /dev/ipmi0 or /dev/ipmi/0 or /dev/ipmidev/0: No such file or directory
+[WARN] Command returned non-zero exit code
+
+[CMD] IPMI sensor list: ipmitool sensor list
+Could not open device at /dev/ipmi0 or /dev/ipmi/0 or /dev/ipmidev/0: No such file or directory
+[WARN] Command returned non-zero exit code
+
+[CMD] IPMI SEL list: ipmitool sel list
+Could not open device at /dev/ipmi0 or /dev/ipmi/0 or /dev/ipmidev/0: No such file or directory
+[WARN] Command returned non-zero exit code
+
+
+--- ARM Device Tree (aarch64 Only) ---
+
+[INFO] ARM64 system - checking device tree
+[SKIP] File/dir not found: /sys/firmware/devicetree/base/model
+
+[SKIP] File/dir not found: /sys/firmware/devicetree/base/compatible
+
+[CMD] Device tree dirs: ls /sys/firmware/devicetree/base/
+ls: cannot access '/sys/firmware/devicetree/base/': No such file or directory
+[WARN] Command returned non-zero exit code
+
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svepmull svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti ecv afp wfxt
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x0
+CPU part	: 0xd87
+CPU revision	: 1
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svepmull svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti ecv afp wfxt
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x0
+CPU part	: 0xd87
+CPU revision	: 1
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svepmull svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti ecv afp wfxt
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x0
+CPU part	: 0xd87
+CPU revision	: 1
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svepmull svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti ecv afp wfxt
+CPU implementer	: 0x41
+
+--- Firmware Update Status ---
+
+[CMD] fwupdmgr devices: fwupdmgr get-devices
+Idle…: 0%
+NVIDIA NVIDIA_DGX_Spark
+│
+├─Embedded Controller:
+│     Device ID:          8c948e1db381648c8893897e4d09b7b153309991
+│     Summary:            UEFI System Resource Table device (Updated via capsule-on-disk)
+│     Current version:    0x02004b03
+│     Minimum Version:    0x02003400
+│     Vendor:             NVIDIA (DMI:American Megatrends International, LLC.)
+│     Update State:       Success
+│     GUID:               3d13c989-e6a8-4ead-95ee-921f09868f65
+│     Device Flags:       • Internal device
+│                         • Updatable
+│                         • System requires external power source
+│                         • Supported on remote server
+│                         • Needs a reboot after installation
+│                         • Device is usable for the duration of the update
+│                         • Signed Payload
+│     Device Requests:    • Message
+│   
+├─MT2910 Family [ConnectX-7]:
+│     Device ID:          ce4c74a5188d5b9cdb1e72ed32dad2d313c1c999
+│     Current version:    01
+│     Vendor:             Mellanox Technologies (PCI:0x15B3, PCI:0x10DE)
+│     GUIDs:              12029307-5bb1-5200-99a5-536f1be9d081 ← PCI\VEN_15B3&DEV_1021
+│                         b5e95689-ad65-5e57-8778-897f04396256 ← PCI\VEN_15B3&DEV_1021&SUBSYS_15B321EC
+│                         cfc0de0b-adb3-5060-ba22-e4010a78368f ← PCI\VEN_10DE&DEV_22CE
+│                         59007998-a3d7-54a3-b30e-eb3b77e2f351 ← PCI\VEN_10DE&DEV_22CE&SUBSYS_15B321EC
+│     Device Flags:       • Internal device
+│                         • Cryptographic hash verification is available
+│   
+├─MT2910 Family [ConnectX-7]:
+│     Device ID:          7d29f2075dcafb4488b40c73f199cf46bb76bddb
+│     Current version:    01
+│     Vendor:             Mellanox Technologies (PCI:0x15B3, PCI:0x10DE)
+│     GUIDs:              12029307-5bb1-5200-99a5-536f1be9d081 ← PCI\VEN_15B3&DEV_1021
+│                         b5e95689-ad65-5e57-8778-897f04396256 ← PCI\VEN_15B3&DEV_1021&SUBSYS_15B321EC
+│                         cfc0de0b-adb3-5060-ba22-e4010a78368f ← PCI\VEN_10DE&DEV_22CE
+│                         59007998-a3d7-54a3-b30e-eb3b77e2f351 ← PCI\VEN_10DE&DEV_22CE&SUBSYS_15B321EC
+│     Device Flags:       • Internal device
+│                         • Cryptographic hash verification is available
+│   
+├─MT2910 Family [ConnectX-7]:
+│     Device ID:          024ec185fcba9289f4336862423686455165d68a
+│     Current version:    01
+│     Vendor:             Mellanox Technologies (PCI:0x15B3, PCI:0x10DE)
+│     GUIDs:              12029307-5bb1-5200-99a5-536f1be9d081 ← PCI\VEN_15B3&DEV_1021
+│                         b5e95689-ad65-5e57-8778-897f04396256 ← PCI\VEN_15B3&DEV_1021&SUBSYS_15B321EC
+│                         cfc0de0b-adb3-5060-ba22-e4010a78368f ← PCI\VEN_10DE&DEV_22CE
+│                         59007998-a3d7-54a3-b30e-eb3b77e2f351 ← PCI\VEN_10DE&DEV_22CE&SUBSYS_15B321EC
+│     Device Flags:       • Internal device
+│                         • Cryptographic hash verification is available
+│   
+├─MT2910 Family [ConnectX-7]:
+│     Device ID:          fd0f3bbe941288a4198e7476ae94fd87b6e58b15
+│     Current version:    01
+│     Vendor:             Mellanox Technologies (PCI:0x15B3, PCI:0x10DE)
+│     GUIDs:              12029307-5bb1-5200-99a5-536f1be9d081 ← PCI\VEN_15B3&DEV_1021
+│                         b5e95689-ad65-5e57-8778-897f04396256 ← PCI\VEN_15B3&DEV_1021&SUBSYS_15B321EC
+│                         cfc0de0b-adb3-5060-ba22-e4010a78368f ← PCI\VEN_10DE&DEV_22CE
+│                         59007998-a3d7-54a3-b30e-eb3b77e2f351 ← PCI\VEN_10DE&DEV_22CE&SUBSYS_15B321EC
+│     Device Flags:       • Internal device
+│                         • Cryptographic hash verification is available
+│   
+├─MZALC4T0HBL1-00B07:
+│     Device ID:          7de5ffdca08fa52d95fd4bb42aa5d07a4b35d2dd
+│     Summary:            NVM Express solid state drive
+│     Current version:    NXHB202Q
+│     Vendor:             Samsung (NVME:0x144D)
+│     Serial Number:      S8C2NG0Y726863
+│     GUIDs:              35abf34a-7ed8-51b2-ba1b-edef527d47e6 ← NVME\VEN_144D&DEV_A810
+│                         095ba8dd-3778-52b4-9f32-02a67c210ce5 ← NVME\VEN_144D&DEV_A810&SUBSYS_144DA801
+│                         93768061-87bf-5c78-b9ea-5b7a6301012b ← SAMSUNG MZALC4T0HBL1-00B07
+│     Device Flags:       • Internal device
+│                         • Updatable
+│                         • System requires external power source
+│                         • Needs a reboot after installation
+│                         • Device is usable for the duration of the update
+│                         • Signed Payload
+│   
+├─UEFI Device Firmware:
+│     Device ID:          0681fd3882fb4fdca996e412ec249365f6e85838
+│     Summary:            UEFI System Resource Table device (Updated via capsule-on-disk)
+│     Current version:    0x02009009
+│     Minimum Version:    0x02007300
+│     Vendor:             NVIDIA (DMI:American Megatrends International, LLC.)
+│     Update State:       Success
+│     GUID:               b488217b-3895-4fc0-b1bf-ab7005a2d45a
+│     Device Flags:       • Internal device
+│                         • Updatable
+│                         • System requires external power source
+│                         • Supported on remote server
+│                         • Needs a reboot after installation
+│                         • Device is usable for the duration of the update
+│                         • Signed Payload
+│     Device Requests:    • Message
+│   
+├─UEFI Device Firmware:
+│     Device ID:          a6c6b7f79c96a1cc84d9612d804675e0c3d879c4
+│     Summary:            UEFI System Resource Table device (Updated via capsule-on-disk)
+│     Current version:    0x00000500
+│     Minimum Version:    0x00000400
+│     Vendor:             NVIDIA (DMI:American Megatrends International, LLC.)
+│     Update State:       Success
+│     GUID:               dd1a238a-5f8e-46bd-9401-a88da99c5a96
+│     Device Flags:       • Internal device
+│                         • Updatable
+│                         • System requires external power source
+│                         • Supported on remote server
+│                         • Needs a reboot after installation
+│                         • Device is usable for the duration of the update
+│                         • Signed Payload
+│     Device Requests:    • Message
+│   
+└─UEFI dbx:
+      Device ID:          362301da643102b9f38477387e2193e57abaa590
+      Summary:            UEFI revocation database
+      Current version:    20230501
+      Minimum Version:    20230501
+      Vendor:             UEFI:Microsoft
+      Install Duration:   1 second
+      GUIDs:              10ec82f4-ff64-5362-9e5d-688febf5dbb0 ← UEFI\CRT_3CD3F0309EDAE228767A976DD40D9F4AFFC4FBD5218F2E8CC3C9DD97E8AC6F9D&ARCH_AA64
+                          67d35028-ca5b-5834-834a-f97380381082 ← UEFI\CRT_A1117F516A32CEFCBA3F2D1ACE10A87972FD6BBE8FE0D0B996E09E65D802A503&ARCH_AA64
+      Device Flags:       • Internal device
+                          • Updatable
+                          • Needs a reboot after installation
+                          • Device is usable for the duration of the update
+                          • Only version upgrades are allowed
+                          • Signed Payload
+    
+
+[CMD] fwupdmgr updates: fwupdmgr get-updates
+Idle…: 0%
+Devices with no available firmware updates: 
+ • MZALC4T0HBL1-00B07
+ • UEFI dbx
+Devices with the latest available firmware version:
+ • Embedded Controller
+ • UEFI Device Firmware
+ • UEFI Device Firmware
+No updates available
+[WARN] Command returned non-zero exit code
+
+
+--- DGX-Specific Checks ---
+
+[FILE] /etc/dgx-release:
+DGX_NAME="DGX Spark"
+DGX_PRETTY_NAME="NVIDIA DGX Spark"
+DGX_SWBUILD_DATE="2025-09-10-13-50-03"
+DGX_SWBUILD_VERSION="7.2.3"
+DGX_COMMIT_ID="833b4a7"
+DGX_PLATFORM="DGX Server for KVM"
+DGX_SERIAL_NUMBER="1983925006880"
+
+DGX_OTA_VERSION="7.3.1"
+DGX_OTA_DATE="Thu Nov 20 09:51:20 EST 2025"
+
+[CMD] DGX packages: dpkg -l
+ii  dgx-dashboard                                    0.22.0                                        arm64        NVIDIA DGX Dashboard
+ii  dgx-oobe                                         0.17.26                                       arm64        NVIDIA DGX OOBE Core Services
+ii  dgx-oobe-desktop                                 0.4.0-0.4.0                                   arm64        NVIDIA DGX OOBE Desktop Viewer
+ii  dgx-release                                      7.3.1                                         all          Package updates the DGX OS release information
+ii  dgx-repo                                         25.10-2                                       arm64        DGX repository configuration files
+ii  dgx-spark-oobe-customize                         0.17.9                                        arm64        NVIDIA DGX Spark OOBE Customizations
+ii  dgx-spark-ota-update-meta                        25.10.5                                       all          Package pulls new dependencies into the DGX Spark.
+ii  dgxstation-desktop                               25.09-4                                       all          Desktop customization package for DGXStation
+ii  dgxstation-grub                                  25.02-1                                       all          DGX Station grub customizer
+ii  nvidia-dgx-telemetry                             3.2                                           arm64        NVIDIA DGX Telemetry Services
+ii  nvidia-kernel-defaults                           21.05-1                                       all          sysctl default kernel settings for DGX.
+ii  nvidia-raid-config                               25.10-1                                       all          DGX RAID Configuration
+ii  nvidia-spark-fstab-config                        1.0.0-1                                       arm64        NVIDIA DGX Spark Fstab Config
+ii  nvidia-system-core                               2404.25.10-1                                  all          Meta-package for DGX system core packages
+ii  nvidia-system-extra                              2404.25.10-1                                  all          Meta-package for DGX system Extra packages
+ii  nvidia-system-station                            2404.25.10-1                                  arm64        Meta-package for DGX Station packages
+ii  nvidia-system-utils                              2404.25.09-2                                  all          Meta-package for DGX system utility packages
+[CMD] NVIDIA health check: nvidia-healthcheck
+[SKIP] Command not found: nvidia-healthcheck
+
+
+===============================================================================
+  PHASE 4: GPU DEEP ANALYSIS
+  2025-12-18 16:28:30
+===============================================================================
+
+
+--- Quick GPU Overview ---
+
+[CMD] nvidia-smi overview: nvidia-smi
+Thu Dec 18 16:28:30 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.95.05              Driver Version: 580.95.05      CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GB10                    On  |   0000000F:01:00.0 Off |                  N/A |
+| N/A   38C    P8              5W /  N/A  | Not Supported          |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            5495      G   /usr/bin/gnome-shell                    266MiB |
+|    0   N/A  N/A            5991      G   /usr/bin/Xwayland                         8MiB |
++-----------------------------------------------------------------------------------------+
+
+[CMD] GPU list: nvidia-smi -L
+GPU 0: NVIDIA GB10 (UUID: GPU-637effba-9969-68b1-b30e-badef4b3de88)
+
+
+--- Driver Verification (B200 REQUIRES nvidia-open) ---
+
+[FILE] /proc/driver/nvidia/version:
+NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  580.95.05  Release Build  (dvs-builder@U22-I3-AF08-06-3)  Tue Sep 23 09:46:53 UTC 2025
+GCC version:  gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04) 
+
+nvidia_uvm           1900544  8
+nvidia_drm            131072  16
+nvidia_modeset       1957888  8 nvidia_drm
+nvidia              14635008  129 nvidia_uvm,nvidia_modeset
+video                  81920  1 nvidia_modeset
+drm_ttm_helper         16384  1 nvidia_drm
+filename:       /lib/modules/6.14.0-1013-nvidia/kernel/nvidia-580-open/nvidia.ko
+version:        580.95.05
+license:        Dual MIT/GPL
+srcversion:     451D1F1B9F49FB3DC56B590
+[WARN] Could not confirm nvidia-open
+
+--- GPU Security Posture ---
+
+[INFO] Checking GPU security features (confidential computing, attestation)
+[CMD] Security info: nvidia-smi -q -d SECURITY
+Failed to parse --display/-d flags
+[WARN] Command returned non-zero exit code
+
+[CMD] Confidential compute: nvidia-smi conf-compute -grs
+ERROR: Option conf-compute is not recognized. Please run 'nvidia-smi -h'.
+
+[WARN] Command returned non-zero exit code
+
+
+--- GPU Firmware Inventory ---
+
+[INFO] GPU firmware versions (VBIOS, InfoROM, etc.)
+    Product Name                          : NVIDIA GB10
+    Product Brand                         : NVIDIA RTX
+    Product Architecture                  : Blackwell
+    VBIOS Version                         : 9A.0B.0F.00.1D
+    Inforom Version
+        Image Version                     : N/A
+        OEM Object                        : N/A
+        ECC Object                        : N/A
+    Inforom BBX Object Flush
+    GSP Firmware Version                  : 580.95.05
+            Firmware                      : N/A
+    ECC Mode
+    ECC Errors
+        Single Bit ECC                    : N/A
+        Double Bit ECC                    : N/A
+[CMD] InfoROM detailed: nvidia-smi -q -d INFOROM
+Failed to parse --display/-d flags
+[WARN] Command returned non-zero exit code
+
+
+--- ECC Memory Health (Critical) ---
+
+[INFO] ECC errors indicate GPU memory health issues
+[CMD] ECC status: nvidia-smi -q -d ECC
+
+==============NVSMI LOG==============
+
+Timestamp                                 : Thu Dec 18 16:28:30 2025
+Driver Version                            : 580.95.05
+CUDA Version                              : 13.0
+
+Attached GPUs                             : 1
+GPU 0000000F:01:00.0
+    ECC Mode
+        Current                           : N/A
+        Pending                           : N/A
+    ECC Errors
+        Volatile
+            SRAM Correctable              : N/A
+            SRAM Uncorrectable Parity     : N/A
+            SRAM Uncorrectable SEC-DED    : N/A
+            DRAM Correctable              : N/A
+            DRAM Uncorrectable            : N/A
+        Aggregate
+            SRAM Correctable              : N/A
+            SRAM Uncorrectable Parity     : N/A
+            SRAM Uncorrectable SEC-DED    : N/A
+            DRAM Correctable              : N/A
+            DRAM Uncorrectable            : N/A
+            SRAM Threshold Exceeded       : N/A
+        Aggregate Uncorrectable SRAM Sources
+            SRAM L2                       : N/A
+            SRAM SM                       : N/A
+            SRAM Microcontroller          : N/A
+            SRAM PCIE                     : N/A
+            SRAM Other                    : N/A
+        Channel Repair Pending            : N/A
+        TPC Repair Pending                : N/A
+
+
+
+[INFO] Retired pages = memory cells that failed and were remapped
+[INFO] High retired page count suggests GPU wear
+[CMD] Retired pages: nvidia-smi -q -d PAGE_RETIREMENT
+
+==============NVSMI LOG==============
+
+Timestamp                                 : Thu Dec 18 16:28:30 2025
+Driver Version                            : 580.95.05
+CUDA Version                              : 13.0
+
+Attached GPUs                             : 1
+GPU 0000000F:01:00.0
+    Retired Pages
+        Single Bit ECC                    : N/A
+        Double Bit ECC                    : N/A
+        Pending Page Blacklist            : N/A
+
+
+
+--- GPU Clocks and Throttling ---
+
+[CMD] Clock info: nvidia-smi -q -d CLOCK
+
+==============NVSMI LOG==============
+
+Timestamp                                 : Thu Dec 18 16:28:30 2025
+Driver Version                            : 580.95.05
+CUDA Version                              : 13.0
+
+Attached GPUs                             : 1
+GPU 0000000F:01:00.0
+    Clocks
+        Graphics                          : 208 MHz
+        SM                                : 208 MHz
+        Memory                            : N/A
+        Video                             : 598 MHz
+    Applications Clocks
+        Graphics                          : 2418 MHz
+        Memory                            : N/A
+    Default Applications Clocks
+        Graphics                          : 2418 MHz
+        Memory                            : N/A
+    Deferred Clocks
+        Memory                            : N/A
+    Max Clocks
+        Graphics                          : 3003 MHz
+        SM                                : 3003 MHz
+        Memory                            : N/A
+        Video                             : 3003 MHz
+    Max Customer Boost Clocks
+        Graphics                          : N/A
+    SM Clock Samples
+        Duration                          : N/A
+        Number of Samples                 : N/A
+        Max                               : N/A
+        Min                               : N/A
+        Avg                               : N/A
+    Memory Clock Samples
+        Duration                          : N/A
+        Number of Samples                 : N/A
+        Max                               : N/A
+        Min                               : N/A
+        Avg                               : N/A
+    Clock Policy
+        Auto Boost                        : N/A
+        Auto Boost Default                : N/A
+
+
+[CMD] Performance state: nvidia-smi -q -d PERFORMANCE
+
+==============NVSMI LOG==============
+
+Timestamp                                 : Thu Dec 18 16:28:30 2025
+Driver Version                            : 580.95.05
+CUDA Version                              : 13.0
+
+Attached GPUs                             : 1
+GPU 0000000F:01:00.0
+    Performance State                     : P8
+    Clocks Event Reasons
+        Idle                              : Not Active
+        Applications Clocks Setting       : Not Active
+        SW Power Cap                      : Active
+        HW Slowdown                       : Not Active
+            HW Thermal Slowdown           : Not Active
+            HW Power Brake Slowdown       : Not Active
+        Sync Boost                        : Not Active
+        SW Thermal Slowdown               : Not Active
+        Display Clock Setting             : Not Active
+    Clocks Event Reasons Counters
+        SW Power Capping                  : 31066579791 us
+        Sync Boost                        : 0 us
+        SW Thermal Slowdown               : 0 us
+        HW Thermal Slowdown               : 0 us
+        HW Power Braking                  : 0 us
+    Sparse Operation Mode                 : N/A
+
+
+[CMD] Throttle reasons: nvidia-smi -q
+        HW Slowdown                       : Not Active
+            HW Thermal Slowdown           : Not Active
+            HW Power Brake Slowdown       : Not Active
+        SW Thermal Slowdown               : Not Active
+        SW Thermal Slowdown               : 0 us
+        HW Thermal Slowdown               : 0 us
+        GPU Slowdown T.Limit Temp         : -2 C
+
+--- NVLink Status and Errors ---
+
+[INFO] NVLink 5.0: 18 links per B200, 50GB/s per link
+[CMD] NVLink status: nvidia-smi nvlink -s
+
+[CMD] NVLink capabilities: nvidia-smi nvlink -c
+
+
+[CRITICAL] NVLink error counters - any non-zero indicates hardware issues
+[CMD] NVLink ERRORS: nvidia-smi nvlink -e
+
+
+--- MIG Configuration ---
+
+[CMD] MIG mode: nvidia-smi -q -d MIG
+Failed to parse --display/-d flags
+[WARN] Command returned non-zero exit code
+
+[CMD] MIG GPU instances: nvidia-smi mig -lgi
+No MIG-supported devices found.
+[WARN] Command returned non-zero exit code
+
+[CMD] MIG compute instances: nvidia-smi mig -lci
+No MIG-supported devices found.
+[WARN] Command returned non-zero exit code
+
+
+--- Full GPU Query ---
+
+[CMD] Complete nvidia-smi -q: nvidia-smi -q
+
+==============NVSMI LOG==============
+
+Timestamp                                 : Thu Dec 18 16:28:30 2025
+Driver Version                            : 580.95.05
+CUDA Version                              : 13.0
+
+Attached GPUs                             : 1
+GPU 0000000F:01:00.0
+    Product Name                          : NVIDIA GB10
+    Product Brand                         : NVIDIA RTX
+    Product Architecture                  : Blackwell
+    Display Mode                          : Requested functionality has been deprecated
+    Display Attached                      : No
+    Display Active                        : Disabled
+    Persistence Mode                      : Enabled
+    Addressing Mode                       : ATS
+    MIG Mode
+        Current                           : N/A
+        Pending                           : N/A
+    Accounting Mode                       : Disabled
+    Accounting Mode Buffer Size           : 4000
+    Driver Model
+        Current                           : N/A
+        Pending                           : N/A
+    Serial Number                         : N/A
+    GPU UUID                              : GPU-637effba-9969-68b1-b30e-badef4b3de88
+    GPU PDI                               : 0x215f65f34fe59c2c
+    Minor Number                          : 0
+    VBIOS Version                         : 9A.0B.0F.00.1D
+    MultiGPU Board                        : No
+    Board ID                              : 0xf0100
+    Board Part Number                     : N/A
+    GPU Part Number                       : 2E12-275-A1
+    FRU Part Number                       : N/A
+    Platform Info
+        Chassis Serial Number             : 
+        Slot Number                       : 0
+        Tray Index                        : 0
+        Host ID                           : 1
+        Peer Type                         : Direct Connected
+        Module Id                         : 1
+        GPU Fabric GUID                   : 0x0000000000000000
+    Inforom Version
+        Image Version                     : N/A
+        OEM Object                        : N/A
+        ECC Object                        : N/A
+        Power Management Object           : N/A
+    Inforom BBX Object Flush
+        Latest Timestamp                  : N/A
+        Latest Duration                   : N/A
+    GPU Operation Mode
+        Current                           : N/A
+        Pending                           : N/A
+    GPU C2C Mode                          : Enabled
+    GPU Virtualization Mode
+        Virtualization Mode               : None
+        Host VGPU Mode                    : N/A
+        vGPU Heterogeneous Mode           : N/A
+    GPU Recovery Action                   : None
+    GSP Firmware Version                  : 580.95.05
+    IBMNPU
+        Relaxed Ordering Mode             : N/A
+    PCI
+        Bus                               : 0x01
+        Device                            : 0x00
+        Domain                            : 0x000F
+        Base Classcode                    : 0x3
+        Sub Classcode                     : 0x0
+        Device Id                         : 0x2E1210DE
+        Bus Id                            : 0000000F:01:00.0
+        Sub System Id                     : 0x000010DE
+        GPU Link Info
+            PCIe Generation
+                Max                       : 1
+                Current                   : 1
+                Device Current            : 1
+                Device Max                : 5
+                Host Max                  : 5
+            Link Width
+                Max                       : 16x
+                Current                   : 1x
+        Bridge Chip
+            Type                          : N/A
+            Firmware                      : N/A
+        Replays Since Reset               : 0
+        Replay Number Rollovers           : 0
+        Tx Throughput                     : N/A
+        Rx Throughput                     : N/A
+        Atomic Caps Outbound              : FETCHADD_32 FETCHADD_64 SWAP_32 SWAP_64 CAS_32 CAS_64 
+        Atomic Caps Inbound               : N/A
+    Fan Speed                             : N/A
+    Performance State                     : P8
+    Clocks Event Reasons
+        Idle                              : Not Active
+        Applications Clocks Setting       : Not Active
+        SW Power Cap                      : Active
+        HW Slowdown                       : Not Active
+            HW Thermal Slowdown           : Not Active
+            HW Power Brake Slowdown       : Not Active
+        Sync Boost                        : Not Active
+        SW Thermal Slowdown               : Not Active
+        Display Clock Setting             : Not Active
+    Clocks Event Reasons Counters
+        SW Power Capping                  : 31066579791 us
+        Sync Boost                        : 0 us
+        SW Thermal Slowdown               : 0 us
+        HW Thermal Slowdown               : 0 us
+        HW Power Braking                  : 0 us
+    Sparse Operation Mode                 : N/A
+    FB Memory Usage
+        Total                             : N/A
+        Reserved                          : N/A
+        Used                              : N/A
+        Free                              : N/A
+    BAR1 Memory Usage
+        Total                             : N/A
+        Used                              : N/A
+        Free                              : N/A
+    Conf Compute Protected Memory Usage
+        Total                             : 0 MiB
+        Used                              : 0 MiB
+        Free                              : 0 MiB
+    Compute Mode                          : Default
+    Utilization
+        GPU                               : 0 %
+        Memory                            : 0 %
+        Encoder                           : 0 %
+        Decoder                           : 0 %
+        JPEG                              : 0 %
+        OFA                               : 0 %
+    Encoder Stats
+        Active Sessions                   : 0
+        Average FPS                       : 0
+        Average Latency                   : 0
+    FBC Stats
+        Active Sessions                   : 0
+        Average FPS                       : 0
+        Average Latency                   : 0
+    DRAM Encryption Mode
+        Current                           : N/A
+        Pending                           : N/A
+    ECC Mode
+        Current                           : N/A
+        Pending                           : N/A
+    ECC Errors
+        Volatile
+            SRAM Correctable              : N/A
+            SRAM Uncorrectable Parity     : N/A
+            SRAM Uncorrectable SEC-DED    : N/A
+            DRAM Correctable              : N/A
+            DRAM Uncorrectable            : N/A
+        Aggregate
+            SRAM Correctable              : N/A
+            SRAM Uncorrectable Parity     : N/A
+            SRAM Uncorrectable SEC-DED    : N/A
+            DRAM Correctable              : N/A
+            DRAM Uncorrectable            : N/A
+            SRAM Threshold Exceeded       : N/A
+        Aggregate Uncorrectable SRAM Sources
+            SRAM L2                       : N/A
+            SRAM SM                       : N/A
+            SRAM Microcontroller          : N/A
+            SRAM PCIE                     : N/A
+            SRAM Other                    : N/A
+        Channel Repair Pending            : N/A
+        TPC Repair Pending                : N/A
+    Retired Pages
+        Single Bit ECC                    : N/A
+        Double Bit ECC                    : N/A
+        Pending Page Blacklist            : N/A
+    Remapped Rows                         : N/A
+    Temperature
+        GPU Current Temp                  : 38 C
+        GPU T.Limit Temp                  : 57 C
+        GPU Shutdown T.Limit Temp         : -5 C
+        GPU Slowdown T.Limit Temp         : -2 C
+        GPU Max Operating T.Limit Temp    : 0 C
+        GPU Target Temperature            : N/A
+        Memory Current Temp               : N/A
+        Memory Max Operating T.Limit Temp : N/A
+    GPU Power Readings
+        Average Power Draw                : 5.00 W
+        Instantaneous Power Draw          : 5.00 W
+        Current Power Limit               : N/A
+        Requested Power Limit             : N/A
+        Default Power Limit               : N/A
+        Min Power Limit                   : N/A
+        Max Power Limit                   : N/A
+    GPU Memory Power Readings 
+        Average Power Draw                : N/A
+        Instantaneous Power Draw          : N/A
+    Module Power Readings
+        Average Power Draw                : N/A
+        Instantaneous Power Draw          : N/A
+        Current Power Limit               : N/A
+        Requested Power Limit             : N/A
+        Default Power Limit               : N/A
+        Min Power Limit                   : N/A
+        Max Power Limit                   : N/A
+    Power Smoothing                       : N/A
+    Workload Power Profiles
+        Requested Profiles                : N/A
+        Enforced Profiles                 : N/A
+    Clocks
+        Graphics                          : 208 MHz
+        SM                                : 208 MHz
+        Memory                            : N/A
+        Video                             : 598 MHz
+    Applications Clocks
+        Graphics                          : 2418 MHz
+        Memory                            : N/A
+    Default Applications Clocks
+        Graphics                          : 2418 MHz
+        Memory                            : N/A
+    Deferred Clocks
+        Memory                            : N/A
+    Max Clocks
+        Graphics                          : 3003 MHz
+        SM                                : 3003 MHz
+        Memory                            : N/A
+        Video                             : 3003 MHz
+    Max Customer Boost Clocks
+        Graphics                          : N/A
+    Clock Policy
+        Auto Boost                        : N/A
+        Auto Boost Default                : N/A
+    Fabric
+        State                             : N/A
+        Status                            : N/A
+        CliqueId                          : N/A
+        ClusterUUID                       : N/A
+        Health
+            Summary                       : N/A
+            Bandwidth                     : N/A
+            Route Recovery in progress    : N/A
+            Route Unhealthy               : N/A
+            Access Timeout Recovery       : N/A
+            Incorrect Configuration       : N/A
+    Processes
+        GPU instance ID                   : N/A
+        Compute instance ID               : N/A
+        Process ID                        : 5495
+            Type                          : G
+            Name                          : /usr/bin/gnome-shell
+            Used GPU Memory               : 266 MiB
+        GPU instance ID                   : N/A
+        Compute instance ID               : N/A
+        Process ID                        : 5991
+            Type                          : G
+            Name                          : /usr/bin/Xwayland
+            Used GPU Memory               : 8 MiB
+    Capabilities
+        EGM                               : disabled
+
+
+
+===============================================================================
+  PHASE 5: PCIe DEEP ANALYSIS
+  2025-12-18 16:28:30
+===============================================================================
+
+
+--- PCIe Device Overview ---
+
+[CMD] All PCIe devices: lspci
+0000:00:00.0 PCI bridge: NVIDIA Corporation Device 22ce (rev 01)
+0000:01:00.0 Ethernet controller: Mellanox Technologies MT2910 Family [ConnectX-7]
+0000:01:00.1 Ethernet controller: Mellanox Technologies MT2910 Family [ConnectX-7]
+0002:00:00.0 PCI bridge: NVIDIA Corporation Device 22ce (rev 01)
+0002:01:00.0 Ethernet controller: Mellanox Technologies MT2910 Family [ConnectX-7]
+0002:01:00.1 Ethernet controller: Mellanox Technologies MT2910 Family [ConnectX-7]
+0004:00:00.0 PCI bridge: NVIDIA Corporation Device 22ce (rev 01)
+0004:01:00.0 Non-Volatile memory controller: Samsung Electronics Co Ltd Device a810
+0007:00:00.0 PCI bridge: NVIDIA Corporation Device 22d0 (rev 01)
+0007:01:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. Device 8127 (rev 05)
+0009:00:00.0 PCI bridge: NVIDIA Corporation Device 22d0 (rev 01)
+0009:01:00.0 Network controller: MEDIATEK Corp. Device 7925
+000f:00:00.0 PCI bridge: NVIDIA Corporation Device 22d1
+000f:01:00.0 VGA compatible controller: NVIDIA Corporation Device 2e12 (rev a1)
+
+[CMD] PCIe tree: lspci -tv
+-[0000:00]---00.0-[01-0f]--+-00.0  Mellanox Technologies MT2910 Family [ConnectX-7]
+                           \-00.1  Mellanox Technologies MT2910 Family [ConnectX-7]
+-[0002:00]---00.0-[01-0f]--+-00.0  Mellanox Technologies MT2910 Family [ConnectX-7]
+                           \-00.1  Mellanox Technologies MT2910 Family [ConnectX-7]
+-[0004:00]---00.0-[01-0f]----00.0  Samsung Electronics Co Ltd Device a810
+-[0007:00]---00.0-[01-0f]----00.0  Realtek Semiconductor Co., Ltd. Device 8127
+-[0009:00]---00.0-[01-0f]----00.0  MEDIATEK Corp. Device 7925
+-[000f:00]---00.0-[01]----00.0  NVIDIA Corporation Device 2e12
+
+
+--- GPU PCIe Details ---
+
+[INFO] Checking PCIe link negotiation (Gen5 x16 expected for B200)
+[CMD] NVIDIA PCIe info: nvidia-smi -q -d PCIE
+Failed to parse --display/-d flags
+[WARN] Command returned non-zero exit code
+
+[CMD] PCIe current link: nvidia-smi --query-gpu=pcie.link.gen.current,pcie.link.width.current --format=csv
+pcie.link.gen.current, pcie.link.width.current
+1, 1
+
+[CMD] PCIe max link: nvidia-smi --query-gpu=pcie.link.gen.max,pcie.link.width.max --format=csv
+pcie.link.gen.max, pcie.link.width.max
+1, 16
+
+
+--- PCIe Capabilities and Errors (Detailed) ---
+
+[INFO] Detailed PCIe analysis from lspci
+[SUDO] GPU PCIe verbose: sudo lspci -vvv -d 10de:
+0000:00:00.0 PCI bridge: NVIDIA Corporation Device 22ce (rev 01) (prog-if 00 [Normal decode])
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0
+	Interrupt: pin A routed to IRQ 329
+	IOMMU group: 0
+	Bus: primary=00, secondary=01, subordinate=0f, sec-latency=0
+	I/O behind bridge: 0000f000-00000fff [disabled] [32-bit]
+	Memory behind bridge: 67100000-672fffff [size=2M] [32-bit]
+	Prefetchable memory behind bridge: 7500000000-7505ffffff [size=96M] [32-bit]
+	Secondary status: 66MHz- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- <SERR- <PERR-
+	BridgeCtl: Parity- SERR+ NoISA- VGA- VGA16- MAbort- >Reset- FastB2B-
+		PriDiscTmr- SecDiscTmr- DiscTmrStat- DiscTmrSERREn-
+	Capabilities: [40] Power Management version 3
+		Flags: PMEClk- DSI- D1- D2- AuxCurrent=375mA PME(D0+,D1-,D2-,D3hot+,D3cold+)
+		Status: D0 NoSoftRst+ PME-Enable- DSel=0 DScale=0 PME-
+	Capabilities: [50] MSI: Enable+ Count=2/32 Maskable- 64bit+
+		Address: 0000000006850040  Data: 0000
+	Capabilities: [70] Express (v2) Root Port (Slot+), MSI 00
+		DevCap:	MaxPayload 512 bytes, PhantFunc 0
+			ExtTag- RBE+
+		DevCtl:	CorrErr+ NonFatalErr+ FatalErr+ UnsupReq+
+			RlxdOrd+ ExtTag- PhantFunc- AuxPwr- NoSnoop-
+			MaxPayload 512 bytes, MaxReadReq 512 bytes
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr+ TransPend-
+		LnkCap:	Port #0, Speed 32GT/s, Width x4, ASPM L0s L1, Exit Latency L0s <2us, L1 <8us
+			ClockPM- Surprise+ LLActRep+ BwNot+ ASPMOptComp+
+		LnkCtl:	ASPM Disabled; RCB 64 bytes, Disabled- CommClk-
+			ExtSynch- ClockPM- AutWidDis- BWInt+ AutBWInt+
+		LnkSta:	Speed 32GT/s, Width x4
+			TrErr- Train- SlotClk+ DLActive+ BWMgmt- ABWMgmt-
+		SltCap:	AttnBtn- PwrCtrl- MRL- AttnInd- PwrInd- HotPlug- Surprise+
+			Slot #0, PowerLimit 0W; Interlock- NoCompl+
+		SltCtl:	Enable: AttnBtn- PwrFlt- MRL- PresDet- CmdCplt- HPIrq- LinkChg-
+			Control: AttnInd Off, PwrInd Off, Power- Interlock-
+		SltSta:	Status: AttnBtn- PowerFlt- MRL- CmdCplt- PresDet- Interlock-
+			Changed: MRL- PresDet- LinkState-
+		RootCap: CRSVisible+
+		RootCtl: ErrCorrectable- ErrNon-Fatal- ErrFatal- PMEIntEna+ CRSVisible+
+		RootSta: PME ReqID 0000, PMEStatus- PMEPending-
+		DevCap2: Completion Timeout: Range ABCD, TimeoutDis+ NROPrPrP+ LTR+
+			 10BitTagComp+ 10BitTagReq- OBFF Not Supported, ExtFmt+ EETLPPrefix+, MaxEETLPPrefixes 4
+			 EmergencyPowerReduction Not Supported, EmergencyPowerReductionInit-
+			 FRS+ LN System CLS Not Supported, TPHComp- ExtTPHComp- ARIFwd+
+			 AtomicOpsCap: Routing- 32bit- 64bit- 128bitCAS-
+		DevCtl2: Completion Timeout: 50us to 50ms, TimeoutDis- LTR+ 10BitTagReq- OBFF Disabled, ARIFwd+
+			 AtomicOpsCtl: ReqEn- EgressBlck-
+		LnkCap2: Supported Link Speeds: 2.5-32GT/s, Crosslink- Retimer+ 2Retimers+ DRS+
+		LnkCtl2: Target Link Speed: 32GT/s, EnterCompliance- SpeedDis-
+			 Transmit Margin: Normal Operating Range, EnterModifiedCompliance- ComplianceSOS-
+			 Compliance Preset/De-emphasis: -6dB de-emphasis, 0dB preshoot
+		LnkSta2: Current De-emphasis Level: -6dB, EqualizationComplete+ EqualizationPhase1+
+			 EqualizationPhase2+ EqualizationPhase3+ LinkEqualizationRequest-
+			 Retimer- 2Retimers- CrosslinkRes: Downstream Port, DRS-
+			 DownstreamComp: Link Up - Present
+	Capabilities: [100 v2] Advanced Error Reporting
+		UESta:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		UEMsk:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		UESvrt:	DLP+ SDES+ TLP- FCP+ CmpltTO- CmpltAbrt- UnxCmplt- RxOF+ MalfTLP+ ECRC- UnsupReq- ACSViol-
+		CESta:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr-
+		CEMsk:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr+
+		AERCap:	First Error Pointer: 00, ECRCGenCap+ ECRCGenEn- ECRCChkCap+ ECRCChkEn-
+			MultHdrRecCap- MultHdrRecEn- TLPPfxPres- HdrLogCap-
+		HeaderLog: 00000000 00000000 00000000 00000000
+		RootCmd: CERptEn+ NFERptEn+ FERptEn+
+		RootSta: CERcvd- MultCERcvd- UERcvd- MultUERcvd-
+			 FirstFatal- NonFatalMsg- FatalMsg- IntMsg 1
+		ErrorSrc: ERR_COR: 0000 ERR_FATAL/NONFATAL: 0000
+	Capabilities: [148 v1] Virtual Channel
+		Caps:	LPEVC=0 RefClk=100ns PATEntryBits=1
+		Arb:	Fixed+ WRR32- WRR64- WRR128-
+		Ctrl:	ArbSelect=Fixed
+		Status:	InProgress-
+		VC0:	Caps:	PATOffset=00 MaxTimeSlots=1 RejSnoopTrans-
+			Arb:	Fixed- WRR32- WRR64- WRR128- TWRR128- WRR256-
+			Ctrl:	Enable+ ID=0 ArbSelect=Fixed TC/VC=ff
+			Status:	NegoPending- InProgress-
+	Capabilities: [164 v1] Secondary PCI Express
+		LnkCtl3: LnkEquIntrruptEn- PerformEqu-
+		LaneErrStat: 0
+	Capabilities: [184 v1] Physical Layer 16.0 GT/s <?>
+	Capabilities: [1a8 v1] Lane Margining at the Receiver <?>
+	Capabilities: [1c0 v1] Extended Capability ID 0x2a
+	Capabilities: [1e4 v1] Access Control Services
+		ACSCap:	SrcValid+ TransBlk+ ReqRedir+ CmpltRedir+ UpstreamFwd+ EgressCtrl+ DirectTrans-
+		ACSCtl:	SrcValid+ TransBlk- ReqRedir+ CmpltRedir+ UpstreamFwd+ EgressCtrl- DirectTrans-
+	Capabilities: [24c v1] FRS Queueing <?>
+	Capabilities: [25c v1] Readiness Time Reporting <?>
+	Capabilities: [268 v1] Vendor Specific Information: ID=0002 Rev=4 Len=100 <?>
+	Capabilities: [368 v1] Data Link Feature <?>
+	Kernel driver in use: pcieport
+
+0002:00:00.0 PCI bridge: NVIDIA Corporation Device 22ce (rev 01) (prog-if 00 [Normal decode])
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0
+	Interrupt: pin A routed to IRQ 332
+	IOMMU group: 1
+	Bus: primary=00, secondary=01, subordinate=0f, sec-latency=0
+	I/O behind bridge: 0000f000-00000fff [disabled] [32-bit]
+	Memory behind bridge: 5d100000-5d2fffff [size=2M] [32-bit]
+	Prefetchable memory behind bridge: 3d00000000-3d05ffffff [size=96M] [32-bit]
+	Secondary status: 66MHz- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- <SERR- <PERR-
+	BridgeCtl: Parity- SERR+ NoISA- VGA- VGA16- MAbort- >Reset- FastB2B-
+		PriDiscTmr- SecDiscTmr- DiscTmrStat- DiscTmrSERREn-
+	Capabilities: [40] Power Management version 3
+		Flags: PMEClk- DSI- D1- D2- AuxCurrent=375mA PME(D0+,D1-,D2-,D3hot+,D3cold+)
+		Status: D0 NoSoftRst+ PME-Enable- DSel=0 DScale=0 PME-
+	Capabilities: [50] MSI: Enable+ Count=2/32 Maskable- 64bit+
+		Address: 0000000006850040  Data: 0000
+	Capabilities: [70] Express (v2) Root Port (Slot+), MSI 00
+		DevCap:	MaxPayload 512 bytes, PhantFunc 0
+			ExtTag- RBE+
+		DevCtl:	CorrErr+ NonFatalErr+ FatalErr+ UnsupReq+
+			RlxdOrd+ ExtTag- PhantFunc- AuxPwr- NoSnoop-
+			MaxPayload 512 bytes, MaxReadReq 512 bytes
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr+ TransPend-
+		LnkCap:	Port #0, Speed 32GT/s, Width x4, ASPM L0s L1, Exit Latency L0s <2us, L1 <8us
+			ClockPM- Surprise+ LLActRep+ BwNot+ ASPMOptComp+
+		LnkCtl:	ASPM Disabled; RCB 64 bytes, Disabled- CommClk-
+			ExtSynch- ClockPM- AutWidDis- BWInt+ AutBWInt+
+		LnkSta:	Speed 32GT/s, Width x4
+			TrErr- Train- SlotClk+ DLActive+ BWMgmt- ABWMgmt-
+		SltCap:	AttnBtn- PwrCtrl- MRL- AttnInd- PwrInd- HotPlug- Surprise+
+			Slot #2, PowerLimit 0W; Interlock- NoCompl+
+		SltCtl:	Enable: AttnBtn- PwrFlt- MRL- PresDet- CmdCplt- HPIrq- LinkChg-
+			Control: AttnInd Off, PwrInd Off, Power- Interlock-
+		SltSta:	Status: AttnBtn- PowerFlt- MRL- CmdCplt- PresDet- Interlock-
+			Changed: MRL- PresDet- LinkState-
+		RootCap: CRSVisible+
+		RootCtl: ErrCorrectable- ErrNon-Fatal- ErrFatal- PMEIntEna+ CRSVisible+
+		RootSta: PME ReqID 0000, PMEStatus- PMEPending-
+		DevCap2: Completion Timeout: Range ABCD, TimeoutDis+ NROPrPrP+ LTR+
+			 10BitTagComp+ 10BitTagReq- OBFF Not Supported, ExtFmt+ EETLPPrefix+, MaxEETLPPrefixes 4
+			 EmergencyPowerReduction Not Supported, EmergencyPowerReductionInit-
+			 FRS+ LN System CLS Not Supported, TPHComp- ExtTPHComp- ARIFwd+
+			 AtomicOpsCap: Routing- 32bit- 64bit- 128bitCAS-
+		DevCtl2: Completion Timeout: 50us to 50ms, TimeoutDis- LTR+ 10BitTagReq- OBFF Disabled, ARIFwd+
+			 AtomicOpsCtl: ReqEn- EgressBlck-
+		LnkCap2: Supported Link Speeds: 2.5-32GT/s, Crosslink- Retimer+ 2Retimers+ DRS+
+		LnkCtl2: Target Link Speed: 32GT/s, EnterCompliance- SpeedDis-
+			 Transmit Margin: Normal Operating Range, EnterModifiedCompliance- ComplianceSOS-
+			 Compliance Preset/De-emphasis: -6dB de-emphasis, 0dB preshoot
+		LnkSta2: Current De-emphasis Level: -6dB, EqualizationComplete+ EqualizationPhase1+
+			 EqualizationPhase2+ EqualizationPhase3+ LinkEqualizationRequest-
+			 Retimer- 2Retimers- CrosslinkRes: Downstream Port, DRS-
+			 DownstreamComp: Link Up - Present
+	Capabilities: [100 v2] Advanced Error Reporting
+		UESta:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		UEMsk:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		UESvrt:	DLP+ SDES+ TLP- FCP+ CmpltTO- CmpltAbrt- UnxCmplt- RxOF+ MalfTLP+ ECRC- UnsupReq- ACSViol-
+		CESta:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr-
+		CEMsk:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr+
+		AERCap:	First Error Pointer: 00, ECRCGenCap+ ECRCGenEn- ECRCChkCap+ ECRCChkEn-
+			MultHdrRecCap- MultHdrRecEn- TLPPfxPres- HdrLogCap-
+		HeaderLog: 00000000 00000000 00000000 00000000
+		RootCmd: CERptEn+ NFERptEn+ FERptEn+
+		RootSta: CERcvd- MultCERcvd- UERcvd- MultUERcvd-
+			 FirstFatal- NonFatalMsg- FatalMsg- IntMsg 1
+		ErrorSrc: ERR_COR: 0000 ERR_FATAL/NONFATAL: 0000
+	Capabilities: [148 v1] Virtual Channel
+		Caps:	LPEVC=0 RefClk=100ns PATEntryBits=1
+		Arb:	Fixed+ WRR32- WRR64- WRR128-
+		Ctrl:	ArbSelect=Fixed
+		Status:	InProgress-
+		VC0:	Caps:	PATOffset=00 MaxTimeSlots=1 RejSnoopTrans-
+			Arb:	Fixed- WRR32- WRR64- WRR128- TWRR128- WRR256-
+			Ctrl:	Enable+ ID=0 ArbSelect=Fixed TC/VC=ff
+			Status:	NegoPending- InProgress-
+	Capabilities: [164 v1] Secondary PCI Express
+		LnkCtl3: LnkEquIntrruptEn- PerformEqu-
+		LaneErrStat: 0
+	Capabilities: [184 v1] Physical Layer 16.0 GT/s <?>
+	Capabilities: [1a8 v1] Lane Margining at the Receiver <?>
+	Capabilities: [1c0 v1] Extended Capability ID 0x2a
+	Capabilities: [1e4 v1] Access Control Services
+		ACSCap:	SrcValid+ TransBlk+ ReqRedir+ CmpltRedir+ UpstreamFwd+ EgressCtrl+ DirectTrans-
+		ACSCtl:	SrcValid+ TransBlk- ReqRedir+ CmpltRedir+ UpstreamFwd+ EgressCtrl- DirectTrans-
+	Capabilities: [24c v1] FRS Queueing <?>
+	Capabilities: [25c v1] Readiness Time Reporting <?>
+	Capabilities: [268 v1] Vendor Specific Information: ID=0002 Rev=4 Len=100 <?>
+	Capabilities: [368 v1] Data Link Feature <?>
+	Kernel driver in use: pcieport
+
+0004:00:00.0 PCI bridge: NVIDIA Corporation Device 22ce (rev 01) (prog-if 00 [Normal decode])
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0
+	Interrupt: pin A routed to IRQ 335
+	IOMMU group: 2
+	Bus: primary=00, secondary=01, subordinate=0f, sec-latency=0
+	I/O behind bridge: 20000-20fff [size=4K] [16-bit]
+	Memory behind bridge: 62100000-622fffff [size=2M] [32-bit]
+	Prefetchable memory behind bridge: 5900000000-59001fffff [size=2M] [32-bit]
+	Secondary status: 66MHz- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- <SERR- <PERR-
+	BridgeCtl: Parity- SERR+ NoISA- VGA- VGA16- MAbort- >Reset- FastB2B-
+		PriDiscTmr- SecDiscTmr- DiscTmrStat- DiscTmrSERREn-
+	Capabilities: [40] Power Management version 3
+		Flags: PMEClk- DSI- D1- D2- AuxCurrent=375mA PME(D0+,D1-,D2-,D3hot+,D3cold+)
+		Status: D0 NoSoftRst+ PME-Enable- DSel=0 DScale=0 PME-
+	Capabilities: [50] MSI: Enable+ Count=2/32 Maskable- 64bit+
+		Address: 0000000006850040  Data: 0000
+	Capabilities: [70] Express (v2) Root Port (Slot+), MSI 00
+		DevCap:	MaxPayload 512 bytes, PhantFunc 0
+			ExtTag- RBE+
+		DevCtl:	CorrErr+ NonFatalErr+ FatalErr+ UnsupReq+
+			RlxdOrd+ ExtTag- PhantFunc- AuxPwr- NoSnoop-
+			MaxPayload 512 bytes, MaxReadReq 512 bytes
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr+ TransPend-
+		LnkCap:	Port #0, Speed 32GT/s, Width x4, ASPM L0s L1, Exit Latency L0s <2us, L1 <8us
+			ClockPM- Surprise+ LLActRep+ BwNot+ ASPMOptComp+
+		LnkCtl:	ASPM Disabled; RCB 64 bytes, Disabled- CommClk+
+			ExtSynch- ClockPM- AutWidDis- BWInt+ AutBWInt+
+		LnkSta:	Speed 32GT/s, Width x4
+			TrErr- Train- SlotClk+ DLActive+ BWMgmt- ABWMgmt-
+		SltCap:	AttnBtn- PwrCtrl- MRL- AttnInd- PwrInd- HotPlug+ Surprise+
+			Slot #4, PowerLimit 0W; Interlock- NoCompl+
+		SltCtl:	Enable: AttnBtn- PwrFlt- MRL- PresDet+ CmdCplt- HPIrq+ LinkChg+
+			Control: AttnInd Off, PwrInd Off, Power- Interlock-
+		SltSta:	Status: AttnBtn- PowerFlt- MRL- CmdCplt- PresDet- Interlock-
+			Changed: MRL- PresDet- LinkState-
+		RootCap: CRSVisible+
+		RootCtl: ErrCorrectable- ErrNon-Fatal- ErrFatal- PMEIntEna+ CRSVisible+
+		RootSta: PME ReqID 0000, PMEStatus- PMEPending-
+		DevCap2: Completion Timeout: Range ABCD, TimeoutDis+ NROPrPrP+ LTR+
+			 10BitTagComp+ 10BitTagReq- OBFF Not Supported, ExtFmt+ EETLPPrefix+, MaxEETLPPrefixes 4
+			 EmergencyPowerReduction Not Supported, EmergencyPowerReductionInit-
+			 FRS+ LN System CLS Not Supported, TPHComp- ExtTPHComp- ARIFwd+
+			 AtomicOpsCap: Routing- 32bit- 64bit- 128bitCAS-
+		DevCtl2: Completion Timeout: 50us to 50ms, TimeoutDis- LTR+ 10BitTagReq- OBFF Disabled, ARIFwd-
+			 AtomicOpsCtl: ReqEn- EgressBlck-
+		LnkCap2: Supported Link Speeds: 2.5-32GT/s, Crosslink- Retimer+ 2Retimers+ DRS+
+		LnkCtl2: Target Link Speed: 32GT/s, EnterCompliance- SpeedDis-
+			 Transmit Margin: Normal Operating Range, EnterModifiedCompliance- ComplianceSOS-
+			 Compliance Preset/De-emphasis: -6dB de-emphasis, 0dB preshoot
+		LnkSta2: Current De-emphasis Level: -6dB, EqualizationComplete- EqualizationPhase1-
+			 EqualizationPhase2- EqualizationPhase3- LinkEqualizationRequest-
+			 Retimer- 2Retimers- CrosslinkRes: Downstream Port, DRS-
+			 DownstreamComp: Link Up - Present
+	Capabilities: [100 v2] Advanced Error Reporting
+		UESta:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		UEMsk:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		UESvrt:	DLP+ SDES+ TLP- FCP+ CmpltTO- CmpltAbrt- UnxCmplt- RxOF+ MalfTLP+ ECRC- UnsupReq- ACSViol-
+		CESta:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr-
+		CEMsk:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr+
+		AERCap:	First Error Pointer: 00, ECRCGenCap+ ECRCGenEn- ECRCChkCap+ ECRCChkEn-
+			MultHdrRecCap- MultHdrRecEn- TLPPfxPres- HdrLogCap-
+		HeaderLog: 00000000 00000000 00000000 00000000
+		RootCmd: CERptEn+ NFERptEn+ FERptEn+
+		RootSta: CERcvd- MultCERcvd- UERcvd- MultUERcvd-
+			 FirstFatal- NonFatalMsg- FatalMsg- IntMsg 1
+		ErrorSrc: ERR_COR: 0000 ERR_FATAL/NONFATAL: 0000
+	Capabilities: [148 v1] Virtual Channel
+		Caps:	LPEVC=0 RefClk=100ns PATEntryBits=1
+		Arb:	Fixed+ WRR32- WRR64- WRR128-
+		Ctrl:	ArbSelect=Fixed
+		Status:	InProgress-
+		VC0:	Caps:	PATOffset=00 MaxTimeSlots=1 RejSnoopTrans-
+			Arb:	Fixed- WRR32- WRR64- WRR128- TWRR128- WRR256-
+			Ctrl:	Enable+ ID=0 ArbSelect=Fixed TC/VC=ff
+			Status:	NegoPending- InProgress-
+	Capabilities: [164 v1] Secondary PCI Express
+		LnkCtl3: LnkEquIntrruptEn- PerformEqu-
+		LaneErrStat: 0
+	Capabilities: [184 v1] Physical Layer 16.0 GT/s <?>
+	Capabilities: [1a8 v1] Lane Margining at the Receiver <?>
+	Capabilities: [1c0 v1] Extended Capability ID 0x2a
+	Capabilities: [1e4 v1] Access Control Services
+		ACSCap:	SrcValid+ TransBlk+ ReqRedir+ CmpltRedir+ UpstreamFwd+ EgressCtrl+ DirectTrans-
+		ACSCtl:	SrcValid+ TransBlk- ReqRedir+ CmpltRedir+ UpstreamFwd+ EgressCtrl- DirectTrans-
+	Capabilities: [24c v1] FRS Queueing <?>
+	Capabilities: [25c v1] Readiness Time Reporting <?>
+	Capabilities: [268 v1] Vendor Specific Information: ID=0002 Rev=4 Len=100 <?>
+	Capabilities: [368 v1] Data Link Feature <?>
+	Kernel driver in use: pcieport
+
+0007:00:00.0 PCI bridge: NVIDIA Corporation Device 22d0 (rev 01) (prog-if 00 [Normal decode])
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0
+	Interrupt: pin A routed to IRQ 338
+	IOMMU group: 3
+	Bus: primary=00, secondary=01, subordinate=0f, sec-latency=0
+	I/O behind bridge: 40000-41fff [size=8K] [16-bit]
+	Memory behind bridge: 6e900000-6eafffff [size=2M] [32-bit]
+	Prefetchable memory behind bridge: 9f00000000-9f001fffff [size=2M] [32-bit]
+	Secondary status: 66MHz- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- <SERR- <PERR-
+	BridgeCtl: Parity- SERR+ NoISA- VGA- VGA16- MAbort- >Reset- FastB2B-
+		PriDiscTmr- SecDiscTmr- DiscTmrStat- DiscTmrSERREn-
+	Capabilities: [40] Power Management version 3
+		Flags: PMEClk- DSI- D1- D2- AuxCurrent=375mA PME(D0+,D1-,D2-,D3hot+,D3cold+)
+		Status: D0 NoSoftRst+ PME-Enable- DSel=0 DScale=0 PME-
+	Capabilities: [50] MSI: Enable+ Count=2/32 Maskable- 64bit+
+		Address: 0000000006850040  Data: 0000
+	Capabilities: [70] Express (v2) Root Port (Slot+), MSI 00
+		DevCap:	MaxPayload 512 bytes, PhantFunc 0
+			ExtTag- RBE+
+		DevCtl:	CorrErr+ NonFatalErr+ FatalErr+ UnsupReq+
+			RlxdOrd+ ExtTag- PhantFunc- AuxPwr- NoSnoop-
+			MaxPayload 512 bytes, MaxReadReq 512 bytes
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr+ TransPend-
+		LnkCap:	Port #0, Speed 16GT/s, Width x1, ASPM L0s L1, Exit Latency L0s <2us, L1 <8us
+			ClockPM- Surprise+ LLActRep+ BwNot+ ASPMOptComp+
+		LnkCtl:	ASPM Disabled; RCB 64 bytes, Disabled- CommClk+
+			ExtSynch- ClockPM- AutWidDis- BWInt+ AutBWInt+
+		LnkSta:	Speed 16GT/s, Width x1
+			TrErr- Train- SlotClk+ DLActive+ BWMgmt- ABWMgmt-
+		SltCap:	AttnBtn- PwrCtrl- MRL- AttnInd- PwrInd- HotPlug+ Surprise+
+			Slot #7, PowerLimit 0W; Interlock- NoCompl+
+		SltCtl:	Enable: AttnBtn- PwrFlt- MRL- PresDet+ CmdCplt- HPIrq+ LinkChg+
+			Control: AttnInd Off, PwrInd Off, Power- Interlock-
+		SltSta:	Status: AttnBtn- PowerFlt- MRL- CmdCplt- PresDet- Interlock-
+			Changed: MRL- PresDet- LinkState-
+		RootCap: CRSVisible+
+		RootCtl: ErrCorrectable- ErrNon-Fatal- ErrFatal- PMEIntEna+ CRSVisible+
+		RootSta: PME ReqID 0000, PMEStatus- PMEPending-
+		DevCap2: Completion Timeout: Range ABCD, TimeoutDis+ NROPrPrP+ LTR+
+			 10BitTagComp+ 10BitTagReq- OBFF Not Supported, ExtFmt+ EETLPPrefix+, MaxEETLPPrefixes 4
+			 EmergencyPowerReduction Not Supported, EmergencyPowerReductionInit-
+			 FRS+ LN System CLS Not Supported, TPHComp- ExtTPHComp- ARIFwd+
+			 AtomicOpsCap: Routing- 32bit- 64bit- 128bitCAS-
+		DevCtl2: Completion Timeout: 50us to 50ms, TimeoutDis- LTR+ 10BitTagReq- OBFF Disabled, ARIFwd-
+			 AtomicOpsCtl: ReqEn- EgressBlck-
+		LnkCap2: Supported Link Speeds: 2.5-16GT/s, Crosslink- Retimer+ 2Retimers+ DRS+
+		LnkCtl2: Target Link Speed: 16GT/s, EnterCompliance- SpeedDis-
+			 Transmit Margin: Normal Operating Range, EnterModifiedCompliance- ComplianceSOS-
+			 Compliance Preset/De-emphasis: -6dB de-emphasis, 0dB preshoot
+		LnkSta2: Current De-emphasis Level: -6dB, EqualizationComplete+ EqualizationPhase1+
+			 EqualizationPhase2+ EqualizationPhase3+ LinkEqualizationRequest-
+			 Retimer- 2Retimers- CrosslinkRes: Downstream Port, DRS-
+			 DownstreamComp: Link Up - Present
+	Capabilities: [100 v2] Advanced Error Reporting
+		UESta:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		UEMsk:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		UESvrt:	DLP+ SDES+ TLP- FCP+ CmpltTO- CmpltAbrt- UnxCmplt- RxOF+ MalfTLP+ ECRC- UnsupReq- ACSViol-
+		CESta:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr-
+		CEMsk:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr+
+		AERCap:	First Error Pointer: 00, ECRCGenCap+ ECRCGenEn- ECRCChkCap+ ECRCChkEn-
+			MultHdrRecCap- MultHdrRecEn- TLPPfxPres- HdrLogCap-
+		HeaderLog: 00000000 00000000 00000000 00000000
+		RootCmd: CERptEn+ NFERptEn+ FERptEn+
+		RootSta: CERcvd- MultCERcvd- UERcvd- MultUERcvd-
+			 FirstFatal- NonFatalMsg- FatalMsg- IntMsg 1
+		ErrorSrc: ERR_COR: 0000 ERR_FATAL/NONFATAL: 0000
+	Capabilities: [148 v1] Virtual Channel
+		Caps:	LPEVC=0 RefClk=100ns PATEntryBits=1
+		Arb:	Fixed+ WRR32- WRR64- WRR128-
+		Ctrl:	ArbSelect=Fixed
+		Status:	InProgress-
+		VC0:	Caps:	PATOffset=00 MaxTimeSlots=1 RejSnoopTrans-
+			Arb:	Fixed- WRR32- WRR64- WRR128- TWRR128- WRR256-
+			Ctrl:	Enable+ ID=0 ArbSelect=Fixed TC/VC=ff
+			Status:	NegoPending- InProgress-
+	Capabilities: [164 v1] Secondary PCI Express
+		LnkCtl3: LnkEquIntrruptEn- PerformEqu-
+		LaneErrStat: 0
+	Capabilities: [174 v1] Physical Layer 16.0 GT/s <?>
+	Capabilities: [198 v1] Lane Margining at the Receiver <?>
+	Capabilities: [1a4 v1] Extended Capability ID 0x2a
+	Capabilities: [1c8 v1] Access Control Services
+		ACSCap:	SrcValid+ TransBlk+ ReqRedir+ CmpltRedir+ UpstreamFwd+ EgressCtrl+ DirectTrans-
+		ACSCtl:	SrcValid+ TransBlk- ReqRedir+ CmpltRedir+ UpstreamFwd+ EgressCtrl- DirectTrans-
+	Capabilities: [230 v1] FRS Queueing <?>
+	Capabilities: [240 v1] Readiness Time Reporting <?>
+	Capabilities: [24c v1] Vendor Specific Information: ID=0002 Rev=4 Len=100 <?>
+	Capabilities: [34c v1] Data Link Feature <?>
+	Kernel driver in use: pcieport
+
+0009:00:00.0 PCI bridge: NVIDIA Corporation Device 22d0 (rev 01) (prog-if 00 [Normal decode])
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0
+	Interrupt: pin A routed to IRQ 341
+	IOMMU group: 4
+	Bus: primary=00, secondary=01, subordinate=0f, sec-latency=0
+	I/O behind bridge: 60000-60fff [size=4K] [16-bit]
+	Memory behind bridge: 73900000-73bfffff [size=3M] [32-bit]
+	Prefetchable memory behind bridge: bb00000000-bb001fffff [size=2M] [32-bit]
+	Secondary status: 66MHz- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- <SERR- <PERR-
+	BridgeCtl: Parity- SERR+ NoISA- VGA- VGA16- MAbort- >Reset- FastB2B-
+		PriDiscTmr- SecDiscTmr- DiscTmrStat- DiscTmrSERREn-
+	Capabilities: [40] Power Management version 3
+		Flags: PMEClk- DSI- D1- D2- AuxCurrent=375mA PME(D0+,D1-,D2-,D3hot+,D3cold+)
+		Status: D0 NoSoftRst+ PME-Enable- DSel=0 DScale=0 PME-
+	Capabilities: [50] MSI: Enable+ Count=2/32 Maskable- 64bit+
+		Address: 0000000006850040  Data: 0000
+	Capabilities: [70] Express (v2) Root Port (Slot+), MSI 00
+		DevCap:	MaxPayload 512 bytes, PhantFunc 0
+			ExtTag- RBE+
+		DevCtl:	CorrErr+ NonFatalErr+ FatalErr+ UnsupReq+
+			RlxdOrd+ ExtTag- PhantFunc- AuxPwr- NoSnoop-
+			MaxPayload 256 bytes, MaxReadReq 512 bytes
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr+ TransPend-
+		LnkCap:	Port #0, Speed 16GT/s, Width x1, ASPM L0s L1, Exit Latency L0s <2us, L1 <8us
+			ClockPM- Surprise+ LLActRep+ BwNot+ ASPMOptComp+
+		LnkCtl:	ASPM Disabled; RCB 64 bytes, Disabled- CommClk+
+			ExtSynch- ClockPM- AutWidDis- BWInt+ AutBWInt+
+		LnkSta:	Speed 5GT/s, Width x1
+			TrErr- Train- SlotClk+ DLActive+ BWMgmt- ABWMgmt-
+		SltCap:	AttnBtn- PwrCtrl- MRL- AttnInd- PwrInd- HotPlug+ Surprise+
+			Slot #9, PowerLimit 0W; Interlock- NoCompl+
+		SltCtl:	Enable: AttnBtn- PwrFlt- MRL- PresDet+ CmdCplt- HPIrq+ LinkChg+
+			Control: AttnInd Off, PwrInd Off, Power- Interlock-
+		SltSta:	Status: AttnBtn- PowerFlt- MRL- CmdCplt- PresDet- Interlock-
+			Changed: MRL- PresDet- LinkState-
+		RootCap: CRSVisible+
+		RootCtl: ErrCorrectable- ErrNon-Fatal- ErrFatal- PMEIntEna+ CRSVisible+
+		RootSta: PME ReqID 0000, PMEStatus- PMEPending-
+		DevCap2: Completion Timeout: Range ABCD, TimeoutDis+ NROPrPrP+ LTR+
+			 10BitTagComp+ 10BitTagReq- OBFF Not Supported, ExtFmt+ EETLPPrefix+, MaxEETLPPrefixes 4
+			 EmergencyPowerReduction Not Supported, EmergencyPowerReductionInit-
+			 FRS+ LN System CLS Not Supported, TPHComp- ExtTPHComp- ARIFwd+
+			 AtomicOpsCap: Routing- 32bit- 64bit- 128bitCAS-
+		DevCtl2: Completion Timeout: 50us to 50ms, TimeoutDis- LTR+ 10BitTagReq- OBFF Disabled, ARIFwd-
+			 AtomicOpsCtl: ReqEn- EgressBlck-
+		LnkCap2: Supported Link Speeds: 2.5-16GT/s, Crosslink- Retimer+ 2Retimers+ DRS+
+		LnkCtl2: Target Link Speed: 16GT/s, EnterCompliance- SpeedDis-
+			 Transmit Margin: Normal Operating Range, EnterModifiedCompliance- ComplianceSOS-
+			 Compliance Preset/De-emphasis: -6dB de-emphasis, 0dB preshoot
+		LnkSta2: Current De-emphasis Level: -3.5dB, EqualizationComplete- EqualizationPhase1-
+			 EqualizationPhase2- EqualizationPhase3- LinkEqualizationRequest-
+			 Retimer- 2Retimers- CrosslinkRes: Downstream Port, DRS-
+			 DownstreamComp: Link Up - Present
+	Capabilities: [100 v2] Advanced Error Reporting
+		UESta:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		UEMsk:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		UESvrt:	DLP+ SDES+ TLP- FCP+ CmpltTO- CmpltAbrt- UnxCmplt- RxOF+ MalfTLP+ ECRC- UnsupReq- ACSViol-
+		CESta:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr-
+		CEMsk:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr+
+		AERCap:	First Error Pointer: 00, ECRCGenCap+ ECRCGenEn- ECRCChkCap+ ECRCChkEn-
+			MultHdrRecCap- MultHdrRecEn- TLPPfxPres- HdrLogCap-
+		HeaderLog: 00000000 00000000 00000000 00000000
+		RootCmd: CERptEn+ NFERptEn+ FERptEn+
+		RootSta: CERcvd- MultCERcvd- UERcvd- MultUERcvd-
+			 FirstFatal- NonFatalMsg- FatalMsg- IntMsg 1
+		ErrorSrc: ERR_COR: 0000 ERR_FATAL/NONFATAL: 0000
+	Capabilities: [148 v1] Virtual Channel
+		Caps:	LPEVC=0 RefClk=100ns PATEntryBits=1
+		Arb:	Fixed+ WRR32- WRR64- WRR128-
+		Ctrl:	ArbSelect=Fixed
+		Status:	InProgress-
+		VC0:	Caps:	PATOffset=00 MaxTimeSlots=1 RejSnoopTrans-
+			Arb:	Fixed- WRR32- WRR64- WRR128- TWRR128- WRR256-
+			Ctrl:	Enable+ ID=0 ArbSelect=Fixed TC/VC=ff
+			Status:	NegoPending- InProgress-
+	Capabilities: [164 v1] Secondary PCI Express
+		LnkCtl3: LnkEquIntrruptEn- PerformEqu-
+		LaneErrStat: 0
+	Capabilities: [174 v1] Physical Layer 16.0 GT/s <?>
+	Capabilities: [198 v1] Lane Margining at the Receiver <?>
+	Capabilities: [1a4 v1] Extended Capability ID 0x2a
+	Capabilities: [1c8 v1] Access Control Services
+		ACSCap:	SrcValid+ TransBlk+ ReqRedir+ CmpltRedir+ UpstreamFwd+ EgressCtrl+ DirectTrans-
+		ACSCtl:	SrcValid+ TransBlk- ReqRedir+ CmpltRedir+ UpstreamFwd+ EgressCtrl- DirectTrans-
+	Capabilities: [230 v1] FRS Queueing <?>
+	Capabilities: [240 v1] Readiness Time Reporting <?>
+	Capabilities: [24c v1] Vendor Specific Information: ID=0002 Rev=4 Len=100 <?>
+	Capabilities: [34c v1] Data Link Feature <?>
+	Kernel driver in use: pcieport
+
+000f:00:00.0 PCI bridge: NVIDIA Corporation Device 22d1 (prog-if 00 [Normal decode])
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR+ FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0
+	Interrupt: pin ? routed to IRQ 343
+	IOMMU group: 5
+	Bus: primary=00, secondary=01, subordinate=01, sec-latency=0
+	I/O behind bridge: 0000f000-00000fff [disabled] [32-bit]
+	Memory behind bridge: fff00000-000fffff [disabled] [32-bit]
+	Prefetchable memory behind bridge: 24000000-27ffffff [size=64M] [32-bit]
+	Secondary status: 66MHz- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- <SERR- <PERR-
+	BridgeCtl: Parity- SERR+ NoISA- VGA- VGA16- MAbort- >Reset- FastB2B-
+		PriDiscTmr- SecDiscTmr- DiscTmrStat- DiscTmrSERREn-
+	Capabilities: [40] Power Management version 3
+		Flags: PMEClk- DSI+ D1- D2- AuxCurrent=0mA PME(D0+,D1-,D2-,D3hot+,D3cold-)
+		Status: D0 NoSoftRst+ PME-Enable- DSel=0 DScale=0 PME-
+	Capabilities: [48] Express (v2) Root Port (Slot-), MSI 00
+		DevCap:	MaxPayload 512 bytes, PhantFunc 0
+			ExtTag+ RBE+
+		DevCtl:	CorrErr+ NonFatalErr+ FatalErr+ UnsupReq+
+			RlxdOrd+ ExtTag+ PhantFunc- AuxPwr- NoSnoop+
+			MaxPayload 256 bytes, MaxReadReq 512 bytes
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr- TransPend-
+		LnkCap:	Port #0, Speed 32GT/s, Width x16, ASPM L1, Exit Latency L1 <32us
+			ClockPM- Surprise- LLActRep+ BwNot+ ASPMOptComp+
+		LnkCtl:	ASPM Disabled; RCB 128 bytes, Disabled- CommClk-
+			ExtSynch- ClockPM- AutWidDis- BWInt+ AutBWInt+
+		LnkSta:	Speed unknown, Width x0
+			TrErr- Train- SlotClk- DLActive+ BWMgmt- ABWMgmt-
+		RootCap: CRSVisible+
+		RootCtl: ErrCorrectable- ErrNon-Fatal- ErrFatal- PMEIntEna+ CRSVisible+
+		RootSta: PME ReqID 0000, PMEStatus- PMEPending-
+		DevCap2: Completion Timeout: Not Supported, TimeoutDis- NROPrPrP- LTR+
+			 10BitTagComp+ 10BitTagReq- OBFF Not Supported, ExtFmt+ EETLPPrefix+, MaxEETLPPrefixes 1
+			 EmergencyPowerReduction Not Supported, EmergencyPowerReductionInit-
+			 FRS+ LN System CLS Not Supported, TPHComp+ ExtTPHComp- ARIFwd+
+			 AtomicOpsCap: Routing- 32bit+ 64bit+ 128bitCAS+
+		DevCtl2: Completion Timeout: 50us to 50ms, TimeoutDis- LTR+ 10BitTagReq- OBFF Disabled, ARIFwd+
+			 AtomicOpsCtl: ReqEn- EgressBlck-
+[INFO] Extracting PCIe link status:
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr+ TransPend-
+		LnkCap:	Port #0, Speed 32GT/s, Width x4, ASPM L0s L1, Exit Latency L0s <2us, L1 <8us
+		LnkCtl:	ASPM Disabled; RCB 64 bytes, Disabled- CommClk-
+		LnkSta:	Speed 32GT/s, Width x4
+		LnkCap2: Supported Link Speeds: 2.5-32GT/s, Crosslink- Retimer+ 2Retimers+ DRS+
+		LnkCtl2: Target Link Speed: 32GT/s, EnterCompliance- SpeedDis-
+		LnkSta2: Current De-emphasis Level: -6dB, EqualizationComplete+ EqualizationPhase1+
+		UESta:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		CESta:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr-
+		LnkCtl3: LnkEquIntrruptEn- PerformEqu-
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr+ TransPend-
+		LnkCap:	Port #0, Speed 32GT/s, Width x4, ASPM L0s L1, Exit Latency L0s <2us, L1 <8us
+		LnkCtl:	ASPM Disabled; RCB 64 bytes, Disabled- CommClk-
+		LnkSta:	Speed 32GT/s, Width x4
+		LnkCap2: Supported Link Speeds: 2.5-32GT/s, Crosslink- Retimer+ 2Retimers+ DRS+
+		LnkCtl2: Target Link Speed: 32GT/s, EnterCompliance- SpeedDis-
+		LnkSta2: Current De-emphasis Level: -6dB, EqualizationComplete+ EqualizationPhase1+
+		UESta:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		CESta:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr-
+		LnkCtl3: LnkEquIntrruptEn- PerformEqu-
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr+ TransPend-
+		LnkCap:	Port #0, Speed 32GT/s, Width x4, ASPM L0s L1, Exit Latency L0s <2us, L1 <8us
+		LnkCtl:	ASPM Disabled; RCB 64 bytes, Disabled- CommClk+
+		LnkSta:	Speed 32GT/s, Width x4
+		LnkCap2: Supported Link Speeds: 2.5-32GT/s, Crosslink- Retimer+ 2Retimers+ DRS+
+		LnkCtl2: Target Link Speed: 32GT/s, EnterCompliance- SpeedDis-
+		LnkSta2: Current De-emphasis Level: -6dB, EqualizationComplete- EqualizationPhase1-
+		UESta:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		CESta:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr-
+		LnkCtl3: LnkEquIntrruptEn- PerformEqu-
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr+ TransPend-
+		LnkCap:	Port #0, Speed 16GT/s, Width x1, ASPM L0s L1, Exit Latency L0s <2us, L1 <8us
+		LnkCtl:	ASPM Disabled; RCB 64 bytes, Disabled- CommClk+
+		LnkSta:	Speed 16GT/s, Width x1
+		LnkCap2: Supported Link Speeds: 2.5-16GT/s, Crosslink- Retimer+ 2Retimers+ DRS+
+		LnkCtl2: Target Link Speed: 16GT/s, EnterCompliance- SpeedDis-
+		LnkSta2: Current De-emphasis Level: -6dB, EqualizationComplete+ EqualizationPhase1+
+		UESta:	DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+		CESta:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr-
+		LnkCtl3: LnkEquIntrruptEn- PerformEqu-
+
+
+--- PCIe ACS (Access Control Services) ---
+
+[INFO] ACS affects GPU passthrough isolation
+	Capabilities: [1e4 v1] Access Control Services
+	Capabilities: [230 v1] Access Control Services
+	Capabilities: [230 v1] Access Control Services
+	Capabilities: [1e4 v1] Access Control Services
+	Capabilities: [230 v1] Access Control Services
+	Capabilities: [230 v1] Access Control Services
+	Capabilities: [1e4 v1] Access Control Services
+	Capabilities: [1c8 v1] Access Control Services
+	Capabilities: [1c8 v1] Access Control Services
+	Capabilities: [23c v1] Access Control Services
+
+--- NVIDIA Interrupt Assignment ---
+
+482:          0          0          0          0          0          0          0          0          0          0          0       1346          0          0          0          0          0          0          0          0 ITS-PCI-MSIX-000f:01:00.0   0 Edge      nvidia
+483:          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0 ITS-PCI-MSIX-000f:01:00.0   1 Edge      nvidia
+484:          0          0          0          0          0          0          0          0          0          0          0          0          0     285898          0          0          0          0          0          0 ITS-PCI-MSIX-000f:01:00.0   2 Edge      nvidia
+485:          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0 ITS-PCI-MSIX-000f:01:00.0   3 Edge      nvidia
+486:          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0 ITS-PCI-MSIX-000f:01:00.0   4 Edge      nvidia
+487:          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0 ITS-PCI-MSIX-000f:01:00.0   5 Edge      nvidia
+488:          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0 ITS-PCI-MSIX-000f:01:00.0   6 Edge      nvidia
+489:          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0 ITS-PCI-MSIX-000f:01:00.0   7 Edge      nvidia
+[CMD] MSI-X assignment: sudo lspci -vvv -d 10de:
+	Capabilities: [50] MSI: Enable+ Count=2/32 Maskable- 64bit+
+	Capabilities: [70] Express (v2) Root Port (Slot+), MSI 00
+	Capabilities: [50] MSI: Enable+ Count=2/32 Maskable- 64bit+
+	Capabilities: [70] Express (v2) Root Port (Slot+), MSI 00
+	Capabilities: [50] MSI: Enable+ Count=2/32 Maskable- 64bit+
+	Capabilities: [70] Express (v2) Root Port (Slot+), MSI 00
+	Capabilities: [50] MSI: Enable+ Count=2/32 Maskable- 64bit+
+	Capabilities: [70] Express (v2) Root Port (Slot+), MSI 00
+	Capabilities: [50] MSI: Enable+ Count=2/32 Maskable- 64bit+
+
+===============================================================================
+  PHASE 6: THERMAL SENSORS & TOPOLOGY
+  2025-12-18 16:28:31
+===============================================================================
+
+
+--- Hardware Topology Visualization ---
+
+[INFO] lstopo provides visual hardware topology (CPU, memory, PCIe, GPU)
+[CMD] lstopo text: lstopo-no-graphics --of txt
+[SKIP] Command not found: lstopo-no-graphics
+
+[CMD] lstopo summary: lstopo-no-graphics --of console
+[SKIP] Command not found: lstopo-no-graphics
+
+
+--- NUMA Topology ---
+
+[CMD] numactl hardware: numactl --hardware
+available: 1 nodes (0)
+node 0 cpus: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
+node 0 size: 122570 MB
+node 0 free: 62288 MB
+node distances:
+node   0 
+  0:  10 
+
+[CMD] numactl show: numactl --show
+policy: default
+preferred node: current
+physcpubind: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 
+cpubind: 0 
+nodebind: 0 
+membind: 0 
+preferred: 
+
+[CMD] NUMA from lscpu: lscpu
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-19
+
+--- All Thermal Sensors ---
+
+[INFO] Temperature readings from all system sensors
+[CMD] sensors (all): sensors
+[SKIP] Command not found: sensors
+
+[INFO] Thermal zones from sysfs:
+  thermal_zone0: acpitz = 40C
+  thermal_zone1: acpitz = 39C
+  thermal_zone2: acpitz = 40C
+  thermal_zone3: acpitz = 39C
+  thermal_zone4: acpitz = 40C
+  thermal_zone5: acpitz = 38C
+  thermal_zone6: acpitz = 40C
+
+
+--- GPU Temperature History ---
+
+[CMD] GPU temp current: nvidia-smi --query-gpu=temperature.gpu --format=csv
+temperature.gpu
+38
+
+[CMD] GPU memory temp: nvidia-smi --query-gpu=temperature.memory --format=csv
+temperature.memory
+N/A
+
+
+===============================================================================
+  PHASE 7: DCGM COMPREHENSIVE DIAGNOSTICS
+  2025-12-18 16:28:31
+===============================================================================
+
+
+--- DCGM Discovery ---
+
+[INFO] DCGM (Data Center GPU Manager) is THE standard for datacenter monitoring
+[CMD] DCGM discovery list: dcgmi discovery -l
+1 GPU found.
++--------+----------------------------------------------------------------------+
+| GPU ID | Device Information                                                   |
++--------+----------------------------------------------------------------------+
+| 0      | Name: NVIDIA GB10                                                    |
+|        | PCI Bus ID: 0000000F:01:00.0                                         |
+|        | Device UUID: GPU-637effba-9969-68b1-b30e-badef4b3de88                |
++--------+----------------------------------------------------------------------+
+0 NvSwitches found.
++-----------+
+| Switch ID |
++-----------+
++-----------+
+0 CPUs found.
++--------+----------------------------------------------------------------------+
+| CPU ID | Device Information                                                   |
++--------+----------------------------------------------------------------------+
++--------+----------------------------------------------------------------------+
+
+
+--- DCGM Group Configuration ---
+
+[CMD] DCGM groups: dcgmi group -l
++-------------------+----------------------------------------------------------+
+| GROUPS                                                                       |
+| 2 groups found.                                                              |
++===================+==========================================================+
+| Groups            |                                                          |
+| -> 0              |                                                          |
+|    -> Group ID    | 0                                                        |
+|    -> Group Name  | DCGM_ALL_SUPPORTED_GPUS                                  |
+|    -> Entities    | GPU 0                                                    |
+| -> 1              |                                                          |
+|    -> Group ID    | 1                                                        |
+|    -> Group Name  | DCGM_ALL_SUPPORTED_NVSWITCHES                            |
+|    -> Entities    | None                                                     |
++-------------------+----------------------------------------------------------+
+
+
+--- DCGM Health Monitoring ---
+
+[CMD] DCGM health config: dcgmi health -c -g 0
+Error: Health watches not enabled. Please enable watches. 
+[WARN] Command returned non-zero exit code
+
+[CMD] DCGM health check: dcgmi health -c
+Error: Health watches not enabled. Please enable watches. 
+[WARN] Command returned non-zero exit code
+
+
+--- DCGM Diagnostics ---
+
+[INFO] DCGM diagnostic levels:
+  Level 1: Quick health check (~10 seconds)
+  Level 2: Memory tests (~2 minutes)
+  Level 3: Full diagnostic suite (~15 minutes)
+
+[RUNNING] Level 1 diagnostic (quick)...
+[CMD] DCGM diag level 1: dcgmi diag -r 1
+Detected unsupported Cuda version
+[WARN] Command returned non-zero exit code
+
+
+--- DCGM Field Values ---
+
+[CMD] DCGM field sample: dcgmi dmon -e 150,155,156,203,204,1001,1002,1003,1004,1005 -c 3
+#Entity   TMPTR        POWER             TOTEC                   GPUTL             MCUTL             GRACT        SMACT        SMOCC        TENSO        DRAMA        
+ID         C            W                 mJ                                                                                                                          
+Error setting watches. Result: -33: This request is serviced by a module of DCGM that is not currently loaded
+
+[WARN] Command returned non-zero exit code
+
+
+--- DCGM Introspection ---
+
+[CMD] DCGM hostengine status: systemctl status nv-hostengine
+Unit nv-hostengine.service could not be found.
+[WARN] Command returned non-zero exit code
+
+
+===============================================================================
+  PHASE 8: MELLANOX/CONNECTX NETWORK DEEP DIVE
+  2025-12-18 16:28:31
+===============================================================================
+
+
+--- Mellanox Software Tools (MST) ---
+
+[CMD] MST status: mst status
+-E- You must be root to use mst tool
+[WARN] Command returned non-zero exit code
+
+[CMD] MST start: sudo mst start
+Starting MST (Mellanox Software Tools) driver set
+Loading MST PCI module - Success
+Loading MST PCI configuration module - Success
+Create devices
+
+
+--- ConnectX Firmware Versions ---
+
+[INFO] NIC firmware critical for RDMA performance
+[CMD] mlxfwmanager query: mlxfwmanager --query
+-E- No devices found or specified, mst might be stopped, run 'mst start' to load MST modules
+[WARN] Command returned non-zero exit code
+
+
+--- ConnectX Configuration ---
+
+[INFO] Querying /dev/mst/mt11794_pciconf0 configuration...
+[CMD] mlxconfig /dev/mst/mt11794_pciconf0: mlxconfig -d /dev/mst/mt11794_pciconf0 q
+-E- Failed to open the device
+[WARN] Command returned non-zero exit code
+
+[INFO] Querying /dev/mst/mt11794_pci_cr0 configuration...
+[CMD] mlxconfig /dev/mst/mt11794_pci_cr0: mlxconfig -d /dev/mst/mt11794_pci_cr0 q
+-E- Failed to open the device
+[WARN] Command returned non-zero exit code
+
+[INFO] Querying /dev/mst/mt4129_pciconf0 configuration...
+[CMD] mlxconfig /dev/mst/mt4129_pciconf0: mlxconfig -d /dev/mst/mt4129_pciconf0 q
+-E- Failed to open the device
+[WARN] Command returned non-zero exit code
+
+[INFO] Querying /dev/mst/mt4129_pciconf0.1 configuration...
+[CMD] mlxconfig /dev/mst/mt4129_pciconf0.1: mlxconfig -d /dev/mst/mt4129_pciconf0.1 q
+-E- Failed to open the device
+[WARN] Command returned non-zero exit code
+
+[INFO] Querying /dev/mst/mt4129_pciconf1 configuration...
+[CMD] mlxconfig /dev/mst/mt4129_pciconf1: mlxconfig -d /dev/mst/mt4129_pciconf1 q
+-E- Failed to open the device
+[WARN] Command returned non-zero exit code
+
+[INFO] Querying /dev/mst/mt4129_pciconf1.1 configuration...
+[CMD] mlxconfig /dev/mst/mt4129_pciconf1.1: mlxconfig -d /dev/mst/mt4129_pciconf1.1 q
+-E- Failed to open the device
+[WARN] Command returned non-zero exit code
+
+
+--- Mellanox Link Diagnostics ---
+
+[CMD] mlxlink: mlxlink
+[31m 
+-E- Failed to open device: "", Success
+[0m 
+[WARN] Command returned non-zero exit code
+
+
+--- InfiniBand Status ---
+
+[CMD] OFED version: ofed_info -s
+OFED-internal-25.07-0.9.7:
+
+[CMD] IB status: ibstat
+CA 'mlx5_0'
+	CA type: MT4129
+	Number of ports: 1
+	Firmware version: 28.45.4028
+	Hardware version: 0
+	Node GUID: 0x4cbb4703002db3e5
+	System image GUID: 0x4cbb4703002db3e5
+	Port 1:
+		State: Down
+		Physical state: Disabled
+		Rate: 40
+		Base lid: 0
+		LMC: 0
+		SM lid: 0
+		Capability mask: 0x00010000
+		Port GUID: 0x4ebb47fffe2db3e5
+		Link layer: Ethernet
+CA 'mlx5_1'
+	CA type: MT4129
+	Number of ports: 1
+	Firmware version: 28.45.4028
+	Hardware version: 0
+	Node GUID: 0x4cbb4703002db3e6
+	System image GUID: 0x4cbb4703002db3e5
+	Port 1:
+		State: Active
+		Physical state: LinkUp
+		Rate: 100
+		Base lid: 0
+		LMC: 0
+		SM lid: 0
+		Capability mask: 0x00010000
+		Port GUID: 0x4ebb47fffe2db3e6
+		Link layer: Ethernet
+CA 'mlx5_2'
+	CA type: MT4129
+	Number of ports: 1
+	Firmware version: 28.45.4028
+	Hardware version: 0
+	Node GUID: 0x4cbb4703002db3e9
+	System image GUID: 0x4cbb4703002db3e5
+	Port 1:
+		State: Down
+		Physical state: Disabled
+		Rate: 40
+		Base lid: 0
+		LMC: 0
+		SM lid: 0
+		Capability mask: 0x00010000
+		Port GUID: 0x4ebb47fffe2db3e9
+		Link layer: Ethernet
+CA 'mlx5_3'
+	CA type: MT4129
+	Number of ports: 1
+	Firmware version: 28.45.4028
+	Hardware version: 0
+	Node GUID: 0x4cbb4703002db3ea
+	System image GUID: 0x4cbb4703002db3e5
+	Port 1:
+		State: Active
+		Physical state: LinkUp
+		Rate: 100
+		Base lid: 0
+		LMC: 0
+		SM lid: 0
+		Capability mask: 0x00010000
+		Port GUID: 0x4ebb47fffe2db3ea
+		Link layer: Ethernet
+
+[CMD] IB device info verbose: ibv_devinfo -v
+hca_id:	mlx5_0
+	transport:			InfiniBand (0)
+	fw_ver:				28.45.4028
+	node_guid:			4cbb:4703:002d:b3e5
+	sys_image_guid:			4cbb:4703:002d:b3e5
+	vendor_id:			0x02c9
+	vendor_part_id:			4129
+	hw_ver:				0x0
+	board_id:			NVD0000000087
+	phys_port_cnt:			1
+	max_mr_size:			0xffffffffffffffff
+	page_size_cap:			0xfffffffffffff000
+	max_qp:				131072
+	max_qp_wr:			32768
+	device_cap_flags:		0x25321c36
+					BAD_PKEY_CNTR
+					BAD_QKEY_CNTR
+					AUTO_PATH_MIG
+					CHANGE_PHY_PORT
+					PORT_ACTIVE_EVENT
+					SYS_IMAGE_GUID
+					RC_RNR_NAK_GEN
+					MEM_WINDOW
+					XRC
+					MEM_MGT_EXTENSIONS
+					MEM_WINDOW_TYPE_2B
+					RAW_IP_CSUM
+					MANAGED_FLOW_STEERING
+	max_sge:			30
+	max_sge_rd:			30
+	max_cq:				16777216
+	max_cqe:			4194303
+	max_mr:				16777216
+	max_pd:				8388608
+	max_qp_rd_atom:			16
+	max_ee_rd_atom:			0
+	max_res_rd_atom:		2097152
+	max_qp_init_rd_atom:		16
+	max_ee_init_rd_atom:		0
+	atomic_cap:			ATOMIC_HCA (1)
+	max_ee:				0
+	max_rdd:			0
+	max_mw:				16777216
+	max_raw_ipv6_qp:		0
+	max_raw_ethy_qp:		0
+	max_mcast_grp:			2097152
+	max_mcast_qp_attach:		240
+	max_total_mcast_qp_attach:	503316480
+	max_ah:				2147483647
+	max_fmr:			0
+	max_srq:			8388608
+	max_srq_wr:			32767
+	max_srq_sge:			31
+	max_pkeys:			128
+	local_ca_ack_delay:		16
+	general_odp_caps:
+					ODP_SUPPORT
+					ODP_SUPPORT_IMPLICIT
+	rc_odp_caps:
+					SUPPORT_SEND
+					SUPPORT_RECV
+					SUPPORT_WRITE
+					SUPPORT_READ
+					SUPPORT_ATOMIC
+					SUPPORT_SRQ
+	uc_odp_caps:
+					NO SUPPORT
+	ud_odp_caps:
+					SUPPORT_SEND
+	xrc_odp_caps:
+					SUPPORT_SEND
+					SUPPORT_WRITE
+					SUPPORT_READ
+					SUPPORT_ATOMIC
+					SUPPORT_SRQ
+	completion timestamp_mask:			0x7fffffffffffffff
+	hca_core_clock:			1000000kHZ
+	raw packet caps:
+					C-VLAN stripping offload
+					Scatter FCS offload
+					IP csum offload
+	device_cap_flags_ex:		0x3000005425321C36
+					RAW_SCATTER_FCS
+					PCI_WRITE_END_PADDING
+					Unknown flags: 0x3000004000000000
+	tso_caps:
+		max_tso:			262144
+		supported_qp:
+					SUPPORT_RAW_PACKET
+	rss_caps:
+		max_rwq_indirection_tables:			1048576
+		max_rwq_indirection_table_size:			2048
+		rx_hash_function:				0x1
+		rx_hash_fields_mask:				0x800000FF
+		supported_qp:
+					SUPPORT_RAW_PACKET
+	max_wq_type_rq:			8388608
+	packet_pacing_caps:
+		qp_rate_limit_min:	1kbps
+		qp_rate_limit_max:	200000000kbps
+		supported_qp:
+					SUPPORT_RAW_PACKET
+	tag matching not supported
+
+	cq moderation caps:
+		max_cq_count:	65535
+		max_cq_period:	4095 us
+
+	maximum available device memory:	43690Bytes
+
+	num_comp_vectors:		20
+		port:	1
+			state:			PORT_DOWN (1)
+			max_mtu:		4096 (5)
+			active_mtu:		1024 (3)
+			sm_lid:			0
+			port_lid:		0
+			port_lmc:		0x00
+			link_layer:		Ethernet
+			max_msg_sz:		0x40000000
+			port_cap_flags:		0x04010000
+			port_cap_flags2:	0x0000
+			max_vl_num:		invalid value (0)
+			bad_pkey_cntr:		0x0
+			qkey_viol_cntr:		0x0
+			sm_sl:			0
+			pkey_tbl_len:		1
+			gid_tbl_len:		255
+			subnet_timeout:		0
+			init_type_reply:	0
+			active_width:		4X (2)
+			active_speed:		10.0 Gbps (4)
+			phys_state:		DISABLED (3)
+			GID[  0]:		fe80:0000:0000:0000:4ebb:47ff:fe2d:b3e5, RoCE v1
+			GID[  1]:		fe80::4ebb:47ff:fe2d:b3e5, RoCE v2
+
+hca_id:	mlx5_1
+	transport:			InfiniBand (0)
+	fw_ver:				28.45.4028
+	node_guid:			4cbb:4703:002d:b3e6
+	sys_image_guid:			4cbb:4703:002d:b3e5
+	vendor_id:			0x02c9
+	vendor_part_id:			4129
+	hw_ver:				0x0
+	board_id:			NVD0000000087
+	phys_port_cnt:			1
+	max_mr_size:			0xffffffffffffffff
+	page_size_cap:			0xfffffffffffff000
+	max_qp:				131072
+	max_qp_wr:			32768
+	device_cap_flags:		0x25321c36
+					BAD_PKEY_CNTR
+					BAD_QKEY_CNTR
+					AUTO_PATH_MIG
+					CHANGE_PHY_PORT
+					PORT_ACTIVE_EVENT
+					SYS_IMAGE_GUID
+					RC_RNR_NAK_GEN
+					MEM_WINDOW
+					XRC
+					MEM_MGT_EXTENSIONS
+					MEM_WINDOW_TYPE_2B
+					RAW_IP_CSUM
+					MANAGED_FLOW_STEERING
+	max_sge:			30
+	max_sge_rd:			30
+	max_cq:				16777216
+	max_cqe:			4194303
+	max_mr:				16777216
+	max_pd:				8388608
+	max_qp_rd_atom:			16
+	max_ee_rd_atom:			0
+	max_res_rd_atom:		2097152
+	max_qp_init_rd_atom:		16
+	max_ee_init_rd_atom:		0
+	atomic_cap:			ATOMIC_HCA (1)
+	max_ee:				0
+	max_rdd:			0
+	max_mw:				16777216
+	max_raw_ipv6_qp:		0
+	max_raw_ethy_qp:		0
+	max_mcast_grp:			2097152
+	max_mcast_qp_attach:		240
+	max_total_mcast_qp_attach:	503316480
+	max_ah:				2147483647
+	max_fmr:			0
+	max_srq:			8388608
+	max_srq_wr:			32767
+	max_srq_sge:			31
+	max_pkeys:			128
+	local_ca_ack_delay:		16
+	general_odp_caps:
+					ODP_SUPPORT
+					ODP_SUPPORT_IMPLICIT
+	rc_odp_caps:
+					SUPPORT_SEND
+					SUPPORT_RECV
+					SUPPORT_WRITE
+					SUPPORT_READ
+					SUPPORT_ATOMIC
+					SUPPORT_SRQ
+	uc_odp_caps:
+					NO SUPPORT
+	ud_odp_caps:
+					SUPPORT_SEND
+	xrc_odp_caps:
+					SUPPORT_SEND
+					SUPPORT_WRITE
+					SUPPORT_READ
+					SUPPORT_ATOMIC
+					SUPPORT_SRQ
+	completion timestamp_mask:			0x7fffffffffffffff
+	hca_core_clock:			1000000kHZ
+	raw packet caps:
+					C-VLAN stripping offload
+					Scatter FCS offload
+					IP csum offload
+	device_cap_flags_ex:		0x3000005425321C36
+					RAW_SCATTER_FCS
+					PCI_WRITE_END_PADDING
+					Unknown flags: 0x3000004000000000
+	tso_caps:
+		max_tso:			262144
+		supported_qp:
+					SUPPORT_RAW_PACKET
+	rss_caps:
+		max_rwq_indirection_tables:			1048576
+		max_rwq_indirection_table_size:			2048
+		rx_hash_function:				0x1
+		rx_hash_fields_mask:				0x800000FF
+		supported_qp:
+					SUPPORT_RAW_PACKET
+	max_wq_type_rq:			8388608
+	packet_pacing_caps:
+		qp_rate_limit_min:	1kbps
+		qp_rate_limit_max:	200000000kbps
+		supported_qp:
+					SUPPORT_RAW_PACKET
+	tag matching not supported
+
+	cq moderation caps:
+		max_cq_count:	65535
+		max_cq_period:	4095 us
+
+	maximum available device memory:	43690Bytes
+
+	num_comp_vectors:		20
+		port:	1
+			state:			PORT_ACTIVE (4)
+			max_mtu:		4096 (5)
+			active_mtu:		4096 (5)
+			sm_lid:			0
+			port_lid:		0
+			port_lmc:		0x00
+			link_layer:		Ethernet
+			max_msg_sz:		0x40000000
+			port_cap_flags:		0x04010000
+			port_cap_flags2:	0x0000
+			max_vl_num:		invalid value (0)
+			bad_pkey_cntr:		0x0
+			qkey_viol_cntr:		0x0
+			sm_sl:			0
+			pkey_tbl_len:		1
+			gid_tbl_len:		255
+			subnet_timeout:		0
+			init_type_reply:	0
+			active_width:		1X (1)
+			active_speed:		100.0 Gbps (128)
+			phys_state:		LINK_UP (5)
+			GID[  0]:		fe80:0000:0000:0000:4ebb:47ff:fe2d:b3e6, RoCE v1
+			GID[  1]:		fe80::4ebb:47ff:fe2d:b3e6, RoCE v2
+			GID[  2]:		0000:0000:0000:0000:0000:ffff:c0a8:640a, RoCE v1
+			GID[  3]:		::ffff:192.168.100.10, RoCE v2
+
+hca_id:	mlx5_2
+	transport:			InfiniBand (0)
+	fw_ver:				28.45.4028
+	node_guid:			4cbb:4703:002d:b3e9
+	sys_image_guid:			4cbb:4703:002d:b3e5
+	vendor_id:			0x02c9
+	vendor_part_id:			4129
+	hw_ver:				0x0
+	board_id:			NVD0000000087
+	phys_port_cnt:			1
+	max_mr_size:			0xffffffffffffffff
+	page_size_cap:			0xfffffffffffff000
+	max_qp:				131072
+	max_qp_wr:			32768
+	device_cap_flags:		0x25321c36
+					BAD_PKEY_CNTR
+					BAD_QKEY_CNTR
+					AUTO_PATH_MIG
+					CHANGE_PHY_PORT
+					PORT_ACTIVE_EVENT
+					SYS_IMAGE_GUID
+					RC_RNR_NAK_GEN
+					MEM_WINDOW
+					XRC
+					MEM_MGT_EXTENSIONS
+					MEM_WINDOW_TYPE_2B
+					RAW_IP_CSUM
+					MANAGED_FLOW_STEERING
+	max_sge:			30
+	max_sge_rd:			30
+	max_cq:				16777216
+	max_cqe:			4194303
+	max_mr:				16777216
+	max_pd:				8388608
+	max_qp_rd_atom:			16
+	max_ee_rd_atom:			0
+	max_res_rd_atom:		2097152
+	max_qp_init_rd_atom:		16
+	max_ee_init_rd_atom:		0
+	atomic_cap:			ATOMIC_HCA (1)
+	max_ee:				0
+	max_rdd:			0
+	max_mw:				16777216
+	max_raw_ipv6_qp:		0
+	max_raw_ethy_qp:		0
+	max_mcast_grp:			2097152
+	max_mcast_qp_attach:		240
+	max_total_mcast_qp_attach:	503316480
+	max_ah:				2147483647
+	max_fmr:			0
+	max_srq:			8388608
+	max_srq_wr:			32767
+	max_srq_sge:			31
+	max_pkeys:			128
+	local_ca_ack_delay:		16
+	general_odp_caps:
+					ODP_SUPPORT
+					ODP_SUPPORT_IMPLICIT
+	rc_odp_caps:
+					SUPPORT_SEND
+					SUPPORT_RECV
+					SUPPORT_WRITE
+					SUPPORT_READ
+					SUPPORT_ATOMIC
+					SUPPORT_SRQ
+	uc_odp_caps:
+					NO SUPPORT
+	ud_odp_caps:
+					SUPPORT_SEND
+	xrc_odp_caps:
+					SUPPORT_SEND
+					SUPPORT_WRITE
+					SUPPORT_READ
+					SUPPORT_ATOMIC
+					SUPPORT_SRQ
+	completion timestamp_mask:			0x7fffffffffffffff
+	hca_core_clock:			1000000kHZ
+	raw packet caps:
+					C-VLAN stripping offload
+					Scatter FCS offload
+					IP csum offload
+	device_cap_flags_ex:		0x3000005425321C36
+					RAW_SCATTER_FCS
+					PCI_WRITE_END_PADDING
+					Unknown flags: 0x3000004000000000
+	tso_caps:
+		max_tso:			262144
+		supported_qp:
+					SUPPORT_RAW_PACKET
+	rss_caps:
+		max_rwq_indirection_tables:			1048576
+		max_rwq_indirection_table_size:			2048
+		rx_hash_function:				0x1
+		rx_hash_fields_mask:				0x800000FF
+		supported_qp:
+					SUPPORT_RAW_PACKET
+	max_wq_type_rq:			8388608
+	packet_pacing_caps:
+		qp_rate_limit_min:	1kbps
+		qp_rate_limit_max:	200000000kbps
+		supported_qp:
+					SUPPORT_RAW_PACKET
+	tag matching not supported
+
+	cq moderation caps:
+		max_cq_count:	65535
+		max_cq_period:	4095 us
+
+	maximum available device memory:	43690Bytes
+
+	num_comp_vectors:		20
+		port:	1
+			state:			PORT_DOWN (1)
+			max_mtu:		4096 (5)
+			active_mtu:		1024 (3)
+			sm_lid:			0
+			port_lid:		0
+			port_lmc:		0x00
+			link_layer:		Ethernet
+			max_msg_sz:		0x40000000
+			port_cap_flags:		0x04010000
+			port_cap_flags2:	0x0000
+			max_vl_num:		invalid value (0)
+			bad_pkey_cntr:		0x0
+			qkey_viol_cntr:		0x0
+			sm_sl:			0
+			pkey_tbl_len:		1
+			gid_tbl_len:		255
+			subnet_timeout:		0
+			init_type_reply:	0
+			active_width:		4X (2)
+			active_speed:		10.0 Gbps (4)
+			phys_state:		DISABLED (3)
+			GID[  0]:		fe80:0000:0000:0000:4ebb:47ff:fe2d:b3e9, RoCE v1
+			GID[  1]:		fe80::4ebb:47ff:fe2d:b3e9, RoCE v2
+
+hca_id:	mlx5_3
+	transport:			InfiniBand (0)
+	fw_ver:				28.45.4028
+	node_guid:			4cbb:4703:002d:b3ea
+	sys_image_guid:			4cbb:4703:002d:b3e5
+	vendor_id:			0x02c9
+	vendor_part_id:			4129
+	hw_ver:				0x0
+	board_id:			NVD0000000087
+	phys_port_cnt:			1
+	max_mr_size:			0xffffffffffffffff
+	page_size_cap:			0xfffffffffffff000
+	max_qp:				131072
+	max_qp_wr:			32768
+	device_cap_flags:		0x25321c36
+					BAD_PKEY_CNTR
+					BAD_QKEY_CNTR
+					AUTO_PATH_MIG
+					CHANGE_PHY_PORT
+					PORT_ACTIVE_EVENT
+					SYS_IMAGE_GUID
+					RC_RNR_NAK_GEN
+					MEM_WINDOW
+					XRC
+					MEM_MGT_EXTENSIONS
+					MEM_WINDOW_TYPE_2B
+					RAW_IP_CSUM
+					MANAGED_FLOW_STEERING
+	max_sge:			30
+	max_sge_rd:			30
+	max_cq:				16777216
+	max_cqe:			4194303
+	max_mr:				16777216
+	max_pd:				8388608
+	max_qp_rd_atom:			16
+	max_ee_rd_atom:			0
+	max_res_rd_atom:		2097152
+	max_qp_init_rd_atom:		16
+	max_ee_init_rd_atom:		0
+	atomic_cap:			ATOMIC_HCA (1)
+	max_ee:				0
+	max_rdd:			0
+	max_mw:				16777216
+	max_raw_ipv6_qp:		0
+	max_raw_ethy_qp:		0
+	max_mcast_grp:			2097152
+	max_mcast_qp_attach:		240
+	max_total_mcast_qp_attach:	503316480
+	max_ah:				2147483647
+	max_fmr:			0
+	max_srq:			8388608
+	max_srq_wr:			32767
+	max_srq_sge:			31
+	max_pkeys:			128
+	local_ca_ack_delay:		16
+	general_odp_caps:
+					ODP_SUPPORT
+					ODP_SUPPORT_IMPLICIT
+	rc_odp_caps:
+					SUPPORT_SEND
+					SUPPORT_RECV
+					SUPPORT_WRITE
+					SUPPORT_READ
+					SUPPORT_ATOMIC
+					SUPPORT_SRQ
+	uc_odp_caps:
+					NO SUPPORT
+	ud_odp_caps:
+					SUPPORT_SEND
+	xrc_odp_caps:
+					SUPPORT_SEND
+					SUPPORT_WRITE
+					SUPPORT_READ
+					SUPPORT_ATOMIC
+					SUPPORT_SRQ
+	completion timestamp_mask:			0x7fffffffffffffff
+	hca_core_clock:			1000000kHZ
+	raw packet caps:
+					C-VLAN stripping offload
+					Scatter FCS offload
+					IP csum offload
+	device_cap_flags_ex:		0x3000005425321C36
+					RAW_SCATTER_FCS
+					PCI_WRITE_END_PADDING
+					Unknown flags: 0x3000004000000000
+	tso_caps:
+		max_tso:			262144
+		supported_qp:
+					SUPPORT_RAW_PACKET
+	rss_caps:
+		max_rwq_indirection_tables:			1048576
+		max_rwq_indirection_table_size:			2048
+		rx_hash_function:				0x1
+		rx_hash_fields_mask:				0x800000FF
+		supported_qp:
+					SUPPORT_RAW_PACKET
+	max_wq_type_rq:			8388608
+	packet_pacing_caps:
+		qp_rate_limit_min:	1kbps
+		qp_rate_limit_max:	200000000kbps
+		supported_qp:
+					SUPPORT_RAW_PACKET
+	tag matching not supported
+
+	cq moderation caps:
+		max_cq_count:	65535
+		max_cq_period:	4095 us
+
+	maximum available device memory:	43690Bytes
+
+	num_comp_vectors:		20
+		port:	1
+			state:			PORT_ACTIVE (4)
+			max_mtu:		4096 (5)
+			active_mtu:		1024 (3)
+			sm_lid:			0
+			port_lid:		0
+			port_lmc:		0x00
+			link_layer:		Ethernet
+			max_msg_sz:		0x40000000
+			port_cap_flags:		0x04010000
+			port_cap_flags2:	0x0000
+			max_vl_num:		invalid value (0)
+			bad_pkey_cntr:		0x0
+			qkey_viol_cntr:		0x0
+			sm_sl:			0
+			pkey_tbl_len:		1
+			gid_tbl_len:		255
+			subnet_timeout:		0
+			init_type_reply:	0
+			active_width:		1X (1)
+			active_speed:		100.0 Gbps (128)
+			phys_state:		LINK_UP (5)
+			GID[  0]:		fe80:0000:0000:0000:4ebb:47ff:fe2d:b3ea, RoCE v1
+			GID[  1]:		fe80::4ebb:47ff:fe2d:b3ea, RoCE v2
+			GID[  2]:		fe80:0000:0000:0000:8bc9:849e:000f:320a, RoCE v1
+			GID[  3]:		fe80::8bc9:849e:f:320a, RoCE v2
+
+
+
+--- Network Interface Details ---
+
+[INFO] Interface: enP7s7
+[CMD] ethtool enP7s7 driver: ethtool -i enP7s7
+driver: r8127
+version: 11.014.00-NAPI
+firmware-version: 
+expansion-rom-version: 
+bus-info: 0007:01:00.0
+supports-statistics: yes
+supports-test: no
+supports-eeprom-access: no
+supports-register-dump: yes
+supports-priv-flags: no
+
+[CMD] ethtool enP7s7 settings: ethtool enP7s7
+netlink error: Operation not permitted
+Settings for enP7s7:
+	Supported ports: [ TP ]
+	Supported link modes:   10baseT/Half 10baseT/Full
+	                        100baseT/Half 100baseT/Full
+	                        1000baseT/Full
+	                        10000baseT/Full
+	                        2500baseT/Full
+	                        5000baseT/Full
+	Supported pause frame use: Symmetric Receive-only
+	Supports auto-negotiation: Yes
+	Supported FEC modes: Not reported
+	Advertised link modes:  10baseT/Half 10baseT/Full
+	                        100baseT/Half 100baseT/Full
+	                        1000baseT/Full
+	                        10000baseT/Full
+	                        2500baseT/Full
+	                        5000baseT/Full
+	Advertised pause frame use: No
+[CMD] ethtool enP7s7 stats: ethtool -S enP7s7
+NIC statistics:
+     tx_packets: 0
+     rx_packets: 0
+     tx_errors: 0
+     rx_errors: 0
+     rx_missed: 0
+     align_errors: 0
+     tx_single_collisions: 0
+     tx_multi_collisions: 0
+     unicast: 0
+     broadcast: 0
+     multicast: 0
+     tx_aborted: 0
+     tx_underrun: 0
+     tx_octets: 0
+     rx_octets: 0
+     rx_multicast64: 0
+     tx_unicast64: 0
+     tx_broadcast64: 0
+     tx_multicast64: 0
+     tx_pause_on: 0
+     tx_pause_off: 0
+     tx_pause_all: 0
+     tx_deferred: 0
+     tx_late_collision: 0
+     tx_all_collision: 0
+     tx_aborted32: 0
+     align_errors32: 0
+     rx_frame_too_long: 0
+
+[INFO] Interface: enp1s0f0np0
+[CMD] ethtool enp1s0f0np0 driver: ethtool -i enp1s0f0np0
+driver: mlx5_core
+version: 25.07-0.9.7
+firmware-version: 28.45.4028 (NVD0000000087)
+expansion-rom-version: 
+bus-info: 0000:01:00.0
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: no
+supports-register-dump: no
+supports-priv-flags: yes
+
+[CMD] ethtool enp1s0f0np0 settings: ethtool enp1s0f0np0
+Settings for enp1s0f0np0:
+	Supported ports: [  ]
+	Supported link modes:   1000baseT/Full
+	                        10000baseT/Full
+	                        1000baseKX/Full
+	                        10000baseKR/Full
+	                        10000baseR_FEC
+	                        40000baseKR4/Full
+	                        40000baseCR4/Full
+	                        40000baseSR4/Full
+	                        40000baseLR4/Full
+	                        25000baseCR/Full
+	                        25000baseKR/Full
+	                        25000baseSR/Full
+	                        50000baseCR2/Full
+	                        50000baseKR2/Full
+	                        100000baseKR4/Full
+	                        100000baseSR4/Full
+	                        100000baseCR4/Full
+[CMD] ethtool enp1s0f0np0 stats: ethtool -S enp1s0f0np0
+NIC statistics:
+     rx_packets: 0
+     rx_bytes: 0
+     tx_packets: 0
+     tx_bytes: 0
+     tx_tso_packets: 0
+     tx_tso_bytes: 0
+     tx_tso_inner_packets: 0
+     tx_tso_inner_bytes: 0
+     tx_added_vlan_packets: 0
+     tx_nop: 0
+     tx_mpwqe_blks: 0
+     tx_mpwqe_pkts: 0
+     tx_tls_encrypted_packets: 0
+     tx_tls_encrypted_bytes: 0
+     tx_tls_ooo: 0
+     tx_tls_dump_packets: 0
+     tx_tls_dump_bytes: 0
+     tx_tls_resync_bytes: 0
+     tx_tls_skip_no_sync_data: 0
+     tx_tls_drop_no_sync_data: 0
+     tx_tls_drop_bypass_req: 0
+     rx_lro_packets: 0
+     rx_lro_bytes: 0
+     rx_gro_packets: 0
+     rx_gro_bytes: 0
+     rx_gro_skbs: 0
+     rx_gro_large_hds: 0
+     rx_hds_nodata_packets: 0
+
+[INFO] Interface: enp1s0f1np1
+[CMD] ethtool enp1s0f1np1 driver: ethtool -i enp1s0f1np1
+driver: mlx5_core
+version: 25.07-0.9.7
+firmware-version: 28.45.4028 (NVD0000000087)
+expansion-rom-version: 
+bus-info: 0000:01:00.1
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: no
+supports-register-dump: no
+supports-priv-flags: yes
+
+[CMD] ethtool enp1s0f1np1 settings: ethtool enp1s0f1np1
+Settings for enp1s0f1np1:
+	Supported ports: [ Backplane ]
+	Supported link modes:   1000baseT/Full
+	                        10000baseT/Full
+	                        1000baseKX/Full
+	                        10000baseKR/Full
+	                        10000baseR_FEC
+	                        40000baseKR4/Full
+	                        40000baseCR4/Full
+	                        40000baseSR4/Full
+	                        40000baseLR4/Full
+	                        25000baseCR/Full
+	                        25000baseKR/Full
+	                        25000baseSR/Full
+	                        50000baseCR2/Full
+	                        50000baseKR2/Full
+	                        100000baseKR4/Full
+	                        100000baseSR4/Full
+	                        100000baseCR4/Full
+[CMD] ethtool enp1s0f1np1 stats: ethtool -S enp1s0f1np1
+NIC statistics:
+     rx_packets: 375946
+     rx_bytes: 25937670
+     tx_packets: 8347142
+     tx_bytes: 75099336626
+     tx_tso_packets: 422654
+     tx_tso_bytes: 26195969196
+     tx_tso_inner_packets: 0
+     tx_tso_inner_bytes: 0
+     tx_added_vlan_packets: 0
+     tx_nop: 12131
+     tx_mpwqe_blks: 5066101
+     tx_mpwqe_pkts: 5415739
+     tx_tls_encrypted_packets: 0
+     tx_tls_encrypted_bytes: 0
+     tx_tls_ooo: 0
+     tx_tls_dump_packets: 0
+     tx_tls_dump_bytes: 0
+     tx_tls_resync_bytes: 0
+     tx_tls_skip_no_sync_data: 0
+     tx_tls_drop_no_sync_data: 0
+     tx_tls_drop_bypass_req: 0
+     rx_lro_packets: 0
+     rx_lro_bytes: 0
+     rx_gro_packets: 0
+     rx_gro_bytes: 0
+     rx_gro_skbs: 0
+     rx_gro_large_hds: 0
+     rx_hds_nodata_packets: 0
+
+[INFO] Interface: wlP9s9
+[CMD] ethtool wlP9s9 driver: ethtool -i wlP9s9
+driver: mt7925e
+version: 6.14.0-1013-nvidia
+firmware-version: ____000000-20250721232943
+expansion-rom-version: 
+bus-info: 0009:01:00.0
+supports-statistics: yes
+supports-test: no
+supports-eeprom-access: no
+supports-register-dump: no
+supports-priv-flags: no
+
+[CMD] ethtool wlP9s9 settings: ethtool wlP9s9
+netlink error: Operation not permitted
+Settings for wlP9s9:
+	Link detected: yes
+
+[CMD] ethtool wlP9s9 stats: ethtool -S wlP9s9
+NIC statistics:
+     rx_packets: 1005087
+     rx_bytes: 595489635
+     rx_duplicates: 0
+     rx_fragments: 968360
+     rx_dropped: 1
+     tx_packets: 483599
+     tx_bytes: 198012083
+     tx_filtered: 0
+     tx_retry_failed: 8
+     tx_retries: 152895
+     sta_state: 4
+     txrate: 1080600000
+     rxrate: 864800000
+     signal: 205
+     channel: 5600
+     noise: 18446744073709551615
+     ch_time: 0
+     ch_time_busy: 0
+     ch_time_ext_busy: 18446744073709551615
+     ch_time_rx: 0
+     ch_time_tx: 0
+     tx_ampdu_cnt: 0
+     tx_mpdu_attempts: 0
+     tx_mpdu_success: 0
+     tx_pkt_ebf_cnt: 0
+     tx_pkt_ibf_cnt: 0
+     tx_ampdu_len:0-1: 0
+     tx_ampdu_len:2-10: 0
+
+[INFO] Interface: enP2p1s0f0np0
+[CMD] ethtool enP2p1s0f0np0 driver: ethtool -i enP2p1s0f0np0
+driver: mlx5_core
+version: 25.07-0.9.7
+firmware-version: 28.45.4028 (NVD0000000087)
+expansion-rom-version: 
+bus-info: 0002:01:00.0
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: no
+supports-register-dump: no
+supports-priv-flags: yes
+
+[CMD] ethtool enP2p1s0f0np0 settings: ethtool enP2p1s0f0np0
+Settings for enP2p1s0f0np0:
+	Supported ports: [  ]
+	Supported link modes:   1000baseT/Full
+	                        10000baseT/Full
+	                        1000baseKX/Full
+	                        10000baseKR/Full
+	                        10000baseR_FEC
+	                        40000baseKR4/Full
+	                        40000baseCR4/Full
+	                        40000baseSR4/Full
+	                        40000baseLR4/Full
+	                        25000baseCR/Full
+	                        25000baseKR/Full
+	                        25000baseSR/Full
+	                        50000baseCR2/Full
+	                        50000baseKR2/Full
+	                        100000baseKR4/Full
+	                        100000baseSR4/Full
+	                        100000baseCR4/Full
+[CMD] ethtool enP2p1s0f0np0 stats: ethtool -S enP2p1s0f0np0
+NIC statistics:
+     rx_packets: 0
+     rx_bytes: 0
+     tx_packets: 0
+     tx_bytes: 0
+     tx_tso_packets: 0
+     tx_tso_bytes: 0
+     tx_tso_inner_packets: 0
+     tx_tso_inner_bytes: 0
+     tx_added_vlan_packets: 0
+     tx_nop: 0
+     tx_mpwqe_blks: 0
+     tx_mpwqe_pkts: 0
+     tx_tls_encrypted_packets: 0
+     tx_tls_encrypted_bytes: 0
+     tx_tls_ooo: 0
+     tx_tls_dump_packets: 0
+     tx_tls_dump_bytes: 0
+     tx_tls_resync_bytes: 0
+     tx_tls_skip_no_sync_data: 0
+     tx_tls_drop_no_sync_data: 0
+     tx_tls_drop_bypass_req: 0
+     rx_lro_packets: 0
+     rx_lro_bytes: 0
+     rx_gro_packets: 0
+     rx_gro_bytes: 0
+     rx_gro_skbs: 0
+     rx_gro_large_hds: 0
+     rx_hds_nodata_packets: 0
+
+[INFO] Interface: tailscale0
+[CMD] ethtool tailscale0 driver: ethtool -i tailscale0
+driver: tun
+version: 1.6
+firmware-version: 
+expansion-rom-version: 
+bus-info: tun
+supports-statistics: no
+supports-test: no
+supports-eeprom-access: no
+supports-register-dump: no
+supports-priv-flags: no
+
+[CMD] ethtool tailscale0 settings: ethtool tailscale0
+netlink error: Operation not permitted
+Settings for tailscale0:
+	Supported ports: [  ]
+	Supported link modes:   Not reported
+	Supported pause frame use: No
+	Supports auto-negotiation: No
+	Supported FEC modes: Not reported
+	Advertised link modes:  Not reported
+	Advertised pause frame use: No
+	Advertised auto-negotiation: No
+	Advertised FEC modes: Not reported
+	Speed: Unknown!
+	Duplex: Full
+	Auto-negotiation: off
+	Port: Twisted Pair
+	PHYAD: 0
+	Transceiver: internal
+	MDI-X: Unknown
+        Current message level: 0x00000000 (0)
+[CMD] ethtool tailscale0 stats: ethtool -S tailscale0
+no stats available
+[WARN] Command returned non-zero exit code
+
+
+[INFO] Interface: enP2p1s0f1np1
+[CMD] ethtool enP2p1s0f1np1 driver: ethtool -i enP2p1s0f1np1
+driver: mlx5_core
+version: 25.07-0.9.7
+firmware-version: 28.45.4028 (NVD0000000087)
+expansion-rom-version: 
+bus-info: 0002:01:00.1
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: no
+supports-register-dump: no
+supports-priv-flags: yes
+
+[CMD] ethtool enP2p1s0f1np1 settings: ethtool enP2p1s0f1np1
+Settings for enP2p1s0f1np1:
+	Supported ports: [ Backplane ]
+	Supported link modes:   1000baseT/Full
+	                        10000baseT/Full
+	                        1000baseKX/Full
+	                        10000baseKR/Full
+	                        10000baseR_FEC
+	                        40000baseKR4/Full
+	                        40000baseCR4/Full
+	                        40000baseSR4/Full
+	                        40000baseLR4/Full
+	                        25000baseCR/Full
+	                        25000baseKR/Full
+	                        25000baseSR/Full
+	                        50000baseCR2/Full
+	                        50000baseKR2/Full
+	                        100000baseKR4/Full
+	                        100000baseSR4/Full
+	                        100000baseCR4/Full
+[CMD] ethtool enP2p1s0f1np1 stats: ethtool -S enP2p1s0f1np1
+NIC statistics:
+     rx_packets: 225
+     rx_bytes: 40754
+     tx_packets: 12004
+     tx_bytes: 2014792
+     tx_tso_packets: 0
+     tx_tso_bytes: 0
+     tx_tso_inner_packets: 0
+     tx_tso_inner_bytes: 0
+     tx_added_vlan_packets: 0
+     tx_nop: 0
+     tx_mpwqe_blks: 12004
+     tx_mpwqe_pkts: 12004
+     tx_tls_encrypted_packets: 0
+     tx_tls_encrypted_bytes: 0
+     tx_tls_ooo: 0
+     tx_tls_dump_packets: 0
+     tx_tls_dump_bytes: 0
+     tx_tls_resync_bytes: 0
+     tx_tls_skip_no_sync_data: 0
+     tx_tls_drop_no_sync_data: 0
+     tx_tls_drop_bypass_req: 0
+     rx_lro_packets: 0
+     rx_lro_bytes: 0
+     rx_gro_packets: 0
+     rx_gro_bytes: 0
+     rx_gro_skbs: 0
+     rx_gro_large_hds: 0
+     rx_hds_nodata_packets: 0
+
+
+--- GPUDirect RDMA Status ---
+
+[CMD] Peer memory version: cat /sys/kernel/mm/memory_peers/nv_mem/version
+cat: /sys/kernel/mm/memory_peers/nv_mem/version: No such file or directory
+[WARN] Command returned non-zero exit code
+
+[CMD] GPUDirect Storage: nvidia-fs -V
+[SKIP] Command not found: nvidia-fs
+
+
+--- RDMA Performance Readiness ---
+
+[INFO] Checking RDMA kernel modules
+rdma_ucm               32768  0
+rdma_cm               139264  1 rdma_ucm
+iw_cm                  57344  1 rdma_cm
+ib_ipoib              147456  0
+ib_cm                 139264  2 rdma_cm,ib_ipoib
+ib_umad                45056  0
+mlx5_ib               520192  0
+mlx5_fwctl             16384  0
+fwctl                  20480  1 mlx5_fwctl
+ib_uverbs             204800  2 rdma_ucm,mlx5_ib
+macsec                 77824  1 mlx5_ib
+ib_core               524288  8 rdma_cm,ib_ipoib,iw_cm,ib_umad,rdma_ucm,ib_uverbs,mlx5_ib,ib_cm
+mlx5_core            2912256  2 mlx5_fwctl,mlx5_ib
+mlxdevm               544768  1 mlx5_core
+mlxfw                  32768  1 mlx5_core
+psample                24576  2 openvswitch,mlx5_core
+tls                   159744  1 mlx5_core
+pci_hyperv_intf        12288  1 mlx5_core
+mlx_compat             16384  14 rdma_cm,ib_ipoib,mlxdevm,mlxfw,mlx5_fwctl,iw_cm,ib_umad,fwctl,ib_core,rdma_ucm,ib_uverbs,mlx5_ib,ib_cm,mlx5_core
+[CMD] RDMA devices: rdma link show
+link mlx5_0/1 state DOWN physical_state DISABLED netdev enp1s0f0np0 
+link mlx5_1/1 state ACTIVE physical_state LINK_UP netdev enp1s0f1np1 
+link mlx5_2/1 state DOWN physical_state DISABLED netdev enP2p1s0f0np0 
+link mlx5_3/1 state ACTIVE physical_state LINK_UP netdev enP2p1s0f1np1 
+
+[CMD] RDMA system config: rdma system show
+netns shared copy-on-fork on
+
+
+===============================================================================
+  PHASE 9: WIRELESS (DGX Spark WiFi 7)
+  2025-12-18 16:28:32
+===============================================================================
+
+
+--- WiFi Configuration ---
+
+[CMD] iw dev: iw dev
+phy#0
+	Unnamed/non-netdev interface
+		wdev 0x4
+		addr fa:3d:c6:af:ba:0e
+		type P2P-device
+		txpower 3.00 dBm
+	Interface wlP9s9
+		ifindex 8
+		wdev 0x1
+		addr f8:3d:c6:af:ba:0e
+		ssid kerberos2
+		type managed
+		channel 120 (5600 MHz), width: 80 MHz, center1: 5610 MHz
+		txpower 3.00 dBm
+		multicast TXQ:
+			qsz-byt	qsz-pkt	flows	drops	marks	overlmt	hashcol	tx-bytes	tx-packets
+			0	0	0	0	0	0	0	0		0
+
+[CMD] iw phy capabilities: iw phy
+Wiphy phy0
+	wiphy index: 0
+	max # scan SSIDs: 4
+	max scan IEs length: 482 bytes
+	max # sched scan SSIDs: 10
+	max # match sets: 16
+	Retry short limit: 7
+	Retry long limit: 4
+	Coverage class: 0 (up to 0m)
+	Device supports AP-side u-APSD.
+	Device supports T-DLS.
+	Supported Ciphers:
+		* WEP40 (00-0f-ac:1)
+		* WEP104 (00-0f-ac:5)
+		* TKIP (00-0f-ac:2)
+		* CCMP-128 (00-0f-ac:4)
+		* CCMP-256 (00-0f-ac:10)
+		* GCMP-128 (00-0f-ac:8)
+		* GCMP-256 (00-0f-ac:9)
+		* CMAC (00-0f-ac:6)
+		* CMAC-256 (00-0f-ac:13)
+		* GMAC-128 (00-0f-ac:11)
+		* GMAC-256 (00-0f-ac:12)
+	Available Antennas: TX 0x3 RX 0x3
+	Configured Antennas: TX 0x3 RX 0x3
+	Supported interface modes:
+		 * managed
+		 * AP
+		 * AP/VLAN
+		 * monitor
+		 * P2P-client
+		 * P2P-GO
+		 * P2P-device
+	Band 1:
+		Capabilities: 0x9ff
+			RX LDPC
+			HT20/HT40
+			SM Power Save disabled
+			RX Greenfield
+			RX HT20 SGI
+			RX HT40 SGI
+			TX STBC
+			RX STBC 1-stream
+			Max AMSDU length: 7935 bytes
+			No DSSS/CCK HT40
+		Maximum RX AMPDU length 65535 bytes (exponent: 0x003)
+		Minimum RX AMPDU time spacing: 1 usec (0x03)
+		HT TX/RX MCS rate indexes supported: 0-15
+		HE Iftypes: managed
+			HE MAC Capabilities (0x08011a000040):
+				+HTC HE Supported
+				Trigger Frame MAC Padding Duration: 2
+				OM Control
+				Maximum A-MPDU Length Exponent: 3
+				A-MSDU in A-MPDU
+			HE PHY Capabilities: (0x2270ce126dc0b3064e3f00):
+				HE40/2.4GHz
+				242 tone RUs/2.4GHz
+				Device Class: 1
+				LDPC Coding in Payload
+				HE SU PPDU with 1x HE-LTF and 0.8us GI
+				NDP with 4x HE-LTF and 3.2us GI
+				STBC Tx <= 80MHz
+				STBC Rx <= 80MHz
+				Full Bandwidth UL MU-MIMO
+				Partial Bandwidth UL MU-MIMO
+				DCM Max Constellation: 2
+				DCM Max Constellation Rx: 2
+				SU Beamformee
+				Beamformee STS <= 80Mhz: 3
+				Beamformee STS > 80Mhz: 3
+				Ng = 16 SU Feedback
+				Ng = 16 MU Feedback
+				Codebook Size SU Feedback
+				Codebook Size MU Feedback
+				Triggered CQI Feedback
+				Partial Bandwidth Extended Range
+				PPE Threshold Present
+				Power Boost Factor ar
+				HE SU PPDU & HE PPDU 4x HE-LTF 0.8us GI
+				20MHz in 40MHz HE PPDU 2.4GHz
+				20MHz in 160/80+80MHz HE PPDU
+				80MHz in 160/80+80MHz HE PPDU
+				DCM Max BW: 1
+				Longer Than 16HE SIG-B OFDM Symbols
+				Non-Triggered CQI Feedback
+				TX 1024-QAM
+				RX 1024-QAM
+				RX Full BW SU Using HE MU PPDU with Compression SIGB
+				RX Full BW SU Using HE MU PPDU with Non-Compression SIGB
+			HE RX MCS and NSS set <= 80 MHz
+				1 streams: MCS 0-11
+				2 streams: MCS 0-11
+				3 streams: not supported
+				4 streams: not supported
+				5 streams: not supported
+				6 streams: not supported
+				7 streams: not supported
+				8 streams: not supported
+[CMD] rfkill status: rfkill list
+0: hci0: Bluetooth
+	Soft blocked: no
+	Hard blocked: no
+1: phy0: Wireless LAN
+	Soft blocked: no
+	Hard blocked: no
+
+[CMD] WiFi regulatory: iw reg get
+global
+country US: DFS-FCC
+	(902 - 904 @ 2), (N/A, 30), (N/A)
+	(904 - 920 @ 16), (N/A, 30), (N/A)
+	(920 - 928 @ 8), (N/A, 30), (N/A)
+	(2400 - 2472 @ 40), (N/A, 30), (N/A)
+	(5150 - 5250 @ 80), (N/A, 23), (N/A), AUTO-BW
+	(5250 - 5350 @ 80), (N/A, 24), (0 ms), DFS, AUTO-BW
+	(5470 - 5730 @ 160), (N/A, 24), (0 ms), DFS
+	(5730 - 5850 @ 80), (N/A, 30), (N/A), AUTO-BW
+	(5850 - 5895 @ 40), (N/A, 27), (N/A), NO-OUTDOOR, AUTO-BW, PASSIVE-SCAN
+	(5925 - 7125 @ 320), (N/A, 12), (N/A), NO-OUTDOOR, PASSIVE-SCAN
+	(57240 - 71000 @ 2160), (N/A, 40), (N/A)
+
+phy#0
+country US: DFS-FCC
+	(902 - 904 @ 2), (N/A, 30), (N/A)
+	(904 - 920 @ 16), (N/A, 30), (N/A)
+	(920 - 928 @ 8), (N/A, 30), (N/A)
+	(2400 - 2472 @ 40), (N/A, 30), (N/A)
+	(5150 - 5250 @ 80), (N/A, 23), (N/A), AUTO-BW
+	(5250 - 5350 @ 80), (N/A, 24), (0 ms), DFS, AUTO-BW
+	(5470 - 5730 @ 160), (N/A, 24), (0 ms), DFS
+	(5730 - 5850 @ 80), (N/A, 30), (N/A), AUTO-BW
+	(5850 - 5895 @ 40), (N/A, 27), (N/A), NO-OUTDOOR, AUTO-BW, PASSIVE-SCAN
+	(5925 - 7125 @ 320), (N/A, 12), (N/A), NO-OUTDOOR, PASSIVE-SCAN
+	(57240 - 71000 @ 2160), (N/A, 40), (N/A)
+
+
+
+===============================================================================
+  PHASE 10: CUDA AND SOFTWARE STACK
+  2025-12-18 16:28:32
+===============================================================================
+
+
+--- CUDA Installation ---
+
+[CMD] nvcc version: nvcc --version
+[SKIP] Command not found: nvcc
+
+[SKIP] File/dir not found: /usr/local/cuda/version.txt
+
+[FILE] /usr/local/cuda/version.json:
+{
+   "cuda" : {
+      "name" : "CUDA SDK",
+      "version" : "13.0.2"
+   },
+   "cuda_cccl" : {
+      "name" : "CUDA C++ Core Compute Libraries",
+      "version" : "13.0.85"
+   },
+   "cuda_crt" : {
+      "name" : "CUDA crt Compiler for CUDA applications",
+      "version" : "13.0.88"
+   },
+   "cuda_ctadvisor" : {
+      "name" : "CUDA Compile Time Advisor",
+      "version" : "13.0.85"
+   },
+   "cuda_cudart" : {
+      "name" : "CUDA Runtime (cudart)",
+      "version" : "13.0.96"
+   },
+   "cuda_culibos" : {
+      "name" : "CUDA DEV culibos is a Math Libraries",
+      "version" : "13.0.85"
+   },
+   "cuda_cuobjdump" : {
+      "name" : "cuobjdump",
+      "version" : "13.0.85"
+   },
+   "cuda_cupti" : {
+      "name" : "CUPTI",
+      "version" : "13.0.85"
+   },
+   "cuda_cuxxfilt" : {
+      "name" : "CUDA cu++ filt",
+      "version" : "13.0.85"
+   },
+   "cuda_gdb" : {
+      "name" : "CUDA GDB",
+      "version" : "13.0.85"
+   },
+   "cuda_nvcc" : {
+      "name" : "CUDA NVCC",
+      "version" : "13.0.88"
+   },
+   "cuda_nvdisasm" : {
+      "name" : "CUDA nvdisasm",
+      "version" : "13.0.85"
+   },
+   "cuda_nvml_dev" : {
+      "name" : "CUDA NVML Headers",
+      "version" : "13.0.87"
+   },
+   "cuda_nvprune" : {
+      "name" : "CUDA nvprune",
+      "version" : "13.0.85"
+   },
+   "cuda_nvrtc" : {
+      "name" : "CUDA NVRTC",
+      "version" : "13.0.88"
+   },
+   "cuda_nvtx" : {
+      "name" : "CUDA NVTX",
+      "version" : "13.0.85"
+   },
+   "cuda_profiler_api" : {
+      "name" : "CUDA Profiler API",
+      "version" : "13.0.85"
+   },
+   "cuda_sandbox_dev" : {
+      "name" : "NVIDIA Sandbox Utils",
+      "version" : "13.0.85"
+   },
+   "cuda_sanitizer_api" : {
+      "name" : "CUDA Compute Sanitizer API",
+      "version" : "13.0.85"
+   },
+   "fabricmanager" : {
+      "name" : "Fabric Manager",
+      "version" : "580.95.05"
+   },
+   "imex" : {
+      "name" : "Mapping GPU memory over NVLink",
+      "version" : "580.95.05"
+   },
+   "libcublas" : {
+      "name" : "CUDA cuBLAS",
+      "version" : "13.1.0.3"
+   },
+   "libcufft" : {
+      "name" : "CUDA cuFFT",
+      "version" : "12.0.0.61"
+   },
+   "libcufile" : {
+      "name" : "GPUDirect Storage (cufile)",
+      "version" : "1.15.1.6"
+   },
+   "libcurand" : {
+      "name" : "CUDA cuRAND",
+      "version" : "10.4.0.35"
+   },
+   "libcusolver" : {
+      "name" : "CUDA cuSOLVER",
+      "version" : "12.0.4.66"
+   },
+   "libcusparse" : {
+      "name" : "CUDA cuSPARSE",
+      "version" : "12.6.3.3"
+   },
+   "libnpp" : {
+      "name" : "CUDA NPP",
+      "version" : "13.0.1.2"
+   },
+   "libnvfatbin" : {
+      "name" : "Fatbin interaction library",
+      "version" : "13.0.85"
+   },
+   "libnvidia_nscq" : {
+      "name" : "NvSwitch Library",
+      "version" : "580.95.05"
+   },
+   "libnvjitlink" : {
+      "name" : "JIT Linker Library",
+      "version" : "13.0.88"
+   },
+   "libnvjpeg" : {
+      "name" : "CUDA nvJPEG",
+      "version" : "13.0.1.86"
+   },
+   "libnvptxcompiler" : {
+      "name" : "CUDA PTX compiler",
+      "version" : "13.0.88"
+   },
+   "libnvvm" : {
+      "name" : "NVVM",
+      "version" : "13.0.88"
+   },
+   "nsight_compute" : {
+      "name" : "Nsight Compute",
+      "version" : "2025.3.1.4"
+   },
+   "nsight_systems" : {
+      "name" : "Nsight Systems",
+      "version" : "2025.3.2.474"
+   },
+   "nvidia_driver" : {
+      "name" : "NVIDIA Linux Driver",
+      "version" : "580.95.05"
+   },
+   "nvidia_fs" : {
+      "name" : "NVIDIA file-system",
+      "version" : "2.26.6"
+   }
+}
+
+lrwxrwxrwx  1 root  root    22 Sep 12 18:10 cuda -> /etc/alternatives/cuda
+lrwxrwxrwx  1 root  root    25 Sep 12 18:10 cuda-13 -> /etc/alternatives/cuda-13
+drwxr-xr-x 12 root  root  4096 Nov 13 17:12 cuda-13.0
+
+--- NVIDIA Libraries ---
+
+	libvncclient.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libvncclient.so.1
+	librte_gpu_cuda.so.23 (libc6,AArch64) => /opt/mellanox/dpdk/lib/aarch64-linux-gnu/librte_gpu_cuda.so.23
+	librte_gpu_cuda.so (libc6,AArch64) => /opt/mellanox/dpdk/lib/aarch64-linux-gnu/librte_gpu_cuda.so
+	libpcsamplingutil.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libpcsamplingutil.so
+	libnvtx3interop.so.1 (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvtx3interop.so.1
+	libnvtx3interop.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvtx3interop.so
+	libnvrtc.so.13 (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvrtc.so.13
+	libnvrtc.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvrtc.so
+	libnvrtc-builtins.so.13.0 (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvrtc-builtins.so.13.0
+	libnvrtc-builtins.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvrtc-builtins.so
+	libnvperf_target.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvperf_target.so
+	libnvperf_host.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvperf_host.so
+	libnvjpeg.so.13 (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvjpeg.so.13
+	libnvjpeg.so (libc6,AArch64) => /usr/local/cuda/targets/sbsa-linux/lib/libnvjpeg.so
+	libnvidia-wayland-client.so.590.44.01 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-wayland-client.so.590.44.01
+	libnvidia-tls.so.580.95.05 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-tls.so.580.95.05
+	libnvidia-rtcore.so.580.95.05 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-rtcore.so.580.95.05
+	libnvidia-ptxjitcompiler.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-ptxjitcompiler.so.1
+	libnvidia-ptxjitcompiler.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-ptxjitcompiler.so
+	libnvidia-opticalflow.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-opticalflow.so.1
+	libnvidia-opticalflow.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-opticalflow.so
+	libnvidia-opencl.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-opencl.so.1
+	libnvidia-nvvm70.so.4 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-nvvm70.so.4
+	libnvidia-nvvm70.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-nvvm70.so
+	libnvidia-nvvm.so.4 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-nvvm.so.4
+	libnvidia-nvvm.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-nvvm.so
+	libnvidia-ngx.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-ngx.so.1
+	libnvidia-ml.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-ml.so.1
+	libnvidia-ml.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-ml.so
+	libnvidia-gtk3.so.590.44.01 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-gtk3.so.590.44.01
+	libnvidia-gtk2.so.590.44.01 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-gtk2.so.590.44.01
+	libnvidia-gpucomp.so.580.95.05 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-gpucomp.so.580.95.05
+	libnvidia-glvkspirv.so.580.95.05 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-glvkspirv.so.580.95.05
+	libnvidia-glsi.so.580.95.05 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-glsi.so.580.95.05
+	libnvidia-glcore.so.580.95.05 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-glcore.so.580.95.05
+	libnvidia-fbc.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-fbc.so.1
+	libnvidia-fbc.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-fbc.so
+	libnvidia-encode.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-encode.so.1
+	libnvidia-encode.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-encode.so
+	libnvidia-eglcore.so.580.95.05 (libc6,AArch64) => /lib/aarch64-linux-gnu/libnvidia-eglcore.so.580.95.05
+[CMD] cuDNN version: grep -E CUDNN_MAJOR|CUDNN_MINOR|CUDNN_PATCHLEVEL /usr/include/cudnn_version.h
+grep: /usr/include/cudnn_version.h: No such file or directory
+[WARN] Command returned non-zero exit code
+
+[CMD] NCCL version: grep -E NCCL_MAJOR|NCCL_MINOR|NCCL_PATCH /usr/include/nccl.h
+grep: /usr/include/nccl.h: No such file or directory
+[WARN] Command returned non-zero exit code
+
+
+--- Fabric Manager Status ---
+
+[SERVICE] nvidia-fabricmanager:
+inactive
+inactive/not found
+[SKIP] Service not found
+
+[SERVICE] nvidia-nvlsm:
+inactive
+inactive/not found
+[SKIP] Service not found
+
+[SERVICE] nvidia-persistenced:
+active
+● nvidia-persistenced.service - NVIDIA Persistence Daemon
+     Loaded: loaded (/usr/lib/systemd/system/nvidia-persistenced.service; enabled; preset: enabled)
+    Drop-In: /etc/systemd/system/nvidia-persistenced.service.d
+             └─nv-persistence-override.conf
+     Active: active (running) since Wed 2025-12-17 22:57:23 EST; 17h ago
+   Main PID: 2091 (nvidia-persiste)
+      Tasks: 1 (limit: 153562)
+     Memory: 16.1M (peak: 73.1M)
+        CPU: 2.315s
+     CGroup: /system.slice/nvidia-persistenced.service
+             └─2091 /usr/bin/nvidia-persistenced --persistence-mode --verbose
+
+Dec 17 22:57:18 spark-b3e4 systemd[1]: Starting nvidia-persistenced.service - NVIDIA Persistence Daemon...
+Dec 17 22:57:18 spark-b3e4 nvidia-persistenced[2091]: Verbose syslog connection opened
+Dec 17 22:57:18 spark-b3e4 nvidia-persistenced[2091]: Started (2091)
+Dec 17 22:57:21 spark-b3e4 nvidia-persistenced[2091]: device 000f:01:00.0 - registered
+Dec 17 22:57:23 spark-b3e4 nvidia-persistenced[2091]: device 000f:01:00.0 - persistence mode enabled.
+Dec 17 22:57:23 spark-b3e4 nvidia-persistenced[2091]: device 000f:01:00.0 - NUMA memory onlined.
+Dec 17 22:57:23 spark-b3e4 nvidia-persistenced[2091]: Local RPC services initialized
+Dec 17 22:57:23 spark-b3e4 systemd[1]: Started nvidia-persistenced.service - NVIDIA Persistence Daemon.
+
+[CMD] FM version: nv-fabricmanager --version
+[SKIP] Command not found: nv-fabricmanager
+
+
+--- NVIDIA Packages ---
+
+[CMD] NVIDIA dpkg: dpkg -l
+ii  cuda-nsight-compute-13-0                         13.0.2-1                                      arm64        NVIDIA Nsight Compute
+ii  cuda-nsight-systems-13-0                         13.0.2-1                                      arm64        NVIDIA Nsight Systems
+ii  cuda-nvtx-13-0                                   13.0.85-1                                     arm64        NVIDIA Tools Extension
+ii  datacenter-gpu-manager                           1:3.3.9                                       arm64        NVIDIA® Datacenter GPU Management Tools
+ii  dgx-dashboard                                    0.22.0                                        arm64        NVIDIA DGX Dashboard
+ii  dgx-oobe                                         0.17.26                                       arm64        NVIDIA DGX OOBE Core Services
+ii  dgx-oobe-desktop                                 0.4.0-0.4.0                                   arm64        NVIDIA DGX OOBE Desktop Viewer
+ii  dgx-spark-oobe-customize                         0.17.9                                        arm64        NVIDIA DGX Spark OOBE Customizations
+ii  doca-host                                        3.1.0-091000-25.07-ubuntu2404                 arm64        Software package including drivers, libraries and tools installed on the host server to support NVIDIA networking platforms
+ii  dpa-gdbserver                                    25.07.2812                                    arm64        Nvidia DPA gdbserver tool.
+ii  dpa-stats                                        25.07.0151                                    arm64        Nvidia DPA performance counters library and tools.
+ii  flexio-samples                                   25.07.2812                                    all          Nvidia host and DPA sdk samples.
+ii  flexio-sdk                                       25.07.2812                                    arm64        Nvidia host and DPA sdk libs.
+ii  hpc-sdk-repo                                     25.10-2                                       arm64        NVIDIA HPC SDK repository configuration files
+ii  ibarr:arm64                                      0.1.5-1.2507097                               arm64        Nvidia address and route userspace resolution services for Infiniband
+ii  libnvhws-dev:arm64                               25.07.6-1                                     arm64        HW Steering development library for Nvidia NICs - Dev headers
+ii  libnvhws1:arm64                                  25.07.6-1                                     arm64        HW Steering development library for Nvidia NICs
+ii  libnvidia-cfg1-580:arm64                         580.95.05-0ubuntu0.24.04.2                    arm64        NVIDIA binary OpenGL/GLX configuration library
+ii  libnvidia-common-580                             580.95.05-0ubuntu0.24.04.2                    all          Shared files used by the NVIDIA libraries
+ii  libnvidia-compute-580:arm64                      580.95.05-0ubuntu0.24.04.2                    arm64        NVIDIA libcompute package
+ii  libnvidia-container-tools                        1.18.1-1                                      arm64        NVIDIA container runtime library (command-line tools)
+ii  libnvidia-container1:arm64                       1.18.1-1                                      arm64        NVIDIA container runtime library
+ii  libnvidia-decode-580:arm64                       580.95.05-0ubuntu0.24.04.2                    arm64        NVIDIA Video Decoding runtime libraries
+ii  libnvidia-egl-wayland1:arm64                     1:1.1.20-1ubuntu1                             arm64        Wayland EGL External Platform library -- shared library
+ii  libnvidia-encode-580:arm64                       580.95.05-0ubuntu0.24.04.2                    arm64        NVENC Video Encoding runtime library
+ii  libnvidia-extra-580:arm64                        580.95.05-0ubuntu0.24.04.2                    arm64        Extra libraries for the NVIDIA driver
+ii  libnvidia-fbc1-580:arm64                         580.95.05-0ubuntu0.24.04.2                    arm64        NVIDIA OpenGL-based Framebuffer Capture runtime library
+ii  libnvidia-gl-580:arm64                           580.95.05-0ubuntu0.24.04.2                    arm64        NVIDIA OpenGL/GLX/EGL/GLES GLVND libraries and Vulkan ICD
+ii  linux-headers-6.11.0-1016-nvidia                 6.11.0-1016.16                                arm64        Linux kernel headers for version 6.11.0 on ARMv8 SMP
+ii  linux-headers-6.14.0-1013-nvidia                 6.14.0-1013.13                                arm64        Linux kernel headers for version 6.14.0
+iF  linux-headers-6.14.0-1015-nvidia                 6.14.0-1015.15                                arm64        Linux kernel headers for version 6.14.0
+iU  linux-headers-nvidia-hwe-24.04                   6.14.0-1015.15                                arm64        NVIDIA Linux kernel headers
+ii  linux-image-6.11.0-1016-nvidia                   6.11.0-1016.16                                arm64        Signed kernel image nvidia
+ii  linux-image-6.14.0-1013-nvidia                   6.14.0-1013.13                                arm64        Signed kernel image nvidia
+iF  linux-image-6.14.0-1015-nvidia                   6.14.0-1015.15                                arm64        Signed kernel image nvidia
+ii  linux-image-nvidia-hwe-24.04                     6.14.0-1015.15                                arm64        NVIDIA Linux kernel image
+ii  linux-modules-6.11.0-1016-nvidia                 6.11.0-1016.16                                arm64        Linux kernel extra modules for version 6.11.0 on ARMv8 SMP
+ii  linux-modules-6.14.0-1013-nvidia                 6.14.0-1013.13                                arm64        Linux kernel extra modules for version 6.14.0
+ii  linux-modules-6.14.0-1015-nvidia                 6.14.0-1015.15                                arm64        Linux kernel extra modules for version 6.14.0
+ii  linux-modules-extra-6.11.0-1016-nvidia           6.11.0-1016.16                                arm64        Linux kernel extra modules for version 6.11.0 on ARMv8 SMP
+rc  linux-modules-nvidia-580-open-6.11.0-1014-nvidia 6.11.0-1014.14+2                              arm64        Linux kernel nvidia modules for version 6.11.0-1014
+ii  linux-modules-nvidia-580-open-6.11.0-1016-nvidia 6.11.0-1016.16+1000                           arm64        Linux kernel nvidia modules for version 6.11.0-1016
+ii  linux-modules-nvidia-580-open-6.14.0-1013-nvidia 6.14.0-1013.13                                arm64        Linux kernel nvidia modules for version 6.14.0-1013
+ii  linux-modules-nvidia-580-open-6.14.0-1015-nvidia 6.14.0-1015.15                                arm64        Linux kernel nvidia modules for version 6.14.0-1015
+ii  linux-modules-nvidia-580-open-nvidia-hwe-24.04   6.14.0-1015.15                                arm64        Extra drivers for nvidia-580-open for the nvidia-hwe-24.04 flavour
+ii  linux-modules-nvidia-fs-6.11.0-1016-nvidia       6.11.0-1016.16                                arm64        Linux kernel nvidia-fs modules for version 6.11.0-1016
+ii  linux-modules-nvidia-fs-6.14.0-1013-nvidia       6.14.0-1013.13                                arm64        Linux kernel nvidia-fs modules for version 6.14.0-1013
+ii  linux-modules-nvidia-fs-6.14.0-1015-nvidia       6.14.0-1015.15                                arm64        Linux kernel nvidia-fs modules for version 6.14.0-1015
+ii  linux-modules-nvidia-fs-nvidia-hwe-24.04         6.14.0-1015.15                                arm64        Extra drivers for nvidia-fs for the nvidia flavour
+[CMD] CUDA dpkg: dpkg -l
+ii  cuda-cccl-13-0                                   13.0.85-1                                     arm64        CUDA CCCL
+ii  cuda-command-line-tools-13-0                     13.0.2-1                                      arm64        CUDA command-line tools
+ii  cuda-compiler-13-0                               13.0.2-1                                      arm64        CUDA compiler
+ii  cuda-compute-repo-lowpri                         25.10-2                                       arm64        CUDA compute repository configuration files (low priority)
+ii  cuda-crt-13-0                                    13.0.88-1                                     arm64        CUDA crt
+ii  cuda-cudart-13-0                                 13.0.96-1                                     arm64        CUDA Runtime native Libraries
+ii  cuda-cudart-dev-13-0                             13.0.96-1                                     arm64        CUDA Runtime native dev links, headers
+ii  cuda-culibos-dev-13-0                            13.0.85-1                                     arm64        CUDA DEV culibos is a Math Libraries fork of the cuos library
+ii  cuda-cuobjdump-13-0                              13.0.85-1                                     arm64        CUDA cuobjdump
+ii  cuda-cupti-13-0                                  13.0.85-1                                     arm64        CUDA profiling tools runtime libs.
+ii  cuda-cupti-dev-13-0                              13.0.85-1                                     arm64        CUDA profiling tools interface.
+ii  cuda-cuxxfilt-13-0                               13.0.85-1                                     arm64        CUDA cuxxfilt
+ii  cuda-documentation-13-0                          13.0.85-1                                     arm64        CUDA documentation
+ii  cuda-driver-dev-13-0                             13.0.96-1                                     arm64        CUDA Driver native dev stub library
+ii  cuda-gdb-13-0                                    13.0.85-1                                     arm64        CUDA-GDB
+ii  cuda-libraries-13-0                              13.0.2-1                                      arm64        CUDA Libraries 13.0 meta-package
+ii  cuda-libraries-dev-13-0                          13.0.2-1                                      arm64        CUDA Libraries 13.0 development meta-package
+ii  cuda-nsight-compute-13-0                         13.0.2-1                                      arm64        NVIDIA Nsight Compute
+ii  cuda-nsight-systems-13-0                         13.0.2-1                                      arm64        NVIDIA Nsight Systems
+ii  cuda-nvcc-13-0                                   13.0.88-1                                     arm64        CUDA nvcc
+ii  cuda-nvdisasm-13-0                               13.0.85-1                                     arm64        CUDA disassembler
+ii  cuda-nvml-dev-13-0                               13.0.87-1                                     arm64        NVML native dev links, headers
+ii  cuda-nvprune-13-0                                13.0.85-1                                     arm64        CUDA nvprune
+ii  cuda-nvrtc-13-0                                  13.0.88-1                                     arm64        NVRTC native runtime libraries
+ii  cuda-nvrtc-dev-13-0                              13.0.88-1                                     arm64        NVRTC native dev links, headers
+ii  cuda-nvtx-13-0                                   13.0.85-1                                     arm64        NVIDIA Tools Extension
+ii  cuda-profiler-api-13-0                           13.0.85-1                                     arm64        CUDA Profiler API
+ii  cuda-sanitizer-13-0                              13.0.85-1                                     arm64        CUDA Sanitizer
+ii  cuda-toolkit-13-0                                13.0.2-1                                      arm64        CUDA Toolkit 13.0 meta-package
+
+===============================================================================
+  PHASE 11: ML FRAMEWORKS - BLACKWELL COMPATIBILITY
+  2025-12-18 16:28:32
+===============================================================================
+
+
+--- Python Environment ---
+
+[CMD] Python version: python3 --version
+Python 3.12.3
+
+[CMD] Python path: which python3
+/usr/bin/python3
+
+[CMD] Pip version: pip3 --version
+pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12)
+
+
+--- PyTorch SM_100 Check ---
+
+PyTorch version: 2.9.1+cpu
+CUDA available: False
+CUDA version (torch): None
+GPU count: 0
+CUDA arch list: []
+[WARN] SM_100 NOT in arch list
+
+--- Other ML Frameworks ---
+
+transformers: 4.57.3
+accelerate: 1.12.0
+
+===============================================================================
+  PHASE 12: CONTAINER RUNTIME
+  2025-12-18 16:28:34
+===============================================================================
+
+
+--- Docker Configuration ---
+
+[CMD] Docker version: docker version
+Client: Docker Engine - Community
+ Version:           28.5.1
+ API version:       1.51
+ Go version:        go1.24.8
+ Git commit:        e180ab8
+ Built:             Wed Oct  8 12:18:19 2025
+ OS/Arch:           linux/arm64
+ Context:           default
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          28.5.1
+  API version:      1.51 (minimum version 1.24)
+  Go version:       go1.24.8
+  Git commit:       f8215cc
+  Built:            Wed Oct  8 12:18:19 2025
+  OS/Arch:          linux/arm64
+  Experimental:     false
+ containerd:
+  Version:          v1.7.28
+  GitCommit:        b98a3aace656320842a23f4a392a33f46af97866
+ runc:
+  Version:          1.3.0
+  GitCommit:        v1.3.0-0-g4ca628d1
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+
+[CMD] Docker info: docker info
+Client: Docker Engine - Community
+ Version:    28.5.1
+ Context:    default
+ Debug Mode: false
+ Plugins:
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.29.1
+    Path:     /usr/libexec/docker/cli-plugins/docker-buildx
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.40.0
+    Path:     /usr/libexec/docker/cli-plugins/docker-compose
+
+Server:
+ Containers: 6
+  Running: 3
+  Paused: 0
+  Stopped: 3
+ Images: 19
+ Server Version: 28.5.1
+ Storage Driver: overlay2
+  Backing Filesystem: extfs
+  Supports d_type: true
+  Using metacopy: false
+  Native Overlay Diff: true
+  userxattr: false
+ Logging Driver: json-file
+ Cgroup Driver: systemd
+ Cgroup Version: 2
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Discovered Devices:
+  cdi: nvidia.com/gpu=0
+  cdi: nvidia.com/gpu=GPU-637effba-9969-68b1-b30e-badef4b3de88
+  cdi: nvidia.com/gpu=all
+ Swarm: inactive
+ Runtimes: nvidia runc io.containerd.runc.v2
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: b98a3aace656320842a23f4a392a33f46af97866
+ runc version: v1.3.0-0-g4ca628d1
+ init version: de40ad0
+ Security Options:
+  apparmor
+  seccomp
+   Profile: builtin
+  cgroupns
+ Kernel Version: 6.14.0-1013-nvidia
+ Operating System: Ubuntu 24.04.3 LTS
+ OSType: linux
+ Architecture: aarch64
+ CPUs: 20
+ Total Memory: 119.7GiB
+ Name: spark-b3e4
+ ID: d0f6a6f8-7058-4d5a-bd47-77e582bc34ef
+[FILE] /etc/docker/daemon.json:
+{
+    "runtimes": {
+        "nvidia": {
+            "args": [],
+            "path": "nvidia-container-runtime"
+        }
+    }
+}
+[CMD] nvidia-container-cli: nvidia-container-cli info
+NVRM version:   580.95.05
+CUDA version:   13.0
+
+Device Index:   0
+Device Minor:   0
+Model:          NVIDIA GB10
+Brand:          NvidiaRTX
+GPU UUID:       GPU-637effba-9969-68b1-b30e-badef4b3de88
+Bus Location:   0000000f:01:00.0
+Architecture:   12.1
+
+
+===============================================================================
+  PHASE 13: PERFORMANCE BASELINES
+  2025-12-18 16:28:34
+===============================================================================
+
+
+--- Official NVIDIA Bandwidth Test ---
+
+[INFO] nvbandwidth is the official NVIDIA memory bandwidth tool
+[SKIP] nvbandwidth not found
+
+--- GPU Utilization Baseline ---
+
+[CMD] GPU dmon 5 samples: nvidia-smi dmon -c 5 -s pucvmet
+# gpu    pwr  gtemp  mtemp     sm    mem    enc    dec    jpg    ofa   mclk   pclk  pviol  tviol     fb   bar1   ccpm  sbecc  dbecc    pci  rxpci  txpci 
+# Idx      W      C      C      %      %      %      %      %      %    MHz    MHz      %   bool     MB     MB     MB   errs   errs   errs   MB/s   MB/s 
+    0      4     38      -      0      0      0      0      0      0      -    208      0      0      -      -      0      -      -      0      -      - 
+    0      5     38      -      0      0      0      0      0      0      -    208     66      0      -      -      0      -      -      0      -      - 
+    0      5     38      -      0      0      0      0      0      0      -    201     36      0      -      -      0      -      -      0      -      - 
+    0      4     38      -      0      0      0      0      0      0      -    208     63      0      -      -      0      -      -      0      -      - 
+    0      5     38      -      0      0      0      0      0      0      -    208     39      0      -      -      0      -      -      0      -      - 
+
+
+--- GPU Memory Bandwidth (PyTorch) ---
+
+
+--- FP16 Compute Benchmark ---
+
+
+--- Disk I/O Baseline ---
+
+
+
+
+===============================================================================
+  PHASE 14: SECURITY POSTURE
+  2025-12-18 16:28:40
+===============================================================================
+
+
+--- System Security Configuration ---
+
+[CMD] Boot parameters: cat /proc/cmdline
+BOOT_IMAGE=/boot/vmlinuz-6.14.0-1013-nvidia root=UUID=d27bfd26-ff30-400e-9eca-9cdf73de9406 ro init_on_alloc=0 console=tty0 plymouth.ignore-serial-consoles plymouth.use-simpledrm earlycon=uart,mmio32,0x16A00000 nvidia-drm.modeset=1 console=tty0 console=ttyS0,921600 crashkernel=1G-:0M quiet splash pci=pcie_bus_safe vt.handoff=7
+
+[CMD] AppArmor status: aa-status
+You do not have enough privilege to read the profile set.
+apparmor module is loaded.
+[WARN] Command returned non-zero exit code
+
+[CMD] SELinux status: sestatus
+[SKIP] Command not found: sestatus
+
+
+--- Kernel Security Settings ---
+
+[CMD] ASLR: cat /proc/sys/kernel/randomize_va_space
+2
+
+[CMD] dmesg restrict: cat /proc/sys/kernel/dmesg_restrict
+1
+
+[CMD] kptr restrict: cat /proc/sys/kernel/kptr_restrict
+1
+
+[CMD] Secure boot: mokutil --sb-state
+SecureBoot enabled
+
+
+--- System Limits ---
+
+[CMD] ulimit: ulimit -a
+real-time non-blocking time  (microseconds, -R) unlimited
+core file size              (blocks, -c) 0
+data seg size               (kbytes, -d) unlimited
+scheduling priority                 (-e) 0
+file size                   (blocks, -f) unlimited
+pending signals                     (-i) 511876
+max locked memory           (kbytes, -l) unlimited
+max memory size             (kbytes, -m) unlimited
+open files                          (-n) 500000
+pipe size                (512 bytes, -p) 8
+POSIX message queues         (bytes, -q) 819200
+real-time priority                  (-r) 0
+stack size                  (kbytes, -s) 8192
+cpu time                   (seconds, -t) unlimited
+max user processes                  (-u) 511876
+virtual memory              (kbytes, -v) unlimited
+file locks                          (-x) unlimited
+
+[CMD] Max open files: cat /proc/sys/fs/file-max
+9223372036854775807
+
+
+===============================================================================
+  PHASE 15: PROVIDER-SPECIFIC DISCOVERY
+  2025-12-18 16:28:40
+===============================================================================
+
+
+--- Lambda Labs Detection ---
+
+[CMD] Lambda packages: dpkg -l
+[SKIP] File/dir not found: /etc/lambda-stack-version
+
+[CMD] Lambda metadata: curl -s --connect-timeout 2 http://169.254.169.254/latest/meta-data/instance-type
+[WARN] Command returned non-zero exit code
+
+
+--- Brev Detection ---
+
+[CMD] Brev CLI: brev version
+[SKIP] Command not found: brev
+
+[DIR] /home/nmelo/.brev:
+total 16
+drwxr-xr-x  2 nmelo nmelo 4096 Dec 15 11:47 .
+drwxr-x--- 45 nmelo nmelo 4096 Dec 18 16:28 ..
+-rw-------  1 nmelo nmelo 1493 Dec 15 14:08 credentials.json
+-rw-rw-r--  1 nmelo nmelo   67 Dec 15 11:47 onboarding_step.json
+
+[CMD] Brev processes: pgrep -a brev
+[WARN] Command returned non-zero exit code
+
+
+--- DGX Detection ---
+
+[FILE] /etc/dgx-release:
+DGX_NAME="DGX Spark"
+DGX_PRETTY_NAME="NVIDIA DGX Spark"
+DGX_SWBUILD_DATE="2025-09-10-13-50-03"
+DGX_SWBUILD_VERSION="7.2.3"
+DGX_COMMIT_ID="833b4a7"
+DGX_PLATFORM="DGX Server for KVM"
+DGX_SERIAL_NUMBER="1983925006880"
+
+DGX_OTA_VERSION="7.3.1"
+DGX_OTA_DATE="Thu Nov 20 09:51:20 EST 2025"
+
+[CMD] DGX packages: dpkg -l
+ii  dgx-dashboard                                    0.22.0                                        arm64        NVIDIA DGX Dashboard
+ii  dgx-oobe                                         0.17.26                                       arm64        NVIDIA DGX OOBE Core Services
+ii  dgx-oobe-desktop                                 0.4.0-0.4.0                                   arm64        NVIDIA DGX OOBE Desktop Viewer
+ii  dgx-release                                      7.3.1                                         all          Package updates the DGX OS release information
+ii  dgx-repo                                         25.10-2                                       arm64        DGX repository configuration files
+ii  dgx-spark-oobe-customize                         0.17.9                                        arm64        NVIDIA DGX Spark OOBE Customizations
+ii  dgx-spark-ota-update-meta                        25.10.5                                       all          Package pulls new dependencies into the DGX Spark.
+ii  dgxstation-desktop                               25.09-4                                       all          Desktop customization package for DGXStation
+ii  dgxstation-grub                                  25.02-1                                       all          DGX Station grub customizer
+ii  nvidia-dgx-telemetry                             3.2                                           arm64        NVIDIA DGX Telemetry Services
+ii  nvidia-kernel-defaults                           21.05-1                                       all          sysctl default kernel settings for DGX.
+ii  nvidia-raid-config                               25.10-1                                       all          DGX RAID Configuration
+ii  nvidia-spark-fstab-config                        1.0.0-1                                       arm64        NVIDIA DGX Spark Fstab Config
+ii  nvidia-system-core                               2404.25.10-1                                  all          Meta-package for DGX system core packages
+ii  nvidia-system-extra                              2404.25.10-1                                  all          Meta-package for DGX system Extra packages
+ii  nvidia-system-station                            2404.25.10-1                                  arm64        Meta-package for DGX Station packages
+ii  nvidia-system-utils                              2404.25.09-2                                  all          Meta-package for DGX system utility packages
+
+===============================================================================
+  DISCOVERY COMPLETE
+  2025-12-18 16:28:42
+===============================================================================
+
+
+===============================================================================
+  DISCOVERY v2 COMPLETE
+  Finished at: Thu Dec 18 04:28:42 PM EST 2025
+  Log file: /home/nmelo/b200_discovery_v2_spark-b3e4_20251218_162826.log
+===============================================================================
+
+=== QUICK SUMMARY ===
+System: spark-b3e4 - 6.14.0-1013-nvidia - aarch64
+OS: Ubuntu 24.04.3 LTS
+OEM: NVIDIA_DGX_Spark
+
+name, memory.total [MiB], driver_version
+NVIDIA GB10, [N/A], 580.95.05
+
+Virtualization: none
+Unknown
+CUDA: 
+PyTorch: 2.9.1+cpu
+
+=== B200 BLACKWELL VALIDATION ===
+[CHECK] Verify nvidia-open driver
+[OK] No NVLink errors
+[OK] No retired GPU memory pages
+
+Log saved to: /home/nmelo/b200_discovery_v2_spark-b3e4_20251218_162826.log
