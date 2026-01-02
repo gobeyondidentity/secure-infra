@@ -39,7 +39,8 @@ type Authorization struct {
 // checkAuthorization verifies that the operator is authorized for the given CA and optionally device.
 // Returns nil if authorized, or an error with appropriate message if not.
 // caName is the human-readable CA name (e.g., "test-ca"), which is resolved to a CA ID via API lookup.
-func checkAuthorization(caName, deviceID string) error {
+// deviceName is the human-readable device name, which is resolved to a device ID via API lookup.
+func checkAuthorization(caName, deviceName string) error {
 	config, err := loadConfig()
 	if err != nil {
 		return fmt.Errorf("KeyMaker not initialized. Run 'km init' first")
@@ -66,7 +67,32 @@ func checkAuthorization(caName, deviceID string) error {
 		return fmt.Errorf("failed to parse CA response: %w", err)
 	}
 
-	// Now use caInfo.ID for the authorization check
+	// Look up device ID by name if a device is specified
+	var deviceID string
+	if deviceName != "" {
+		dpuResp, err := http.Get(config.ControlPlaneURL + "/api/dpus/" + url.QueryEscape(deviceName))
+		if err != nil {
+			return fmt.Errorf("failed to connect to control plane: %w", err)
+		}
+		defer dpuResp.Body.Close()
+
+		if dpuResp.StatusCode == http.StatusNotFound {
+			return &AuthorizationError{Type: "device", Resource: deviceName}
+		}
+		if dpuResp.StatusCode != http.StatusOK {
+			return fmt.Errorf("failed to look up device: HTTP %d", dpuResp.StatusCode)
+		}
+
+		var dpuInfo struct {
+			ID string `json:"id"`
+		}
+		if err := json.NewDecoder(dpuResp.Body).Decode(&dpuInfo); err != nil {
+			return fmt.Errorf("failed to parse device response: %w", err)
+		}
+		deviceID = dpuInfo.ID
+	}
+
+	// Now use caInfo.ID and deviceID for the authorization check
 	reqBody := AuthorizationCheckRequest{
 		OperatorID: config.OperatorID,
 		CAID:       caInfo.ID,

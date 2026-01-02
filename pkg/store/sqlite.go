@@ -242,10 +242,20 @@ func (s *Store) migrate() error {
 		attestation_age_seconds INTEGER,
 		installed_path TEXT,
 		error_message TEXT,
+		operator_id TEXT DEFAULT '',
+		operator_email TEXT DEFAULT '',
+		tenant_id TEXT DEFAULT '',
+		attestation_snapshot TEXT,
+		blocked_reason TEXT,
+		forced_by TEXT,
 		created_at INTEGER DEFAULT (strftime('%s', 'now'))
 	);
 	CREATE INDEX IF NOT EXISTS idx_distribution_history_dpu ON distribution_history(dpu_name);
 	CREATE INDEX IF NOT EXISTS idx_distribution_history_credential ON distribution_history(credential_name);
+	CREATE INDEX IF NOT EXISTS idx_distribution_history_operator ON distribution_history(operator_id);
+	CREATE INDEX IF NOT EXISTS idx_distribution_history_tenant ON distribution_history(tenant_id);
+	CREATE INDEX IF NOT EXISTS idx_distribution_history_outcome ON distribution_history(outcome);
+	CREATE INDEX IF NOT EXISTS idx_distribution_history_created ON distribution_history(created_at);
 
 	-- Operators
 	CREATE TABLE IF NOT EXISTS operators (
@@ -334,6 +344,13 @@ func (s *Store) migrate() error {
 		"ALTER TABLE dpus ADD COLUMN tenant_id TEXT REFERENCES tenants(id) ON DELETE SET NULL",
 		"ALTER TABLE dpus ADD COLUMN labels TEXT DEFAULT '{}'",
 		"ALTER TABLE ssh_cas ADD COLUMN tenant_id TEXT REFERENCES tenants(id) ON DELETE SET NULL",
+		// Distribution history Phase 3 audit trail enhancements
+		"ALTER TABLE distribution_history ADD COLUMN operator_id TEXT DEFAULT ''",
+		"ALTER TABLE distribution_history ADD COLUMN operator_email TEXT DEFAULT ''",
+		"ALTER TABLE distribution_history ADD COLUMN tenant_id TEXT DEFAULT ''",
+		"ALTER TABLE distribution_history ADD COLUMN attestation_snapshot TEXT",
+		"ALTER TABLE distribution_history ADD COLUMN blocked_reason TEXT",
+		"ALTER TABLE distribution_history ADD COLUMN forced_by TEXT",
 	}
 
 	for _, m := range migrations {

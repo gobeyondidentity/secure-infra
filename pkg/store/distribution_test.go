@@ -288,6 +288,441 @@ func TestDistributionCreatedAt(t *testing.T) {
 	}
 }
 
+func TestDistributionNewFields(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "distribution_new_fields_test_*.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile.Name())
+	tmpFile.Close()
+
+	store, err := Open(tmpFile.Name())
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	defer store.Close()
+
+	// Test recording with all new fields populated
+	snapshot := `{"pcr0":"abc123","pcr1":"def456"}`
+	d := &Distribution{
+		DPUName:             "bf3-full-fields",
+		CredentialType:      "ssh-ca",
+		CredentialName:      "prod-ca",
+		Outcome:             DistributionOutcomeForced,
+		AttestationStatus:   stringPtr("stale"),
+		AttestationAgeSecs:  intPtr(7200),
+		InstalledPath:       stringPtr("/etc/ssh/ca.pub"),
+		ErrorMessage:        nil,
+		OperatorID:          "op-123",
+		OperatorEmail:       "admin@example.com",
+		TenantID:            "tenant-abc",
+		AttestationSnapshot: &snapshot,
+		BlockedReason:       stringPtr("attestation too old"),
+		ForcedBy:            stringPtr("emergency-admin@example.com"),
+	}
+
+	err = store.RecordDistribution(d)
+	if err != nil {
+		t.Fatalf("RecordDistribution failed: %v", err)
+	}
+
+	// Retrieve and verify all fields
+	history, err := store.GetDistributionHistory("bf3-full-fields")
+	if err != nil {
+		t.Fatalf("GetDistributionHistory failed: %v", err)
+	}
+
+	if len(history) != 1 {
+		t.Fatalf("Expected 1 record, got %d", len(history))
+	}
+
+	r := history[0]
+	if r.OperatorID != "op-123" {
+		t.Errorf("OperatorID = %q, want %q", r.OperatorID, "op-123")
+	}
+	if r.OperatorEmail != "admin@example.com" {
+		t.Errorf("OperatorEmail = %q, want %q", r.OperatorEmail, "admin@example.com")
+	}
+	if r.TenantID != "tenant-abc" {
+		t.Errorf("TenantID = %q, want %q", r.TenantID, "tenant-abc")
+	}
+	if r.AttestationSnapshot == nil || *r.AttestationSnapshot != snapshot {
+		t.Errorf("AttestationSnapshot = %v, want %q", r.AttestationSnapshot, snapshot)
+	}
+	if r.BlockedReason == nil || *r.BlockedReason != "attestation too old" {
+		t.Errorf("BlockedReason = %v, want %q", r.BlockedReason, "attestation too old")
+	}
+	if r.ForcedBy == nil || *r.ForcedBy != "emergency-admin@example.com" {
+		t.Errorf("ForcedBy = %v, want %q", r.ForcedBy, "emergency-admin@example.com")
+	}
+}
+
+func TestListDistributionsByOperator(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "distribution_by_operator_test_*.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile.Name())
+	tmpFile.Close()
+
+	store, err := Open(tmpFile.Name())
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	defer store.Close()
+
+	// Create distributions by different operators
+	distributions := []*Distribution{
+		{DPUName: "dpu-1", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeSuccess, OperatorID: "op-alice", OperatorEmail: "alice@example.com", TenantID: "t1"},
+		{DPUName: "dpu-2", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeSuccess, OperatorID: "op-alice", OperatorEmail: "alice@example.com", TenantID: "t1"},
+		{DPUName: "dpu-3", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeSuccess, OperatorID: "op-bob", OperatorEmail: "bob@example.com", TenantID: "t2"},
+	}
+
+	for _, d := range distributions {
+		if err := store.RecordDistribution(d); err != nil {
+			t.Fatalf("RecordDistribution failed: %v", err)
+		}
+	}
+
+	// Query by Alice
+	aliceDistributions, err := store.ListDistributionsByOperator("op-alice", 10)
+	if err != nil {
+		t.Fatalf("ListDistributionsByOperator failed: %v", err)
+	}
+	if len(aliceDistributions) != 2 {
+		t.Errorf("Expected 2 distributions for Alice, got %d", len(aliceDistributions))
+	}
+	for _, d := range aliceDistributions {
+		if d.OperatorID != "op-alice" {
+			t.Errorf("OperatorID = %q, want %q", d.OperatorID, "op-alice")
+		}
+	}
+
+	// Query by Bob
+	bobDistributions, err := store.ListDistributionsByOperator("op-bob", 10)
+	if err != nil {
+		t.Fatalf("ListDistributionsByOperator failed: %v", err)
+	}
+	if len(bobDistributions) != 1 {
+		t.Errorf("Expected 1 distribution for Bob, got %d", len(bobDistributions))
+	}
+
+	// Query by nonexistent operator
+	noneDistributions, err := store.ListDistributionsByOperator("op-nobody", 10)
+	if err != nil {
+		t.Fatalf("ListDistributionsByOperator failed: %v", err)
+	}
+	if len(noneDistributions) != 0 {
+		t.Errorf("Expected 0 distributions for unknown operator, got %d", len(noneDistributions))
+	}
+}
+
+func TestListDistributionsByTenant(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "distribution_by_tenant_test_*.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile.Name())
+	tmpFile.Close()
+
+	store, err := Open(tmpFile.Name())
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	defer store.Close()
+
+	// Create distributions for different tenants
+	distributions := []*Distribution{
+		{DPUName: "dpu-1", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeSuccess, OperatorID: "op-1", TenantID: "tenant-prod"},
+		{DPUName: "dpu-2", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeSuccess, OperatorID: "op-1", TenantID: "tenant-prod"},
+		{DPUName: "dpu-3", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeSuccess, OperatorID: "op-1", TenantID: "tenant-prod"},
+		{DPUName: "dpu-4", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeSuccess, OperatorID: "op-2", TenantID: "tenant-dev"},
+	}
+
+	for _, d := range distributions {
+		if err := store.RecordDistribution(d); err != nil {
+			t.Fatalf("RecordDistribution failed: %v", err)
+		}
+	}
+
+	// Query by tenant-prod
+	prodDistributions, err := store.ListDistributionsByTenant("tenant-prod", 10)
+	if err != nil {
+		t.Fatalf("ListDistributionsByTenant failed: %v", err)
+	}
+	if len(prodDistributions) != 3 {
+		t.Errorf("Expected 3 distributions for tenant-prod, got %d", len(prodDistributions))
+	}
+
+	// Query by tenant-dev
+	devDistributions, err := store.ListDistributionsByTenant("tenant-dev", 10)
+	if err != nil {
+		t.Fatalf("ListDistributionsByTenant failed: %v", err)
+	}
+	if len(devDistributions) != 1 {
+		t.Errorf("Expected 1 distribution for tenant-dev, got %d", len(devDistributions))
+	}
+
+	// Test limit
+	limitedDistributions, err := store.ListDistributionsByTenant("tenant-prod", 2)
+	if err != nil {
+		t.Fatalf("ListDistributionsByTenant failed: %v", err)
+	}
+	if len(limitedDistributions) != 2 {
+		t.Errorf("Expected 2 distributions with limit, got %d", len(limitedDistributions))
+	}
+}
+
+func TestListDistributionsByOutcome(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "distribution_by_outcome_test_*.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile.Name())
+	tmpFile.Close()
+
+	store, err := Open(tmpFile.Name())
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	defer store.Close()
+
+	// Create distributions with different outcomes
+	distributions := []*Distribution{
+		{DPUName: "dpu-1", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeSuccess, OperatorID: "op-1", TenantID: "t1"},
+		{DPUName: "dpu-2", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeSuccess, OperatorID: "op-1", TenantID: "t1"},
+		{DPUName: "dpu-3", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeBlockedStale, OperatorID: "op-1", TenantID: "t1"},
+		{DPUName: "dpu-4", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeBlockedFailed, OperatorID: "op-1", TenantID: "t1"},
+		{DPUName: "dpu-5", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeForced, OperatorID: "op-1", TenantID: "t1"},
+	}
+
+	for _, d := range distributions {
+		if err := store.RecordDistribution(d); err != nil {
+			t.Fatalf("RecordDistribution failed: %v", err)
+		}
+	}
+
+	// Query success outcomes
+	successDistributions, err := store.ListDistributionsByOutcome(DistributionOutcomeSuccess, 10)
+	if err != nil {
+		t.Fatalf("ListDistributionsByOutcome failed: %v", err)
+	}
+	if len(successDistributions) != 2 {
+		t.Errorf("Expected 2 success distributions, got %d", len(successDistributions))
+	}
+	for _, d := range successDistributions {
+		if d.Outcome != DistributionOutcomeSuccess {
+			t.Errorf("Outcome = %q, want %q", d.Outcome, DistributionOutcomeSuccess)
+		}
+	}
+
+	// Query blocked-stale outcomes
+	staleDistributions, err := store.ListDistributionsByOutcome(DistributionOutcomeBlockedStale, 10)
+	if err != nil {
+		t.Fatalf("ListDistributionsByOutcome failed: %v", err)
+	}
+	if len(staleDistributions) != 1 {
+		t.Errorf("Expected 1 blocked-stale distribution, got %d", len(staleDistributions))
+	}
+
+	// Query forced outcomes
+	forcedDistributions, err := store.ListDistributionsByOutcome(DistributionOutcomeForced, 10)
+	if err != nil {
+		t.Fatalf("ListDistributionsByOutcome failed: %v", err)
+	}
+	if len(forcedDistributions) != 1 {
+		t.Errorf("Expected 1 forced distribution, got %d", len(forcedDistributions))
+	}
+}
+
+func TestListDistributionsInTimeRange(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "distribution_time_range_test_*.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile.Name())
+	tmpFile.Close()
+
+	store, err := Open(tmpFile.Name())
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	defer store.Close()
+
+	// Record distributions now
+	before := time.Now().Add(-time.Second)
+	distributions := []*Distribution{
+		{DPUName: "dpu-1", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeSuccess, OperatorID: "op-1", TenantID: "t1"},
+		{DPUName: "dpu-2", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeSuccess, OperatorID: "op-1", TenantID: "t1"},
+	}
+
+	for _, d := range distributions {
+		if err := store.RecordDistribution(d); err != nil {
+			t.Fatalf("RecordDistribution failed: %v", err)
+		}
+	}
+	after := time.Now().Add(time.Second)
+
+	// Query within the time range
+	inRangeDistributions, err := store.ListDistributionsInTimeRange(before, after, 10)
+	if err != nil {
+		t.Fatalf("ListDistributionsInTimeRange failed: %v", err)
+	}
+	if len(inRangeDistributions) != 2 {
+		t.Errorf("Expected 2 distributions in range, got %d", len(inRangeDistributions))
+	}
+
+	// Query before the time range
+	pastDistributions, err := store.ListDistributionsInTimeRange(before.Add(-time.Hour), before.Add(-time.Minute), 10)
+	if err != nil {
+		t.Fatalf("ListDistributionsInTimeRange failed: %v", err)
+	}
+	if len(pastDistributions) != 0 {
+		t.Errorf("Expected 0 distributions in past range, got %d", len(pastDistributions))
+	}
+
+	// Query after the time range
+	futureDistributions, err := store.ListDistributionsInTimeRange(after.Add(time.Minute), after.Add(time.Hour), 10)
+	if err != nil {
+		t.Fatalf("ListDistributionsInTimeRange failed: %v", err)
+	}
+	if len(futureDistributions) != 0 {
+		t.Errorf("Expected 0 distributions in future range, got %d", len(futureDistributions))
+	}
+}
+
+func TestListDistributionsWithFilters(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "distribution_filters_test_*.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile.Name())
+	tmpFile.Close()
+
+	store, err := Open(tmpFile.Name())
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	defer store.Close()
+
+	// Create diverse set of distributions
+	distributions := []*Distribution{
+		{DPUName: "dpu-1", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeSuccess, OperatorID: "op-alice", TenantID: "tenant-prod"},
+		{DPUName: "dpu-1", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeBlockedStale, OperatorID: "op-alice", TenantID: "tenant-prod"},
+		{DPUName: "dpu-2", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeSuccess, OperatorID: "op-bob", TenantID: "tenant-prod"},
+		{DPUName: "dpu-3", CredentialType: "ssh-ca", CredentialName: "ca-1", Outcome: DistributionOutcomeForced, OperatorID: "op-alice", TenantID: "tenant-dev"},
+	}
+
+	for _, d := range distributions {
+		if err := store.RecordDistribution(d); err != nil {
+			t.Fatalf("RecordDistribution failed: %v", err)
+		}
+	}
+
+	t.Run("FilterByTargetDPU", func(t *testing.T) {
+		results, err := store.ListDistributionsWithFilters(DistributionQueryOpts{
+			TargetDPU: "dpu-1",
+			Limit:     10,
+		})
+		if err != nil {
+			t.Fatalf("ListDistributionsWithFilters failed: %v", err)
+		}
+		if len(results) != 2 {
+			t.Errorf("Expected 2 distributions for dpu-1, got %d", len(results))
+		}
+	})
+
+	t.Run("FilterByOperatorAndTenant", func(t *testing.T) {
+		results, err := store.ListDistributionsWithFilters(DistributionQueryOpts{
+			OperatorID: "op-alice",
+			TenantID:   "tenant-prod",
+			Limit:      10,
+		})
+		if err != nil {
+			t.Fatalf("ListDistributionsWithFilters failed: %v", err)
+		}
+		if len(results) != 2 {
+			t.Errorf("Expected 2 distributions for alice in tenant-prod, got %d", len(results))
+		}
+	})
+
+	t.Run("FilterByOutcome", func(t *testing.T) {
+		outcome := DistributionOutcomeSuccess
+		results, err := store.ListDistributionsWithFilters(DistributionQueryOpts{
+			Outcome: &outcome,
+			Limit:   10,
+		})
+		if err != nil {
+			t.Fatalf("ListDistributionsWithFilters failed: %v", err)
+		}
+		if len(results) != 2 {
+			t.Errorf("Expected 2 success distributions, got %d", len(results))
+		}
+	})
+
+	t.Run("FilterByMultipleCriteria", func(t *testing.T) {
+		outcome := DistributionOutcomeSuccess
+		results, err := store.ListDistributionsWithFilters(DistributionQueryOpts{
+			OperatorID: "op-alice",
+			Outcome:    &outcome,
+			Limit:      10,
+		})
+		if err != nil {
+			t.Fatalf("ListDistributionsWithFilters failed: %v", err)
+		}
+		if len(results) != 1 {
+			t.Errorf("Expected 1 success distribution by alice, got %d", len(results))
+		}
+	})
+
+	t.Run("FilterNoMatches", func(t *testing.T) {
+		results, err := store.ListDistributionsWithFilters(DistributionQueryOpts{
+			OperatorID: "op-nobody",
+			Limit:      10,
+		})
+		if err != nil {
+			t.Fatalf("ListDistributionsWithFilters failed: %v", err)
+		}
+		if len(results) != 0 {
+			t.Errorf("Expected 0 distributions, got %d", len(results))
+		}
+	})
+
+	t.Run("NoFilters", func(t *testing.T) {
+		results, err := store.ListDistributionsWithFilters(DistributionQueryOpts{
+			Limit: 10,
+		})
+		if err != nil {
+			t.Fatalf("ListDistributionsWithFilters failed: %v", err)
+		}
+		if len(results) != 4 {
+			t.Errorf("Expected 4 distributions with no filters, got %d", len(results))
+		}
+	})
+
+	t.Run("WithLimit", func(t *testing.T) {
+		results, err := store.ListDistributionsWithFilters(DistributionQueryOpts{
+			Limit: 2,
+		})
+		if err != nil {
+			t.Fatalf("ListDistributionsWithFilters failed: %v", err)
+		}
+		if len(results) != 2 {
+			t.Errorf("Expected 2 distributions with limit, got %d", len(results))
+		}
+	})
+
+	t.Run("NoLimit", func(t *testing.T) {
+		results, err := store.ListDistributionsWithFilters(DistributionQueryOpts{})
+		if err != nil {
+			t.Fatalf("ListDistributionsWithFilters failed: %v", err)
+		}
+		if len(results) != 4 {
+			t.Errorf("Expected 4 distributions with no limit, got %d", len(results))
+		}
+	})
+}
+
 // Helper functions for creating pointers to primitives
 func stringPtr(s string) *string {
 	return &s

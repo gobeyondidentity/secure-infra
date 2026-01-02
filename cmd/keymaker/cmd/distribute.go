@@ -12,6 +12,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// operatorContext holds the operator identity for audit records.
+type operatorContext struct {
+	OperatorID    string
+	OperatorEmail string
+}
+
 func init() {
 	rootCmd.AddCommand(distributeCmd)
 	distributeCmd.AddCommand(distributeSSHCACmd)
@@ -53,6 +59,17 @@ Examples:
 		targetDPU, _ := cmd.Flags().GetString("target")
 		force, _ := cmd.Flags().GetBool("force")
 
+		// Load operator context from config
+		config, err := loadConfig()
+		if err != nil {
+			return fmt.Errorf("KeyMaker not initialized. Run 'km init' first: %w", err)
+		}
+
+		operatorCtx := &operatorContext{
+			OperatorID:    config.OperatorID,
+			OperatorEmail: config.OperatorEmail,
+		}
+
 		// Check authorization before distributing (CA + device)
 		if err := checkAuthorization(caName, targetDPU); err != nil {
 			if authErr, ok := err.(*AuthorizationError); ok {
@@ -89,7 +106,7 @@ Examples:
 		// Handle gate decision
 		if decision.Allowed {
 			// Log audit entry for successful gate check
-			logAuditEntry(auditLogger, dpu.Name, caName, "allowed", "false", decision)
+			logAuditEntry(auditLogger, operatorCtx, dpu.Name, caName, "allowed", "false", decision)
 
 			age := "unknown"
 			if decision.Attestation != nil {
@@ -98,13 +115,13 @@ Examples:
 			fmt.Printf("+ Attestation verified (%s ago)\n\n", age)
 
 			// Proceed with distribution
-			return executeDistribution(cmd.Context(), dpu, ca, decision, false, "")
+			return executeDistribution(cmd.Context(), dpu, ca, decision, false, "", operatorCtx)
 
 		} else {
 			// Gate blocked
 			if force {
 				// Log audit entry for forced bypass
-				logAuditEntry(auditLogger, dpu.Name, caName, "forced", "true", decision)
+				logAuditEntry(auditLogger, operatorCtx, dpu.Name, caName, "forced", "true", decision)
 
 				age := "unknown"
 				if decision.Attestation != nil {
@@ -114,14 +131,14 @@ Examples:
 				fmt.Printf("Warning: Forcing distribution despite %s (logged)\n\n", decision.Reason)
 
 				// Proceed with forced distribution
-				return executeDistribution(cmd.Context(), dpu, ca, decision, true, decision.Reason)
+				return executeDistribution(cmd.Context(), dpu, ca, decision, true, decision.Reason, operatorCtx)
 
 			} else {
 				// Blocked, no force
-				logAuditEntry(auditLogger, dpu.Name, caName, "blocked", "false", decision)
+				logAuditEntry(auditLogger, operatorCtx, dpu.Name, caName, "blocked", "false", decision)
 
 				// Record blocked distribution
-				recordBlockedDistribution(dpu.Name, caName, decision)
+				recordBlockedDistribution(dpu.Name, caName, decision, operatorCtx)
 
 				if decision.Attestation != nil {
 					age := formatAge(decision.Attestation.Age())
@@ -139,13 +156,13 @@ Examples:
 }
 
 // executeDistribution performs the actual gRPC call to distribute the credential.
-func executeDistribution(ctx context.Context, dpu *store.DPU, ca *store.SSHCA, decision *attestation.GateDecision, forced bool, forceReason string) error {
+func executeDistribution(ctx context.Context, dpu *store.DPU, ca *store.SSHCA, decision *attestation.GateDecision, forced bool, forceReason string, opCtx *operatorContext) error {
 	fmt.Println("Distributing CA public key...")
 
 	// Connect to DPU agent
 	client, err := grpcclient.NewClient(dpu.Address())
 	if err != nil {
-		recordFailedDistribution(dpu.Name, ca.Name, decision, fmt.Sprintf("connection failed: %v", err))
+		recordFailedDistribution(dpu.Name, ca.Name, decision, fmt.Sprintf("connection failed: %v", err), opCtx)
 		return fmt.Errorf("failed to connect to DPU agent: %w", err)
 	}
 	defer client.Close()
@@ -153,12 +170,12 @@ func executeDistribution(ctx context.Context, dpu *store.DPU, ca *store.SSHCA, d
 	// Call DistributeCredential RPC
 	resp, err := client.DistributeCredential(ctx, "ssh-ca", ca.Name, ca.PublicKey)
 	if err != nil {
-		recordFailedDistribution(dpu.Name, ca.Name, decision, fmt.Sprintf("RPC failed: %v", err))
+		recordFailedDistribution(dpu.Name, ca.Name, decision, fmt.Sprintf("RPC failed: %v", err), opCtx)
 		return fmt.Errorf("distribution failed: %w", err)
 	}
 
 	if !resp.Success {
-		recordFailedDistribution(dpu.Name, ca.Name, decision, resp.Message)
+		recordFailedDistribution(dpu.Name, ca.Name, decision, resp.Message, opCtx)
 		fmt.Printf("x Distribution failed: %s\n", resp.Message)
 		return fmt.Errorf("agent rejected distribution: %s", resp.Message)
 	}
@@ -172,20 +189,22 @@ func executeDistribution(ctx context.Context, dpu *store.DPU, ca *store.SSHCA, d
 	fmt.Printf("Distribution complete. Certificates signed by %s now accepted.\n", ca.Name)
 
 	// Record successful distribution
-	recordSuccessDistribution(dpu.Name, ca.Name, decision, resp.InstalledPath, forced, forceReason)
+	recordSuccessDistribution(dpu.Name, ca.Name, decision, resp.InstalledPath, forced, forceReason, opCtx)
 
 	return nil
 }
 
 // logAuditEntry creates an audit log entry for the distribution action.
-func logAuditEntry(auditLogger *audit.Logger, dpuName, caName, decision, forced string, gateDecision *attestation.GateDecision) {
+func logAuditEntry(auditLogger *audit.Logger, opCtx *operatorContext, dpuName, caName, decision, forced string, gateDecision *attestation.GateDecision) {
 	logEntry := audit.AuditEntry{
 		Action:   "credential.distribute.ssh-ca",
 		Target:   dpuName,
 		Decision: decision,
 		Details: map[string]string{
-			"ca_name": caName,
-			"forced":  forced,
+			"ca_name":        caName,
+			"forced":         forced,
+			"operator_id":    opCtx.OperatorID,
+			"operator_email": opCtx.OperatorEmail,
 		},
 	}
 
@@ -212,7 +231,7 @@ func logAuditEntry(auditLogger *audit.Logger, dpuName, caName, decision, forced 
 }
 
 // recordSuccessDistribution records a successful distribution in history.
-func recordSuccessDistribution(dpuName, caName string, decision *attestation.GateDecision, installedPath string, forced bool, forceReason string) {
+func recordSuccessDistribution(dpuName, caName string, decision *attestation.GateDecision, installedPath string, forced bool, forceReason string, opCtx *operatorContext) {
 	var outcome store.DistributionOutcome
 	if forced {
 		outcome = store.DistributionOutcomeForced
@@ -226,6 +245,8 @@ func recordSuccessDistribution(dpuName, caName string, decision *attestation.Gat
 		CredentialName: caName,
 		Outcome:        outcome,
 		InstalledPath:  strPtr(installedPath),
+		OperatorID:     opCtx.OperatorID,
+		OperatorEmail:  opCtx.OperatorEmail,
 	}
 
 	if decision.Attestation != nil {
@@ -237,6 +258,7 @@ func recordSuccessDistribution(dpuName, caName string, decision *attestation.Gat
 
 	if forced && forceReason != "" {
 		d.ErrorMessage = strPtr(fmt.Sprintf("forced: %s", forceReason))
+		d.ForcedBy = strPtr(opCtx.OperatorEmail)
 	}
 
 	if err := dpuStore.RecordDistribution(d); err != nil {
@@ -245,7 +267,7 @@ func recordSuccessDistribution(dpuName, caName string, decision *attestation.Gat
 }
 
 // recordBlockedDistribution records a blocked distribution in history.
-func recordBlockedDistribution(dpuName, caName string, decision *attestation.GateDecision) {
+func recordBlockedDistribution(dpuName, caName string, decision *attestation.GateDecision, opCtx *operatorContext) {
 	var outcome store.DistributionOutcome
 	if decision.Attestation == nil {
 		outcome = store.DistributionOutcomeBlockedFailed
@@ -259,6 +281,9 @@ func recordBlockedDistribution(dpuName, caName string, decision *attestation.Gat
 		CredentialName: caName,
 		Outcome:        outcome,
 		ErrorMessage:   strPtr(decision.Reason),
+		BlockedReason:  strPtr(decision.Reason),
+		OperatorID:     opCtx.OperatorID,
+		OperatorEmail:  opCtx.OperatorEmail,
 	}
 
 	if decision.Attestation != nil {
@@ -274,13 +299,15 @@ func recordBlockedDistribution(dpuName, caName string, decision *attestation.Gat
 }
 
 // recordFailedDistribution records a failed distribution in history.
-func recordFailedDistribution(dpuName, caName string, decision *attestation.GateDecision, errorMsg string) {
+func recordFailedDistribution(dpuName, caName string, decision *attestation.GateDecision, errorMsg string, opCtx *operatorContext) {
 	d := &store.Distribution{
 		DPUName:        dpuName,
 		CredentialType: "ssh-ca",
 		CredentialName: caName,
 		Outcome:        store.DistributionOutcomeSuccess, // Still attempted, but failed at RPC level
 		ErrorMessage:   strPtr(errorMsg),
+		OperatorID:     opCtx.OperatorID,
+		OperatorEmail:  opCtx.OperatorEmail,
 	}
 
 	if decision.Attestation != nil {
