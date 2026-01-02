@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/beyondidentity/fabric-console/pkg/attestation"
-	"github.com/beyondidentity/fabric-console/pkg/grpcclient"
-	"github.com/beyondidentity/fabric-console/pkg/hostclient"
-	"github.com/beyondidentity/fabric-console/pkg/store"
+	"github.com/nmelo/secure-infra/pkg/attestation"
+	"github.com/nmelo/secure-infra/pkg/grpcclient"
+	"github.com/nmelo/secure-infra/pkg/hostclient"
+	"github.com/nmelo/secure-infra/pkg/store"
 	"github.com/google/uuid"
 )
 

@@ -1,4 +1,4 @@
-module github.com/beyondidentity/fabric-console
+module github.com/nmelo/secure-infra
 
 go 1.25.5
 

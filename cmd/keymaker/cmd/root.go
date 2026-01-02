@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/beyondidentity/fabric-console/pkg/store"
+	"github.com/nmelo/secure-infra/pkg/store"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )

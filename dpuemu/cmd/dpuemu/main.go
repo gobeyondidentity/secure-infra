@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/beyondidentity/fabric-console/dpuemu/internal/fixture"
-	"github.com/beyondidentity/fabric-console/dpuemu/internal/server"
+	"github.com/nmelo/secure-infra/dpuemu/internal/fixture"
+	"github.com/nmelo/secure-infra/dpuemu/internal/server"
 	"github.com/spf13/cobra"
 )
 

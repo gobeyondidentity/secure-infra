@@ -4,7 +4,7 @@ package main
 import (
 	"os"
 
-	"github.com/beyondidentity/fabric-console/cmd/keymaker/cmd"
+	"github.com/nmelo/secure-infra/cmd/keymaker/cmd"
 )
 
 func main() {

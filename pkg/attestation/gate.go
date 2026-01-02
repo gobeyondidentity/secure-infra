@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/beyondidentity/fabric-console/pkg/store"
+	"github.com/nmelo/secure-infra/pkg/store"
 )
 
 // DefaultFreshnessWindow is the default maximum age for attestations.

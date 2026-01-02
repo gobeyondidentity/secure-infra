@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/beyondidentity/fabric-console/pkg/store"
+	"github.com/nmelo/secure-infra/pkg/store"
 )
 
 func setupTestStore(t *testing.T) (*store.Store, func()) {

@@ -7,8 +7,8 @@ import (
 	"log"
 	"net"
 
-	agentv1 "github.com/beyondidentity/fabric-console/gen/go/agent/v1"
-	"github.com/beyondidentity/fabric-console/dpuemu/internal/fixture"
+	agentv1 "github.com/nmelo/secure-infra/gen/go/agent/v1"
+	"github.com/nmelo/secure-infra/dpuemu/internal/fixture"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/beyondidentity/fabric-console/pkg/store"
+	"github.com/nmelo/secure-infra/pkg/store"
 	"github.com/google/uuid"
 )
 

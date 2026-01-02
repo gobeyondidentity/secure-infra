@@ -20,7 +20,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/beyondidentity/fabric-console/pkg/posture"
+	"github.com/nmelo/secure-infra/pkg/posture"
 	"golang.org/x/crypto/ssh"
 )
 

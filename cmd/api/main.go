@@ -10,8 +10,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/beyondidentity/fabric-console/internal/api"
-	"github.com/beyondidentity/fabric-console/pkg/store"
+	"github.com/nmelo/secure-infra/internal/api"
+	"github.com/nmelo/secure-infra/pkg/store"
 )
 
 var (

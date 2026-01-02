@@ -13,9 +13,9 @@ import (
 	"syscall"
 	"time"
 
-	agentv1 "github.com/beyondidentity/fabric-console/gen/go/agent/v1"
-	"github.com/beyondidentity/fabric-console/internal/agent"
-	"github.com/beyondidentity/fabric-console/internal/agent/localapi"
+	agentv1 "github.com/nmelo/secure-infra/gen/go/agent/v1"
+	"github.com/nmelo/secure-infra/internal/agent"
+	"github.com/nmelo/secure-infra/internal/agent/localapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )

@@ -10,9 +10,9 @@ import (
 	"text/tabwriter"
 	"time"
 
-	agentv1 "github.com/beyondidentity/fabric-console/gen/go/agent/v1"
-	"github.com/beyondidentity/fabric-console/pkg/grpcclient"
-	"github.com/beyondidentity/fabric-console/pkg/store"
+	agentv1 "github.com/nmelo/secure-infra/gen/go/agent/v1"
+	"github.com/nmelo/secure-infra/pkg/grpcclient"
+	"github.com/nmelo/secure-infra/pkg/store"
 	"github.com/spf13/cobra"
 )
 

@@ -7,7 +7,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/beyondidentity/fabric-console/pkg/sshca"
+	"github.com/nmelo/secure-infra/pkg/sshca"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )

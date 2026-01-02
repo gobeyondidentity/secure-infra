@@ -5,8 +5,8 @@ import (
 	"context"
 	"time"
 
-	hostv1 "github.com/beyondidentity/fabric-console/gen/go/host/v1"
-	"github.com/beyondidentity/fabric-console/pkg/host"
+	hostv1 "github.com/nmelo/secure-infra/gen/go/host/v1"
+	"github.com/nmelo/secure-infra/pkg/host"
 )
 
 // Server implements the HostAgentService gRPC interface.

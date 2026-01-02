@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"time"
 
-	agentv1 "github.com/beyondidentity/fabric-console/gen/go/agent/v1"
-	"github.com/beyondidentity/fabric-console/pkg/attestation"
-	"github.com/beyondidentity/fabric-console/pkg/doca"
-	"github.com/beyondidentity/fabric-console/pkg/ovs"
+	agentv1 "github.com/nmelo/secure-infra/gen/go/agent/v1"
+	"github.com/nmelo/secure-infra/pkg/attestation"
+	"github.com/nmelo/secure-infra/pkg/doca"
+	"github.com/nmelo/secure-infra/pkg/ovs"
 )
 
 var (

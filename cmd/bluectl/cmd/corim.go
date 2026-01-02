@@ -10,8 +10,8 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/beyondidentity/fabric-console/pkg/attestation"
-	"github.com/beyondidentity/fabric-console/pkg/grpcclient"
+	"github.com/nmelo/secure-infra/pkg/attestation"
+	"github.com/nmelo/secure-infra/pkg/grpcclient"
 	"github.com/spf13/cobra"
 )
 

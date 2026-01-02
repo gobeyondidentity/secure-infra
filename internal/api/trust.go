@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/beyondidentity/fabric-console/pkg/attestation"
-	"github.com/beyondidentity/fabric-console/pkg/store"
+	"github.com/nmelo/secure-infra/pkg/attestation"
+	"github.com/nmelo/secure-infra/pkg/store"
 )
 
 // ----- Trust Types -----
