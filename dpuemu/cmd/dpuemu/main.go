@@ -9,15 +9,17 @@ import (
 	"syscall"
 
 	"github.com/nmelo/secure-infra/dpuemu/internal/fixture"
+	"github.com/nmelo/secure-infra/dpuemu/internal/portutil"
 	"github.com/nmelo/secure-infra/dpuemu/internal/server"
 	"github.com/spf13/cobra"
 )
 
 var (
 	// Flags
-	listenAddr   string
-	fixturePath  string
-	instanceID   string
+	listenAddr  string
+	port        int
+	fixturePath string
+	instanceID  string
 )
 
 func main() {
@@ -33,11 +35,17 @@ var rootCmd = &cobra.Command{
 	Long: `dpuemu emulates a BlueField DPU agent, enabling development and testing
 without physical hardware. It implements the same gRPC interface as the real agent.
 
-Modes:
-  serve    Start the emulator server with fixture data
+Quick start:
+  dpuemu serve --port 50052
+
+Commands:
+  serve    Start the emulator server
 
 Examples:
-  dpuemu serve --fixture=fixtures/bf3-static.json --listen=:50051
+  dpuemu serve                                      # Uses default fixture, port 50051
+  dpuemu serve --port 50052                         # Custom port with default fixture
+  dpuemu serve --fixture=fixtures/bf3-static.json  # Custom fixture file
+  dpuemu serve --listen=:50051                      # Alternative port syntax
   dpuemu serve --fixture=fixtures/bf3-blueman.json --instance-id=001`,
 }
 
@@ -45,7 +53,19 @@ var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Start the DPU emulator server",
 	Long: `Start the gRPC server that emulates a DPU agent.
-The server loads fixture data and responds to gRPC requests with that data.
+
+If no fixture is specified, a default fixture is used with:
+  Hostname: dpuemu-local
+  Model:    Emulated BlueField-3
+  Serial:   EMU-00000001
+  Status:   healthy
+
+Port can be specified as:
+  --port 50052       # Port number only
+  --listen :50052    # Address format (alternative)
+  --listen 0.0.0.0:50052  # Bind to specific interface
+
+If both --port and --listen are provided, --port takes precedence.
 
 With --instance-id, template variables in the fixture are replaced:
   {{.InstanceID}}   -> the instance ID
@@ -55,15 +75,21 @@ With --instance-id, template variables in the fixture are replaced:
 }
 
 func init() {
-	serveCmd.Flags().StringVarP(&listenAddr, "listen", "l", ":50051", "Address to listen on")
-	serveCmd.Flags().StringVarP(&fixturePath, "fixture", "f", "", "Path to fixture JSON file")
+	serveCmd.Flags().StringVarP(&listenAddr, "listen", "l", "", "Address to listen on (e.g., :50051 or 0.0.0.0:50051)")
+	serveCmd.Flags().IntVarP(&port, "port", "p", 0, "Port to listen on (takes precedence over --listen)")
+	serveCmd.Flags().StringVarP(&fixturePath, "fixture", "f", "", "Path to fixture JSON file (optional, uses defaults if not set)")
 	serveCmd.Flags().StringVarP(&instanceID, "instance-id", "i", "", "Instance ID for templating")
-	serveCmd.MarkFlagRequired("fixture")
 
 	rootCmd.AddCommand(serveCmd)
 }
 
 func runServe(cmd *cobra.Command, args []string) error {
+	// Resolve listen address from --port and --listen flags
+	addr, err := portutil.ResolvePort(port, listenAddr)
+	if err != nil {
+		return fmt.Errorf("invalid port configuration: %w", err)
+	}
+
 	// Build template variables
 	var vars *fixture.TemplateVars
 	if instanceID != "" {
@@ -74,16 +100,22 @@ func runServe(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Load fixture
-	fmt.Printf("Loading fixture from %s\n", fixturePath)
-	fix, err := fixture.Load(fixturePath, vars)
-	if err != nil {
-		return fmt.Errorf("loading fixture: %w", err)
+	// Load fixture or use default
+	var fix *fixture.Fixture
+	if fixturePath != "" {
+		fmt.Printf("Loading fixture from %s\n", fixturePath)
+		fix, err = fixture.Load(fixturePath, vars)
+		if err != nil {
+			return fmt.Errorf("loading fixture: %w", err)
+		}
+	} else {
+		fmt.Println("Using default fixture (no --fixture specified)")
+		fix = fixture.DefaultFixture()
 	}
 
 	// Create server
 	srv := server.New(server.Config{
-		ListenAddr: listenAddr,
+		ListenAddr: addr,
 		InstanceID: instanceID,
 		Fixture:    fix,
 	})
@@ -98,5 +130,5 @@ func runServe(cmd *cobra.Command, args []string) error {
 	}()
 
 	// Start server
-	return srv.Start(listenAddr)
+	return srv.Start(addr)
 }

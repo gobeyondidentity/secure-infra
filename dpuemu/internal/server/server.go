@@ -110,14 +110,35 @@ func (s *Server) GetAttestation(ctx context.Context, req *agentv1.GetAttestation
 
 // HealthCheck verifies the emulator is running and responsive.
 func (s *Server) HealthCheck(ctx context.Context, req *agentv1.HealthCheckRequest) (*agentv1.HealthCheckResponse, error) {
-	log.Printf("HealthCheck called")
+	var resp *agentv1.HealthCheckResponse
 	if s.fixture == nil {
-		return &agentv1.HealthCheckResponse{
+		resp = &agentv1.HealthCheckResponse{
 			Healthy: true,
 			Version: "dpuemu-0.2.0",
-		}, nil
+		}
+	} else {
+		resp = s.fixture.ToHealthCheckResponse()
 	}
-	return s.fixture.ToHealthCheckResponse(), nil
+
+	// Log health status
+	status := "SERVING"
+	if !resp.Healthy {
+		status = "NOT_SERVING"
+	}
+	log.Printf("HealthCheck: status=%s", status)
+
+	// Log component health if verbose (components exist)
+	if len(resp.Components) > 0 {
+		for name, comp := range resp.Components {
+			compStatus := "healthy"
+			if !comp.Healthy {
+				compStatus = "unhealthy"
+			}
+			log.Printf("  component %s: %s", name, compStatus)
+		}
+	}
+
+	return resp, nil
 }
 
 // DistributeCredential simulates deploying a credential to the host via the DPU.
