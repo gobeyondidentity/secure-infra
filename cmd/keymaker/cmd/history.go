@@ -81,7 +81,7 @@ type DistributionHistoryEntry struct {
 }
 
 func runHistory(cmd *cobra.Command, args []string) error {
-	// Load config to get control plane URL
+	// Load config to get server URL
 	config, err := loadConfig()
 	if err != nil {
 		return fmt.Errorf("KeyMaker not initialized. Run 'km init' first")
@@ -138,7 +138,7 @@ func runHistory(cmd *cobra.Command, args []string) error {
 
 	params.Set("limit", strconv.Itoa(limit))
 
-	// Call the control plane API
+	// Call the server API
 	reqURL := config.ControlPlaneURL + "/api/distribution/history"
 	if len(params) > 0 {
 		reqURL += "?" + params.Encode()
@@ -146,7 +146,7 @@ func runHistory(cmd *cobra.Command, args []string) error {
 
 	resp, err := http.Get(reqURL)
 	if err != nil {
-		return fmt.Errorf("failed to connect to control plane: %w", err)
+		return fmt.Errorf("failed to connect to server: %w", err)
 	}
 	defer resp.Body.Close()
 

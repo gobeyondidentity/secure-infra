@@ -11,20 +11,20 @@ import (
 	"github.com/nmelo/secure-infra/pkg/clierror"
 )
 
-// AuthorizationCheckRequest is sent to the control plane to check authorization.
+// AuthorizationCheckRequest is sent to the server to check authorization.
 type AuthorizationCheckRequest struct {
 	OperatorID string `json:"operator_id"`
 	CAID       string `json:"ca_id"`
 	DeviceID   string `json:"device_id,omitempty"`
 }
 
-// AuthorizationCheckResponse is returned from the control plane.
+// AuthorizationCheckResponse is returned from the server.
 type AuthorizationCheckResponse struct {
 	Authorized bool   `json:"authorized"`
 	Reason     string `json:"reason,omitempty"`
 }
 
-// Authorization represents a single authorization entry from the control plane.
+// Authorization represents a single authorization entry from the server.
 type Authorization struct {
 	ID        string   `json:"id"`
 	OperatorID string  `json:"operator_id"`
@@ -51,7 +51,7 @@ func checkAuthorization(caName, deviceName string) error {
 	// Look up CA ID by name
 	caResp, err := http.Get(config.ControlPlaneURL + "/api/credentials/ssh-cas/" + url.QueryEscape(caName))
 	if err != nil {
-		return clierror.ConnectionFailed("control plane")
+		return clierror.ConnectionFailed("server")
 	}
 	defer caResp.Body.Close()
 
@@ -74,7 +74,7 @@ func checkAuthorization(caName, deviceName string) error {
 	if deviceName != "" {
 		dpuResp, err := http.Get(config.ControlPlaneURL + "/api/dpus/" + url.QueryEscape(deviceName))
 		if err != nil {
-			return clierror.ConnectionFailed("control plane")
+			return clierror.ConnectionFailed("server")
 		}
 		defer dpuResp.Body.Close()
 
@@ -114,7 +114,7 @@ func checkAuthorization(caName, deviceName string) error {
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {
-		return clierror.ConnectionFailed("control plane")
+		return clierror.ConnectionFailed("server")
 	}
 	defer resp.Body.Close()
 
@@ -166,7 +166,7 @@ func getAuthorizations() ([]Authorization, error) {
 
 	resp, err := http.Get(reqURL)
 	if err != nil {
-		return nil, clierror.ConnectionFailed("control plane")
+		return nil, clierror.ConnectionFailed("server")
 	}
 	defer resp.Body.Close()
 

@@ -36,6 +36,56 @@ func setupTestServer(t *testing.T) (*Server, *http.ServeMux) {
 	return server, mux
 }
 
+// TestHealthEndpoint tests the /health endpoint at root level.
+func TestHealthEndpoint(t *testing.T) {
+	_, mux := setupTestServer(t)
+
+	req := httptest.NewRequest("GET", "/health", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(w.Body).Decode(&result); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if result["status"] != "ok" {
+		t.Errorf("expected status 'ok', got '%v'", result["status"])
+	}
+	if result["version"] != "0.2.0" {
+		t.Errorf("expected version '0.2.0', got '%v'", result["version"])
+	}
+}
+
+// TestAPIHealthEndpoint tests the /api/health endpoint returns same response as /health.
+func TestAPIHealthEndpoint(t *testing.T) {
+	_, mux := setupTestServer(t)
+
+	req := httptest.NewRequest("GET", "/api/health", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(w.Body).Decode(&result); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if result["status"] != "ok" {
+		t.Errorf("expected status 'ok', got '%v'", result["status"])
+	}
+	if result["version"] != "0.2.0" {
+		t.Errorf("expected version '0.2.0', got '%v'", result["version"])
+	}
+}
+
 // TestTenantListEmpty tests listing tenants when none exist.
 func TestTenantListEmpty(t *testing.T) {
 	_, mux := setupTestServer(t)

@@ -80,6 +80,7 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/distribution/history", s.handleDistributionHistory)
 
 	// Health routes
+	mux.HandleFunc("GET /health", s.handleAPIHealth)
 	mux.HandleFunc("GET /api/health", s.handleAPIHealth)
 
 	// KeyMaker routes
@@ -633,7 +634,7 @@ func (s *Server) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleAPIHealth(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"status":  "ok",
-		"version": "0.1.0",
+		"version": "0.2.0",
 	})
 }
 

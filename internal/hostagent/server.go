@@ -26,7 +26,7 @@ func NewServer(cfg *Config) *Server {
 		config:    cfg,
 		collector: host.NewCollector(),
 		startTime: time.Now().Unix(),
-		version:   "0.1.0",
+		version:   "0.2.0",
 	}
 }
 

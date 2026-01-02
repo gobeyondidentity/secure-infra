@@ -23,7 +23,7 @@ func init() {
 	rootCmd.AddCommand(whoamiCmd)
 
 	initCmd.Flags().String("name", "", "Custom name for this KeyMaker")
-	initCmd.Flags().String("control-plane", "http://localhost:8080", "Control plane URL")
+	initCmd.Flags().String("control-plane", "http://localhost:8080", "Server URL")
 	initCmd.Flags().String("invite-code", "", "Invite code (will prompt if not provided)")
 	initCmd.Flags().Bool("force", false, "Force re-initialization (removes existing config)")
 
@@ -41,15 +41,15 @@ type KMConfig struct {
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialize and bind this KeyMaker to the control plane",
-	Long: `Initialize a new KeyMaker by binding it to the control plane.
+	Short: "Initialize and bind this KeyMaker to the server",
+	Long: `Initialize a new KeyMaker by binding it to the server.
 
 You will need an invite code from your administrator. The code is
 generated with 'bluectl operator invite'.
 
 This command:
 1. Generates a new ed25519 keypair
-2. Binds the public key to the control plane using your invite code
+2. Binds the public key to the server using your invite code
 3. Stores configuration in ~/.km/config.json
 
 Use --force to re-initialize if already configured (removes existing keypair).
@@ -132,8 +132,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 		"device_name":        name, // Temporary, may be updated
 	}
 
-	// POST to control plane
-	fmt.Println("Binding to control plane...")
+	// POST to server
+	fmt.Println("Binding to server...")
 	reqBody, _ := json.Marshal(bindReq)
 	resp, err := http.Post(
 		controlPlane+"/api/v1/keymakers/bind",
@@ -141,7 +141,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		strings.NewReader(string(reqBody)),
 	)
 	if err != nil {
-		return fmt.Errorf("cannot connect to control plane at %s: %w\nVerify the URL and check your network connection", controlPlane, err)
+		return fmt.Errorf("cannot connect to server at %s: %w\nVerify the URL and check your network connection", controlPlane, err)
 	}
 	defer resp.Body.Close()
 

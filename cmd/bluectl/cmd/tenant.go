@@ -65,11 +65,17 @@ var tenantListCmd = &cobra.Command{
 				tags = "-"
 			}
 			desc := t.Description
-			if len(desc) > 40 {
+			if desc == "" {
+				desc = "-"
+			} else if len(desc) > 40 {
 				desc = desc[:37] + "..."
 			}
+			contact := t.Contact
+			if contact == "" {
+				contact = "-"
+			}
 			fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%s\n",
-				t.Name, desc, t.Contact, count, tags)
+				t.Name, desc, contact, count, tags)
 		}
 		w.Flush()
 		return nil

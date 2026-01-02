@@ -78,8 +78,8 @@ Examples:
 				}
 				return clierror.NotAuthorized(fmt.Sprintf("device '%s'", authErr.Resource))
 			}
-			// Connection error to control plane
-			return clierror.ConnectionFailed("control plane")
+			// Connection error to server
+			return clierror.ConnectionFailed("server")
 		}
 
 		// Verify SSH CA exists and get it

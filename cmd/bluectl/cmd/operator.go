@@ -153,8 +153,9 @@ Examples:
 		fmt.Printf("Code: %s\n", code)
 		fmt.Printf("Expires: %s\n", invite.ExpiresAt.Format(time.RFC3339))
 		fmt.Println()
-		fmt.Println("Share this code with the operator. They will run:")
-		fmt.Printf("  km init\n")
+		fmt.Println("Share this code with the operator. They will need to:")
+		fmt.Println("  1. Install km: curl -fsSL https://get.beyondidentity.com/km | sh")
+		fmt.Println("  2. Run: km init")
 
 		return nil
 	},
@@ -204,11 +205,40 @@ Examples:
 			return nil
 		}
 
+		// Build tenant name cache for display
+		tenantNames := make(map[string]string)
+
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "EMAIL\tSTATUS\tCREATED")
+		fmt.Fprintln(w, "EMAIL\tTENANT\tROLE\tSTATUS\tCREATED")
 		for _, op := range operators {
-			fmt.Fprintf(w, "%s\t%s\t%s\n",
-				op.Email, op.Status, op.CreatedAt.Format("2006-01-02"))
+			// Get operator's tenant memberships
+			memberships, _ := dpuStore.GetOperatorTenants(op.ID)
+
+			if len(memberships) == 0 {
+				fmt.Fprintf(w, "%s\t-\t-\t%s\t%s\n",
+					op.Email, op.Status, op.CreatedAt.Format("2006-01-02"))
+			} else {
+				for i, m := range memberships {
+					// Look up tenant name (with cache)
+					tenantName := tenantNames[m.TenantID]
+					if tenantName == "" {
+						if t, err := dpuStore.GetTenant(m.TenantID); err == nil {
+							tenantName = t.Name
+							tenantNames[m.TenantID] = tenantName
+						} else {
+							tenantName = m.TenantID
+						}
+					}
+
+					if i == 0 {
+						fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+							op.Email, tenantName, m.Role, op.Status, op.CreatedAt.Format("2006-01-02"))
+					} else {
+						// Additional tenant memberships on separate rows
+						fmt.Fprintf(w, "\t%s\t%s\t\t\n", tenantName, m.Role)
+					}
+				}
+			}
 		}
 		w.Flush()
 		return nil

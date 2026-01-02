@@ -202,20 +202,25 @@ Examples:
 			return nil
 		}
 
+		// Private key storage info (always "Software (encrypted)" until hardware key storage)
+		privateKeyStorage := "Software (encrypted)"
+
 		if outputFormat != "table" {
-			// For JSON/YAML, exclude private key
+			// For JSON/YAML, exclude private key but include storage info
 			output := struct {
-				ID        string    `json:"id" yaml:"id"`
-				Name      string    `json:"name" yaml:"name"`
-				KeyType   string    `json:"key_type" yaml:"key_type"`
-				PublicKey string    `json:"public_key" yaml:"public_key"`
-				CreatedAt time.Time `json:"created_at" yaml:"created_at"`
+				ID                string    `json:"id" yaml:"id"`
+				Name              string    `json:"name" yaml:"name"`
+				KeyType           string    `json:"key_type" yaml:"key_type"`
+				PublicKey         string    `json:"public_key" yaml:"public_key"`
+				PrivateKeyStorage string    `json:"private_key_storage" yaml:"private_key_storage"`
+				CreatedAt         time.Time `json:"created_at" yaml:"created_at"`
 			}{
-				ID:        ca.ID,
-				Name:      ca.Name,
-				KeyType:   ca.KeyType,
-				PublicKey: pubKeyStr,
-				CreatedAt: ca.CreatedAt,
+				ID:                ca.ID,
+				Name:              ca.Name,
+				KeyType:           ca.KeyType,
+				PublicKey:         pubKeyStr,
+				PrivateKeyStorage: privateKeyStorage,
+				CreatedAt:         ca.CreatedAt,
 			}
 			return formatOutput(output)
 		}
@@ -224,6 +229,7 @@ Examples:
 		fmt.Fprintf(w, "ID:\t%s\n", ca.ID)
 		fmt.Fprintf(w, "Name:\t%s\n", ca.Name)
 		fmt.Fprintf(w, "Key Type:\t%s\n", ca.KeyType)
+		fmt.Fprintf(w, "Private Key:\t%s\n", privateKeyStorage)
 		fmt.Fprintf(w, "Created:\t%s\n", ca.CreatedAt.Format(time.RFC3339))
 		fmt.Fprintf(w, "Public Key:\t%s\n", pubKeyStr)
 		w.Flush()

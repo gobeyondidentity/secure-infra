@@ -20,11 +20,17 @@ func init() {
 	dpuCmd.AddCommand(dpuRemoveCmd)
 	dpuCmd.AddCommand(dpuInfoCmd)
 	dpuCmd.AddCommand(dpuHealthCmd)
+	dpuCmd.AddCommand(dpuAssignCmd)
 
 	// Add flags
 	dpuAddCmd.Flags().IntP("port", "p", 50051, "gRPC port")
+	dpuAddCmd.Flags().StringP("name", "n", "", "DPU name (default: hostname from agent)")
 	dpuAddCmd.Flags().Bool("offline", false, "Skip connectivity check and add DPU anyway")
 	dpuHealthCmd.Flags().BoolP("verbose", "v", false, "Show detailed component health status")
+
+	// Flags for dpu assign
+	dpuAssignCmd.Flags().String("tenant", "", "Tenant to assign the DPU to (required)")
+	dpuAssignCmd.MarkFlagRequired("tenant")
 }
 
 var dpuCmd = &cobra.Command{
@@ -57,7 +63,7 @@ var dpuListCmd = &cobra.Command{
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "NAME\tHOST\tPORT\tSTATUS\tLAST SEEN")
+		fmt.Fprintln(w, "NAME\tHOST\tPORT\tSTATUS*\tLAST SEEN")
 		for _, dpu := range dpus {
 			lastSeen := "never"
 			if dpu.LastSeen != nil {
@@ -67,36 +73,42 @@ var dpuListCmd = &cobra.Command{
 				dpu.Name, dpu.Host, dpu.Port, dpu.Status, lastSeen)
 		}
 		w.Flush()
+		fmt.Println()
+		fmt.Println("* Status reflects last known state. Use 'bluectl dpu health <name>' for live status.")
 		return nil
 	},
 }
 
 var dpuAddCmd = &cobra.Command{
-	Use:   "add <name> <host>",
+	Use:   "add <host>",
 	Short: "Register a new DPU",
 	Long: `A DPU (Data Processing Unit) is a smart NIC installed inside a host server.
 The DPU Agent runs on the DPU itself. Credentials are distributed to the
 host server through the paired Host Agent.
 
-Register a new DPU with a name and host address.
+Register a new DPU by connecting to its agent and retrieving identity information.
 
 The host is the DPU's gRPC agent address (IP or hostname). This is the DPU's management
 interface where the agent runs on the ARM cores, NOT the BMC address. The agent listens
 on port 50051 by default.
 
+By default, the DPU is named using the hostname reported by the agent. Use --name to
+override with a custom name.
+
 By default, registration requires a successful connectivity check to the DPU agent.
-Use --offline to register a DPU that is not currently reachable.
+Use --offline to register a DPU that is not currently reachable (requires --name).
 
 Examples:
-  bluectl dpu add bf3-lab 192.168.1.204              # IP address, default port 50051
-  bluectl dpu add bf3-lab 192.168.1.204 --offline    # Skip connectivity check
-  bluectl dpu add bf3-prod dpu.example.com           # Hostname, default port
-  bluectl dpu add bf3-dev 10.0.0.50 --port 50052     # Custom port`,
-	Args: cobra.ExactArgs(2),
+  bluectl dpu add 192.168.1.204                      # Uses agent hostname as name
+  bluectl dpu add 192.168.1.204 --name bf3-lab       # Custom name
+  bluectl dpu add 192.168.1.204 --offline --name bf3-lab  # Skip connectivity check
+  bluectl dpu add dpu.example.com                    # Hostname, default port
+  bluectl dpu add 10.0.0.50 --port 50052             # Custom port`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		name := args[0]
-		host := args[1]
+		host := args[0]
 		port, _ := cmd.Flags().GetInt("port")
+		name, _ := cmd.Flags().GetString("name")
 		offline, _ := cmd.Flags().GetBool("offline")
 
 		// Check for duplicate address:port - idempotent: return success if exists
@@ -118,26 +130,52 @@ Examples:
 		// Check connectivity BEFORE adding (unless --offline)
 		var status string
 		if offline {
+			if name == "" {
+				return fmt.Errorf("--name is required when using --offline (cannot retrieve hostname from agent)")
+			}
 			status = "offline"
 			fmt.Printf("Skipping connectivity check (--offline)\n")
 		} else {
 			fmt.Printf("Checking connectivity to %s:%d...\n", host, port)
 
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
 			client, err := grpcclient.NewClient(fmt.Sprintf("%s:%d", host, port))
 			if err != nil {
-				return fmt.Errorf("cannot connect to DPU agent at %s:%d: %w\n\nUse --offline to add without connectivity check", host, port, err)
+				return fmt.Errorf("cannot connect to DPU agent at %s:%d: %w\n\nUse --offline --name <name> to add without connectivity check", host, port, err)
 			}
 			defer client.Close()
 
+			// Get system info to display identity and use hostname as default name
+			info, err := client.GetSystemInfo(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to get DPU system info at %s:%d: %w\n\nUse --offline --name <name> to add without connectivity check", host, port, err)
+			}
+
+			// Display DPU identity for user verification
+			fmt.Println("Connected to DPU:")
+			fmt.Printf("  Hostname: %s\n", info.Hostname)
+			fmt.Printf("  Serial:   %s\n", info.SerialNumber)
+			fmt.Printf("  Model:    %s\n", info.Model)
+
+			// Health check
 			if _, err := client.HealthCheck(ctx); err != nil {
-				return fmt.Errorf("DPU agent health check failed at %s:%d: %w\n\nUse --offline to add without connectivity check", host, port, err)
+				return fmt.Errorf("DPU agent health check failed at %s:%d: %w\n\nUse --offline --name <name> to add without connectivity check", host, port, err)
 			}
 
 			status = "healthy"
 			fmt.Println("Connection verified: agent is healthy")
+
+			// Use hostname as default name if not provided
+			if name == "" {
+				name = info.Hostname
+			}
+		}
+
+		// Validate we have a name
+		if name == "" {
+			return fmt.Errorf("could not determine DPU name: agent returned empty hostname. Use --name to specify one")
 		}
 
 		// Now add the DPU
@@ -328,4 +366,38 @@ func runDPUHealth(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+var dpuAssignCmd = &cobra.Command{
+	Use:   "assign <dpu-name>",
+	Short: "Assign a DPU to a tenant",
+	Long: `Assign a DPU to a tenant for grouping and access control.
+
+This is an alias for 'bluectl tenant assign <tenant> <dpu>'.
+
+Examples:
+  bluectl dpu assign bf3-lab --tenant "Production"
+  bluectl dpu assign bf3-dev --tenant acme`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		dpuName := args[0]
+		tenantName, _ := cmd.Flags().GetString("tenant")
+
+		tenant, err := dpuStore.GetTenant(tenantName)
+		if err != nil {
+			return fmt.Errorf("tenant not found: %s", tenantName)
+		}
+
+		dpu, err := dpuStore.Get(dpuName)
+		if err != nil {
+			return fmt.Errorf("DPU not found: %s", dpuName)
+		}
+
+		if err := dpuStore.AssignDPUToTenant(dpu.ID, tenant.ID); err != nil {
+			return fmt.Errorf("failed to assign DPU: %w", err)
+		}
+
+		fmt.Printf("Assigned DPU '%s' to tenant '%s'\n", dpu.Name, tenant.Name)
+		return nil
+	},
 }

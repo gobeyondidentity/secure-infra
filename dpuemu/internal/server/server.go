@@ -114,7 +114,7 @@ func (s *Server) HealthCheck(ctx context.Context, req *agentv1.HealthCheckReques
 	if s.fixture == nil {
 		return &agentv1.HealthCheckResponse{
 			Healthy: true,
-			Version: "dpuemu-0.1.0",
+			Version: "dpuemu-0.2.0",
 		}, nil
 	}
 	return s.fixture.ToHealthCheckResponse(), nil

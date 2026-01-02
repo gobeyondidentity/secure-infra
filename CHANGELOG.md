@@ -1,0 +1,41 @@
+# Changelog
+
+All notable changes to the Secure Infrastructure project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.2.0] - 2026-01-02
+
+### Added
+- SSH CA lifecycle: create, list, show, sign certificates
+- Operator identity system with invite codes and authorization grants
+- Trust relationships between DPUs and hosts
+- Attestation gate with auto-refresh before credential distribution
+- `km push` command for credential distribution with attestation checks
+- Distribution history tracking with `km history`
+- Host agent for receiving credentials from DPU agent
+- DPU emulator (dpuemu) for local development and testing
+- Structured CLI errors with JSON output support
+- Idempotent create commands (dpu add, ssh-ca create, operator invite)
+
+### Changed
+- Renamed `km distribute` to `km push` for clarity
+- CLI arguments: converted required flags to positional args where intuitive
+- Improved empty state messages with actionable next steps
+- Added identity verification during `bluectl dpu add`
+- Status column in `dpu list` now shows warning about cached values
+
+### Security
+- Private keys encrypted at rest using SECURE_INFRA_KEY
+- Attestation required before credential distribution (bypass requires --force and is audited)
+- All forced operations logged to audit trail
+
+## [0.1.0] - 2025-12-15
+
+### Added
+- Initial DPU registration and management
+- Tenant organization for grouping DPUs
+- Basic gRPC agent for DPU communication
+- SQLite storage with encryption support
+- bluectl CLI for administration

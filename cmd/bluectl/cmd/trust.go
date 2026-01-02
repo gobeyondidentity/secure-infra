@@ -20,6 +20,7 @@ func init() {
 	// Flags for trust create
 	trustCreateCmd.Flags().String("type", "ssh_host", "Trust type: ssh_host, mtls")
 	trustCreateCmd.Flags().Bool("bidirectional", false, "Create bidirectional trust")
+	trustCreateCmd.Flags().Bool("force", false, "Bypass attestation checks (use with caution)")
 
 	// Flags for trust list
 	trustListCmd.Flags().String("tenant", "", "Filter by tenant")
@@ -57,6 +58,7 @@ Examples:
 		targetHostname := args[1]
 		trustType, _ := cmd.Flags().GetString("type")
 		bidirectional, _ := cmd.Flags().GetBool("bidirectional")
+		force, _ := cmd.Flags().GetBool("force")
 
 		// Validate trust type
 		if trustType != "ssh_host" && trustType != "mtls" {
@@ -116,13 +118,19 @@ Examples:
 		}
 
 		// Check attestation status for both DPUs (M2M Trust attestation gate)
-		if err := checkAttestationForTrust(sourceDPU.Name); err != nil {
-			fmt.Fprintf(os.Stderr, "Hint: Run 'bluectl attestation %s' to verify device attestation\n", sourceDPU.Name)
-			return err
-		}
-		if err := checkAttestationForTrust(targetDPU.Name); err != nil {
-			fmt.Fprintf(os.Stderr, "Hint: Run 'bluectl attestation %s' to verify device attestation\n", targetDPU.Name)
-			return err
+		if force {
+			fmt.Fprintf(os.Stderr, "WARNING: Bypassing attestation checks (--force). This action is audited.\n")
+		} else {
+			if err := checkAttestationForTrust(sourceDPU.Name); err != nil {
+				fmt.Fprintf(os.Stderr, "Hint: Run 'bluectl attestation %s' to verify device attestation\n", sourceDPU.Name)
+				fmt.Fprintf(os.Stderr, "      Use --force to bypass attestation checks (audited)\n")
+				return err
+			}
+			if err := checkAttestationForTrust(targetDPU.Name); err != nil {
+				fmt.Fprintf(os.Stderr, "Hint: Run 'bluectl attestation %s' to verify device attestation\n", targetDPU.Name)
+				fmt.Fprintf(os.Stderr, "      Use --force to bypass attestation checks (audited)\n")
+				return err
+			}
 		}
 
 		// Create trust relationship with host info
