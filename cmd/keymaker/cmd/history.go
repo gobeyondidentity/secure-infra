@@ -30,24 +30,21 @@ func init() {
 var historyCmd = &cobra.Command{
 	Use:   "history",
 	Short: "Show credential distribution history",
-	Long: `Display the history of credential distribution attempts.
+	Long: `Display the history of credential distributions.
 
-Shows distribution outcomes including whether attestation gates blocked,
-allowed, or were bypassed with --force.
+Shows when credentials were distributed, to which DPUs, and whether
+attestation gates allowed or blocked the operation.
 
-Attestation status is displayed as:
-  fresh   - attestation was less than 1 hour old at distribution time
-  stale   - attestation was 1 hour or older at distribution time
-  none    - no attestation record existed
+Column meanings:
+  ATTEST AGE  How old the attestation was at distribution time (e.g., "5m", "2h")
+  RESULT      success (allowed), blocked (denied), forced (override used)
+
+Use --verbose to see detailed reasons for blocked or forced distributions.
 
 Examples:
   km history
   km history --target bf3-lab-01
-  km history --operator nelson@acme.com
-  km history --result blocked --verbose
-  km history --from 2026-01-01 --to 2026-01-15
-  km history --limit 50
-  km history --target bf3-lab-01 -o json`,
+  km history --result blocked --verbose`,
 	RunE: runHistory,
 }
 
@@ -200,7 +197,7 @@ func runHistory(cmd *cobra.Command, args []string) error {
 
 	if verbose {
 		// Verbose mode shows blocked reason
-		fmt.Fprintln(w, "TIMESTAMP\tTARGET\tOPERATOR\tREASON")
+		fmt.Fprintln(w, "TIMESTAMP\tTARGET\tOPERATOR\tRESULT\tREASON")
 		for _, d := range distributions {
 			reason := ""
 			if d.BlockedReason != nil {
@@ -208,16 +205,17 @@ func runHistory(cmd *cobra.Command, args []string) error {
 			} else if d.AttestationAge != nil && *d.AttestationAge != "" {
 				reason = formatAttestationDetailFromString(d.Outcome, *d.AttestationAge)
 			}
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 				formatTimestamp(d.CreatedAt),
 				d.DPUName,
 				d.OperatorEmail,
+				mapOutcomeDisplay(d.Outcome),
 				reason,
 			)
 		}
 	} else {
 		// Standard mode
-		fmt.Fprintln(w, "TIMESTAMP\tOPERATOR\tTARGET\tCA\tATTESTATION\tRESULT")
+		fmt.Fprintln(w, "TIMESTAMP\tOPERATOR\tTARGET\tCA\tATTEST AGE\tRESULT")
 		for _, d := range distributions {
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
 				formatTimestamp(d.CreatedAt),

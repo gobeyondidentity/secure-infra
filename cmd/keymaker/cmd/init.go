@@ -25,6 +25,8 @@ func init() {
 	initCmd.Flags().String("name", "", "Custom name for this KeyMaker")
 	initCmd.Flags().String("control-plane", "http://localhost:8080", "Control plane URL")
 	initCmd.Flags().String("invite-code", "", "Invite code (will prompt if not provided)")
+
+	whoamiCmd.Flags().BoolP("verbose", "v", false, "Show internal IDs")
 }
 
 // KMConfig is stored in ~/.km/config.json
@@ -270,10 +272,16 @@ var whoamiCmd = &cobra.Command{
 			return formatOutput(config)
 		}
 
-		fmt.Printf("KeyMaker ID:    %s\n", config.KeyMakerID)
-		fmt.Printf("Operator ID:    %s\n", config.OperatorID)
-		fmt.Printf("Operator Email: %s\n", config.OperatorEmail)
-		fmt.Printf("Control Plane:  %s\n", config.ControlPlaneURL)
+		verbose, _ := cmd.Flags().GetBool("verbose")
+
+		fmt.Printf("Operator: %s\n", config.OperatorEmail)
+		fmt.Printf("Server:   %s\n", config.ControlPlaneURL)
+
+		if verbose {
+			fmt.Println()
+			fmt.Printf("KeyMaker ID: %s\n", config.KeyMakerID)
+			fmt.Printf("Operator ID: %s\n", config.OperatorID)
+		}
 
 		// Fetch and display authorizations
 		authorizations, err := getAuthorizations()
@@ -285,15 +293,31 @@ var whoamiCmd = &cobra.Command{
 		} else {
 			fmt.Printf("\nAuthorizations:\n")
 			for _, auth := range authorizations {
-				devices := strings.Join(auth.DeviceIDs, ", ")
-				if len(auth.DeviceIDs) == 0 {
-					devices = "none"
+				// Prefer name fields if available, fall back to IDs
+				var caDisplay string
+				if auth.CAName != "" {
+					caDisplay = auth.CAName
+				} else if len(auth.CAIDs) > 0 {
+					caDisplay = auth.CAIDs[0] // Show first ID as fallback
+				} else {
+					caDisplay = "none"
 				}
-				cas := strings.Join(auth.CAIDs, ", ")
-				if len(auth.CAIDs) == 0 {
-					cas = "none"
+
+				var deviceDisplay string
+				if len(auth.Devices) > 0 {
+					deviceDisplay = strings.Join(auth.Devices, ", ")
+				} else if len(auth.DeviceIDs) > 0 {
+					// Check if it's "all" (special case)
+					if len(auth.DeviceIDs) == 1 && auth.DeviceIDs[0] == "all" {
+						deviceDisplay = "all"
+					} else {
+						deviceDisplay = strings.Join(auth.DeviceIDs, ", ")
+					}
+				} else {
+					deviceDisplay = "none"
 				}
-				fmt.Printf("  CA: %-10s Devices: %s\n", cas, devices)
+
+				fmt.Printf("  CA: %s, Devices: %s\n", caDisplay, deviceDisplay)
 			}
 		}
 
