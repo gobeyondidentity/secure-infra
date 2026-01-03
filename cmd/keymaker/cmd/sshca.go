@@ -20,6 +20,7 @@ func init() {
 	sshCACmd.AddCommand(sshCAListCmd)
 	sshCACmd.AddCommand(sshCAShowCmd)
 	sshCACmd.AddCommand(sshCASignCmd)
+	sshCACmd.AddCommand(sshCADeleteCmd)
 
 	// Flags for create
 	sshCACreateCmd.Flags().String("type", "ed25519", "Key type")
@@ -33,6 +34,9 @@ func init() {
 	sshCASignCmd.Flags().String("pubkey", "", "Path to user's public key file (required)")
 	sshCASignCmd.MarkFlagRequired("principal")
 	sshCASignCmd.MarkFlagRequired("pubkey")
+
+	// Flags for delete
+	sshCADeleteCmd.Flags().Bool("force", false, "Skip confirmation prompt")
 }
 
 var sshCACmd = &cobra.Command{
@@ -318,6 +322,63 @@ Examples:
 
 		// Output certificate to stdout
 		fmt.Println(certStr)
+		return nil
+	},
+}
+
+var sshCADeleteCmd = &cobra.Command{
+	Use:   "delete <name>",
+	Short: "Delete an SSH CA",
+	Long: `Delete an SSH Certificate Authority.
+
+This permanently removes the CA and its private key. Any certificates signed
+by this CA will remain valid until their expiry, but no new certificates can
+be signed.
+
+Use --force to skip the confirmation prompt.
+
+Examples:
+  km ssh-ca delete old-ca
+  km ssh-ca delete old-ca --force`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		force, _ := cmd.Flags().GetBool("force")
+
+		// Check if CA exists first
+		exists, err := dpuStore.SSHCAExists(name)
+		if err != nil {
+			return clierror.InternalError(err)
+		}
+		if !exists {
+			return clierror.CANotFound(name)
+		}
+
+		// Confirm deletion unless --force is set
+		if !force {
+			fmt.Printf("Are you sure you want to delete SSH CA '%s'? [y/N]: ", name)
+			var response string
+			fmt.Scanln(&response)
+			response = strings.ToLower(strings.TrimSpace(response))
+			if response != "y" && response != "yes" {
+				fmt.Println("Deletion cancelled.")
+				return nil
+			}
+		}
+
+		// Delete the CA
+		if err := dpuStore.DeleteSSHCA(name); err != nil {
+			return clierror.InternalError(err)
+		}
+
+		if outputFormat == "json" || outputFormat == "yaml" {
+			return formatOutput(map[string]any{
+				"status": "deleted",
+				"name":   name,
+			})
+		}
+
+		fmt.Printf("SSH CA '%s' deleted.\n", name)
 		return nil
 	},
 }
