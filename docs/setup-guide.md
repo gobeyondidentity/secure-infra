@@ -206,11 +206,9 @@ On success, the CA public key is installed at `/etc/ssh/trusted-user-ca-keys.d/t
 
 ---
 
-## Step 9: Set Up Host Agent (Real Hardware Only)
+## Step 9: Set Up Host Agent
 
-The host agent runs on your Linux servers and communicates with the DPU agent running on the BlueField. It collects security posture and receives credentials via the hardware-secured tmfifo channel.
-
-**Note:** If you're using the emulator (Option A in Step 3), skip this step. The emulator doesn't provide the local API that the host agent needs.
+The host agent runs on your Linux servers and communicates with the DPU agent. It collects security posture and receives credentials. On real hardware, it uses the hardware-secured tmfifo channel. With the emulator, it uses the local HTTP API.
 
 ### 9a: Build for Linux
 
@@ -230,7 +228,16 @@ scp bin/host-agent-linux <user>@<HOST_IP>:~/host-agent
 
 ### 9c: Run on host
 
-The host agent auto-detects the BlueField's tmfifo device. If found, it uses the hardware-secured channel. Otherwise, it falls back to network communication with the DPU agent.
+**With emulator (local testing):**
+
+```bash
+# Emulator exposes local API on port 9443 by default
+host-agent --dpu-agent http://localhost:9443 --oneshot
+```
+
+**With real BlueField hardware:**
+
+The host agent auto-detects the BlueField's tmfifo device for hardware-secured communication.
 
 ```bash
 ssh <user>@<HOST_IP>
