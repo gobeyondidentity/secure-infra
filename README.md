@@ -21,7 +21,7 @@ The system uses BlueField-3 DPUs as enforcement points, checking both hardware a
 
 ## Quick Start
 
-For complete setup instructions, see the [Setup Guide](../product/docs/setup-guide.md).
+For complete setup instructions, see the [Setup Guide](docs/setup-guide.md).
 
 **Demo the attestation gate with the emulator:**
 
