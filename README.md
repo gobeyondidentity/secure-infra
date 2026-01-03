@@ -1,42 +1,70 @@
 # Secure Infrastructure
 
-Attestation-gated credential management for AI infrastructure using NVIDIA BlueField DPUs.
+Hardware-bound credential management for AI infrastructure using NVIDIA BlueField DPUs.
 
 ## Overview
 
-Secure Infrastructure provides hardware-enforced Zero Trust authentication for GPU clusters. It uses BlueField-3 Data Processing Units (DPUs) as trust anchors, requiring cryptographic attestation before deploying credentials. Attestation proves that hardware is genuine and firmware is unmodified, preventing credential theft even if host systems are compromised.
+Secure Infrastructure binds credentials to hardware so they can't be extracted, even by root. Private keys live in the DPU's hardware root of trust. They can sign operations, but they can't be read out or copied to another machine.
+
+When a node is compromised, your IR doesn't include a credential rotation fire drill. The credentials couldn't move.
+
+The system uses BlueField-3 DPUs as enforcement points, checking both hardware attestation (DICE) and host posture before any credential is created or used.
 
 ## Features
 
-- SSH CA lifecycle management (create, list, show, sign)
-- Attestation gate with automatic refresh
-- Distribution history with audit trail
-- Operator identity and authorization
-- Structured CLI output (`-o json`)
-- Idempotent create commands
+- **Hardware-bound credentials**: Private keys in DPU hardware root of trust, not files on disk
+- **Posture-aware operations**: Credentials only created/used when hardware and OS attestation pass
+- **No secret sprawl**: Credentials die with the node; fresh ones created automatically on reimage
+- **Audit trail**: Every credential push tied to point-in-time attestation state
+- **SSH CA management**: Create, sign, push certificate authorities to attested infrastructure
+- **Automation-ready**: Structured output (`-o json`), idempotent commands, exit codes
 
 ## Quick Start
 
+For complete setup instructions, see the [Setup Guide](../product/docs/setup-guide.md).
+
+**Demo the attestation gate with the emulator:**
+
 ```bash
-# Start the DPU emulator for local development
-dpuemu serve --port 50051
+# Terminal 1: Start API server
+bin/api serve --port 8080
 
-# Register the emulated DPU with the control plane
-bluectl dpu add localhost --port 50051
-
-# Create an SSH Certificate Authority
-km ssh-ca create ops-ca
-
-# Push CA to DPU (requires valid attestation)
-km push ssh-ca ops-ca localhost
+# Terminal 2: Start DPU emulator
+bin/dpuemu serve --port 50051
 ```
+
+```bash
+# Terminal 3: Set up and demo
+
+# 1. Create tenant and register DPU
+bluectl tenant add demo
+bluectl dpu add bf3-emu localhost --port 50051
+bluectl tenant assign demo bf3-emu
+
+# 2. Verify hardware attestation
+bluectl attestation bf3-emu
+
+# 3. Create SSH CA and push to attested DPU
+km ssh-ca create ops-ca
+km push ssh-ca ops-ca bf3-emu    # Succeeds (fresh attestation)
+
+# 4. The gate in action: wait for staleness or simulate
+#    After 1 hour, attestation becomes stale:
+km push ssh-ca ops-ca bf3-emu    # BLOCKED: attestation stale
+
+# 5. Re-attest and retry
+bluectl attestation bf3-emu      # Re-verify hardware
+km push ssh-ca ops-ca bf3-emu    # Succeeds again
+```
+
+The attestation gate blocks credential distribution when hardware verification is stale or failed. This is the core security property: credentials only flow to verified infrastructure.
 
 ## Components
 
 | Component | Description |
 |-----------|-------------|
 | `bluectl` | Admin CLI: DPU management, tenants, operators, attestation |
-| `km` | Operator CLI: SSH CA lifecycle, credential distribution |
+| `km` | Operator CLI: SSH CA lifecycle, credential push |
 | `agent` | DPU agent running on BlueField ARM cores |
 | `host-agent` | Host agent for credential receipt via tmfifo and posture reporting |
 | `api` | Control plane API server |
