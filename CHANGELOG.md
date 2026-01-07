@@ -5,6 +5,27 @@ All notable changes to the Secure Infrastructure project will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-01-07
+
+### Added
+- dpuemu local REST API (/local/v1/register, /local/v1/posture, /local/v1/cert)
+- `km ssh-ca delete` command with confirmation prompt
+- Host-agent can now test against emulator
+
+### Changed
+- Renamed cmd/api to cmd/server for clarity
+- Authorization responses now show human-readable names instead of UUIDs
+- `km whoami` shows CA/device names by default (--verbose for IDs)
+
+### Fixed
+- ID/name consistency across authorization checks
+- Setup guide corrections from validation walkthrough
+- README quick start demonstrates attestation gate flow
+
+### Documentation
+- Comprehensive setup guide with emulator support
+- README polish (overview, features, quick start)
+
 ## [0.2.0] - 2026-01-02
 
 ### Added
