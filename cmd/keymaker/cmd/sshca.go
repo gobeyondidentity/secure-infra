@@ -130,7 +130,7 @@ Examples:
 			})
 		}
 
-		fmt.Printf("SSH CA '%s' created. ID: %s\n", name, id)
+		fmt.Printf("SSH CA '%s' created.\n", name)
 		return nil
 	},
 }
