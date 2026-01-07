@@ -166,7 +166,7 @@ func (f *Fixture) ToHealthCheckResponse() *agentv1.HealthCheckResponse {
 	if f.Health == nil {
 		return &agentv1.HealthCheckResponse{
 			Healthy: true,
-			Version: "0.2.0",
+			Version: "0.3.0",
 		}
 	}
 

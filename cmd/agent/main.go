@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	version = "0.2.0"
+	version = "0.3.0"
 
 	listenAddr      = flag.String("listen", ":50051", "gRPC listen address")
 	bmcAddr         = flag.String("bmc-addr", "", "BMC address for Redfish API (optional)")

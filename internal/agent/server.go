@@ -55,7 +55,7 @@ func NewServer(cfg *Config) *Server {
 		ovsClient:  ovs.NewClient(),
 		redfishCli: redfishCli,
 		startTime:  currentUnixTime(),
-		version:    "0.2.0",
+		version:    "0.3.0",
 	}
 }
 

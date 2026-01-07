@@ -48,7 +48,7 @@ bin/server --listen :8080
 Verify:
 ```bash
 curl http://localhost:8080/api/health
-# Expected: {"status":"ok","version":"0.2.0"}
+# Expected: {"status":"ok","version":"0.3.0"}
 ```
 
 ---
