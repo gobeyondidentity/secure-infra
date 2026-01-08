@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Centralized version management in `internal/version/version.go`
 - CLI output no longer exposes internal IDs (tenant add, dpu add, ssh-ca show, tenant show)
+- Default server port changed from 8080 to 18080
 
 ### Fixed
 - Server and agent binaries were reporting version 0.3.0 instead of current version
