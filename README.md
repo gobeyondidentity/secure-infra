@@ -1,5 +1,7 @@
 # Secure Infrastructure
 
+**v0.4.0** | [Quickstart](docs/quickstart-emulator.md) | [Hardware Setup](docs/setup-hardware.md) | [Changelog](CHANGELOG.md)
+
 Hardware-bound credential management for AI infrastructure using NVIDIA BlueField DPUs.
 
 ## Overview
@@ -21,43 +23,16 @@ The system uses BlueField-3 DPUs as enforcement points, checking both hardware a
 
 ## Quick Start
 
-For complete setup instructions, see the [Setup Guide](docs/setup-guide.md).
+Choose your path:
 
-**Demo the attestation gate with the emulator:**
+| Path | Time | Requirements |
+|------|------|--------------|
+| [Emulator Quickstart](docs/quickstart-emulator.md) | 10 min | Go 1.22+, Make |
+| [Hardware Setup](docs/setup-hardware.md) | 30 min | BlueField-3 DPU |
 
-```bash
-# Terminal 1: Start server
-bin/server --listen :8080
+**Try the emulator first** to learn the system without hardware. The quickstart walks you through the full flow: create a tenant, register a DPU, set up operators, and push credentials to attested infrastructure.
 
-# Terminal 2: Start DPU emulator
-bin/dpuemu serve --port 50051
-```
-
-```bash
-# Terminal 3: Set up and demo
-
-# 1. Create tenant and register DPU
-bluectl tenant add demo
-bluectl dpu add bf3-emu localhost --port 50051
-bluectl tenant assign demo bf3-emu
-
-# 2. Verify hardware attestation
-bluectl attestation bf3-emu
-
-# 3. Create SSH CA and push to attested DPU
-km ssh-ca create ops-ca
-km push ssh-ca ops-ca bf3-emu    # Succeeds (fresh attestation)
-
-# 4. The gate in action: wait for staleness or simulate
-#    After 1 hour, attestation becomes stale:
-km push ssh-ca ops-ca bf3-emu    # BLOCKED: attestation stale
-
-# 5. Re-attest and retry
-bluectl attestation bf3-emu      # Re-verify hardware
-km push ssh-ca ops-ca bf3-emu    # Succeeds again
-```
-
-The attestation gate blocks credential distribution when hardware verification is stale or failed. This is the core security property: credentials only flow to verified infrastructure.
+The core security property: credentials only flow to verified infrastructure. When attestation is stale or failed, credential distribution is blocked.
 
 ## Components
 
@@ -98,15 +73,16 @@ cd web && npm install && npm run dev
 ## Project Structure
 
 ```
-eng/
+secure-infra/
 ├── cmd/           # CLI and agent entrypoints
-├── internal/      # Private application code
 ├── pkg/           # Shared libraries
+├── internal/      # Private application code
 ├── proto/         # Protobuf definitions
 ├── gen/           # Generated gRPC code
 ├── dpuemu/        # DPU emulator
 ├── web/           # Dashboard (Next.js)
-└── deploy/        # Install scripts
+├── deploy/        # Install scripts
+└── docs/          # Setup guides
 ```
 
 ## License

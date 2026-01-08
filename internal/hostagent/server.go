@@ -7,6 +7,7 @@ import (
 	"time"
 
 	hostv1 "github.com/nmelo/secure-infra/gen/go/host/v1"
+	"github.com/nmelo/secure-infra/internal/version"
 	"github.com/nmelo/secure-infra/pkg/host"
 )
 
@@ -26,7 +27,7 @@ func NewServer(cfg *Config) *Server {
 		config:    cfg,
 		collector: host.NewCollector(),
 		startTime: time.Now().Unix(),
-		version:   "0.3.0",
+		version:   version.Version,
 	}
 }
 

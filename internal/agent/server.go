@@ -13,6 +13,7 @@ import (
 	agentv1 "github.com/nmelo/secure-infra/gen/go/agent/v1"
 	"github.com/nmelo/secure-infra/internal/agent/localapi"
 	"github.com/nmelo/secure-infra/internal/agent/tmfifo"
+	"github.com/nmelo/secure-infra/internal/version"
 	"github.com/nmelo/secure-infra/pkg/attestation"
 	"github.com/nmelo/secure-infra/pkg/doca"
 	"github.com/nmelo/secure-infra/pkg/ovs"
@@ -55,7 +56,7 @@ func NewServer(cfg *Config) *Server {
 		ovsClient:  ovs.NewClient(),
 		redfishCli: redfishCli,
 		startTime:  currentUnixTime(),
-		version:    "0.3.0",
+		version:    version.Version,
 	}
 }
 

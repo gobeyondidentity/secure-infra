@@ -12,12 +12,11 @@ import (
 	"time"
 
 	"github.com/nmelo/secure-infra/internal/api"
+	"github.com/nmelo/secure-infra/internal/version"
 	"github.com/nmelo/secure-infra/pkg/store"
 )
 
 var (
-	version = "0.3.0"
-
 	listenAddr = flag.String("listen", ":8080", "HTTP listen address")
 	dbPath     = flag.String("db", "", "Database path (default: ~/.local/share/bluectl/dpus.db)")
 )
@@ -25,7 +24,7 @@ var (
 func main() {
 	flag.Parse()
 
-	log.Printf("Fabric Console API v%s starting...", version)
+	log.Printf("Fabric Console API v%s starting...", version.Version)
 
 	// Open database
 	path := *dbPath

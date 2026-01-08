@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nmelo/secure-infra/internal/version"
 	"github.com/nmelo/secure-infra/pkg/clierror"
 	"github.com/nmelo/secure-infra/pkg/store"
 	"github.com/spf13/cobra"
@@ -13,9 +14,6 @@ import (
 )
 
 var (
-	// Version is set at build time
-	Version = "0.4.0"
-
 	// Global flags
 	outputFormat string
 	dbPath       string
@@ -44,7 +42,7 @@ Getting started:
   2. Create an SSH CA:      km ssh-ca create ops-ca
   3. Push to a DPU:         km push ssh-ca ops-ca target-dpu
   4. View history:          km history`,
-	Version:      Version,
+	Version:      version.Version,
 	SilenceUsage: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Skip store initialization for commands that don't need it

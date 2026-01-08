@@ -2,10 +2,13 @@
 
 Get Secure Infrastructure running locally without hardware. Use this guide to learn the system, run CI/CD pipelines, or evaluate the product.
 
+Starting over? See [Clean Slate](#appendix-a-clean-slate) to reset your environment.
+
 ## Prerequisites
 
 - Go 1.22+
 - Make
+- 3 terminal windows (server, emulator, CLI commands)
 
 ## Clone and Build
 
@@ -57,7 +60,7 @@ Every DPU and operator belongs to a tenant.
 
 ```bash
 bin/bluectl tenant add gpu-prod --description "GPU Production Cluster"
-bin/bluectl tenant list
+# Expected: Created tenant 'gpu-prod' (id: tnt_...)
 ```
 
 ---
@@ -68,9 +71,10 @@ The emulator simulates a BlueField DPU with mock attestation data.
 
 ```bash
 bin/dpuemu serve --port 50051 --fixture dpuemu/fixtures/bf3-static.json
+# Expected: dpuemu gRPC server listening on :50051
 ```
 
-Leave this running in a separate terminal.
+Leave this running in a separate terminal (Terminal 2).
 
 ---
 
@@ -80,8 +84,10 @@ Tell the server about your emulated DPU:
 
 ```bash
 bin/bluectl dpu add localhost --name bf3
+# Expected: Added DPU 'bf3' at localhost:50051 (id: ...)
+
 bin/bluectl tenant assign gpu-prod bf3
-bin/bluectl dpu list
+# Expected: Assigned DPU 'bf3' to tenant 'gpu-prod'
 ```
 
 ---
@@ -94,6 +100,7 @@ Admins manage infrastructure. Operators push credentials. This separation create
 
 ```bash
 bin/bluectl operator invite operator@example.com gpu-prod
+# Expected: Code: GPU-XXXX-XXXX
 ```
 
 Save the invite code from the output.
@@ -102,12 +109,15 @@ Save the invite code from the output.
 
 ```bash
 bin/km init
+# Enter the invite code when prompted
+# Expected: Bound successfully.
 ```
 
-Enter the invite code when prompted. Verify:
+Verify:
 
 ```bash
 bin/km whoami
+# Expected: Operator: operator@example.com
 ```
 
 ---
@@ -120,12 +130,14 @@ An SSH CA signs short-lived certificates instead of scattering static keys acros
 
 ```bash
 bin/km ssh-ca create test-ca
+# Expected: SSH CA 'test-ca' created.
 ```
 
 ### 6b: Grant access (as admin)
 
 ```bash
 bin/bluectl operator grant operator@example.com gpu-prod test-ca bf3
+# Expected: Authorization granted
 ```
 
 ---
@@ -136,6 +148,7 @@ The DPU must prove it's running trusted firmware before receiving credentials. T
 
 ```bash
 bin/bluectl attestation bf3
+# Expected: Attestation Status: ATTESTATION_STATUS_VALID
 ```
 
 ---
@@ -146,6 +159,7 @@ Push the CA to the emulated DPU:
 
 ```bash
 bin/km push ssh-ca test-ca bf3
+# Expected: CA installed at /etc/ssh/trusted-user-ca-keys.d/test-ca.pub
 ```
 
 With the emulator, credentials are stored locally. On real hardware, they'd be pushed to the host via the DPU.
@@ -171,6 +185,18 @@ You've completed the emulator quickstart. The emulator can't simulate:
 - Real attestation from TPM/DICE
 
 When you're ready for production, see [Hardware Setup Guide](setup-hardware.md).
+
+---
+
+## Troubleshooting
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `encryption key not configured` | SECURE_INFRA_KEY not set | Re-run `export SECURE_INFRA_KEY=...` |
+| `address already in use` | Port 8080 or 50051 busy | Kill existing process or use different port |
+| `UNIQUE constraint failed` | Stale data from previous run | See [Clean Slate](#appendix-a-clean-slate) |
+| `not authorized to access CA` | Grant not applied | Re-run `bluectl operator grant ...` |
+| `connection refused` | Server or emulator not running | Check Terminals 1 and 2 |
 
 ---
 

@@ -18,6 +18,7 @@ import (
 	"github.com/nmelo/secure-infra/internal/agent"
 	"github.com/nmelo/secure-infra/internal/agent/localapi"
 	"github.com/nmelo/secure-infra/internal/agent/tmfifo"
+	"github.com/nmelo/secure-infra/internal/version"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -25,8 +26,6 @@ import (
 )
 
 var (
-	version = "0.3.0"
-
 	listenAddr      = flag.String("listen", ":50051", "gRPC listen address")
 	bmcAddr         = flag.String("bmc-addr", "", "BMC address for Redfish API (optional)")
 	bmcUser         = flag.String("bmc-user", "root", "BMC username")
@@ -39,7 +38,7 @@ var (
 func main() {
 	flag.Parse()
 
-	log.Printf("Fabric Console Agent v%s starting...", version)
+	log.Printf("Fabric Console Agent v%s starting...", version.Version)
 
 	// Build configuration
 	cfg := agent.DefaultConfig()

@@ -105,7 +105,7 @@ Examples:
 			return fmt.Errorf("failed to add tenant: %w", err)
 		}
 
-		fmt.Printf("Created tenant '%s' (id: %s)\n", name, id)
+		fmt.Printf("Created tenant '%s'.\n", name)
 		return nil
 	},
 }
@@ -179,7 +179,6 @@ var tenantShowCmd = &cobra.Command{
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		fmt.Fprintf(w, "Name:\t%s\n", tenant.Name)
-		fmt.Fprintf(w, "ID:\t%s\n", tenant.ID)
 		fmt.Fprintf(w, "Description:\t%s\n", tenant.Description)
 		fmt.Fprintf(w, "Contact:\t%s\n", tenant.Contact)
 		if len(tenant.Tags) > 0 {

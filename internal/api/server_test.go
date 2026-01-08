@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/nmelo/secure-infra/internal/version"
 	"github.com/nmelo/secure-infra/pkg/store"
 )
 
@@ -56,8 +57,8 @@ func TestHealthEndpoint(t *testing.T) {
 	if result["status"] != "ok" {
 		t.Errorf("expected status 'ok', got '%v'", result["status"])
 	}
-	if result["version"] != "0.3.0" {
-		t.Errorf("expected version '0.3.0', got '%v'", result["version"])
+	if result["version"] != version.Version {
+		t.Errorf("expected version '%s', got '%v'", version.Version, result["version"])
 	}
 }
 
@@ -81,8 +82,8 @@ func TestAPIHealthEndpoint(t *testing.T) {
 	if result["status"] != "ok" {
 		t.Errorf("expected status 'ok', got '%v'", result["status"])
 	}
-	if result["version"] != "0.3.0" {
-		t.Errorf("expected version '0.3.0', got '%v'", result["version"])
+	if result["version"] != version.Version {
+		t.Errorf("expected version '%s', got '%v'", version.Version, result["version"])
 	}
 }
 

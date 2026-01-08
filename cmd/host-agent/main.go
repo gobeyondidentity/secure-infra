@@ -21,11 +21,10 @@ import (
 	"time"
 
 	"github.com/nmelo/secure-infra/internal/hostagent"
+	"github.com/nmelo/secure-infra/internal/version"
 	"github.com/nmelo/secure-infra/pkg/posture"
 	"golang.org/x/crypto/ssh"
 )
-
-var version = "0.3.0"
 
 func main() {
 	dpuAgent := flag.String("dpu-agent", "http://localhost:9443", "DPU Agent local API URL")
@@ -40,7 +39,7 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Printf("host-agent v%s\n", version)
+		fmt.Printf("host-agent v%s\n", version.Version)
 		os.Exit(0)
 	}
 
@@ -49,7 +48,7 @@ func main() {
 		hostname = "unknown"
 	}
 
-	log.Printf("Host Agent v%s starting...", version)
+	log.Printf("Host Agent v%s starting...", version.Version)
 
 	// Handle certificate request mode (uses network)
 	if *requestCertFlag {

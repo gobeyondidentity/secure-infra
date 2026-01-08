@@ -11,11 +11,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/nmelo/secure-infra/internal/version"
 	"github.com/nmelo/secure-infra/pkg/attestation"
 	"github.com/nmelo/secure-infra/pkg/grpcclient"
 	"github.com/nmelo/secure-infra/pkg/hostclient"
 	"github.com/nmelo/secure-infra/pkg/store"
-	"github.com/google/uuid"
 )
 
 // Server is the HTTP API server.
@@ -634,7 +635,7 @@ func (s *Server) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleAPIHealth(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"status":  "ok",
-		"version": "0.3.0",
+		"version": version.Version,
 	})
 }
 

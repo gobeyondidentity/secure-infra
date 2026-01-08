@@ -195,7 +195,7 @@ Examples:
 			})
 		}
 
-		fmt.Printf("Added DPU '%s' at %s:%d (id: %s)\n", name, host, port, id)
+		fmt.Printf("Added DPU '%s' at %s:%d.\n", name, host, port)
 		fmt.Println()
 		fmt.Printf("Next: Assign to a tenant with 'bluectl tenant assign <tenant> %s'\n", name)
 

@@ -230,7 +230,6 @@ Examples:
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintf(w, "ID:\t%s\n", ca.ID)
 		fmt.Fprintf(w, "Name:\t%s\n", ca.Name)
 		fmt.Fprintf(w, "Key Type:\t%s\n", ca.KeyType)
 		fmt.Fprintf(w, "Private Key:\t%s\n", privateKeyStorage)
