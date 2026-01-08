@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `make demo-*` targets for quickstart verification and regression testing
+- `make hw-*` targets for hardware setup guide verification
 
 ### Changed
 - Centralized version management in `internal/version/version.go`
