@@ -88,15 +88,15 @@ SSH into the DPU and start the agent with local API enabled:
 ```bash
 ssh ubuntu@<DPU_IP>
 chmod +x ~/agent
-~/agent --listen :50051 -local-api -control-plane http://<CONTROL_PLANE_IP>:18080 -dpu-name bf3-prod-01
+~/agent --listen :50052 -local-api -control-plane http://<CONTROL_PLANE_IP>:18080 -dpu-name bf3-prod-01
 ```
 
-Replace `<CONTROL_PLANE_IP>` with the IP of the machine running the server. The `-dpu-name` should match what you'll use in Step 5.
+Replace `<CONTROL_PLANE_IP>` with the IP of the machine running the server. We use port 50052 because NVIDIA's BlueMan service uses 50051 on BlueField DPUs. The `-dpu-name` should match what you'll use in Step 5.
 
 ```
 # Expected:
 # Fabric Console Agent v0.4.1 starting...
-# gRPC server listening on :50051
+# gRPC server listening on :50052
 # Starting local API for Host Agent communication...
 # Local API listening on localhost:9443
 # Local API enabled: localhost:9443
@@ -118,13 +118,13 @@ Back on your control plane, register the DPU:
 ```bash
 bin/bluectl dpu add <DPU_IP> --name bf3-prod-01
 # Expected:
-# Checking connectivity to <DPU_IP>:50051...
+# Checking connectivity to <DPU_IP>:50052...
 # Connected to DPU:
 #   Hostname: <hostname>
 #   Serial:   <serial>
 #   Model:    BlueField-3
 # Connection verified: agent is healthy
-# Added DPU 'bf3-prod-01' at <DPU_IP>:50051.
+# Added DPU 'bf3-prod-01' at <DPU_IP>:50052.
 #
 # Next: Assign to a tenant with 'bluectl tenant assign <tenant> bf3-prod-01'
 ```
