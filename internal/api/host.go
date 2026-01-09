@@ -60,6 +60,11 @@ type agentPostureResponse struct {
 	CollectedAt    string `json:"collected_at"`
 }
 
+// listHostsResponse wraps the hosts list for consistent API response format.
+type listHostsResponse struct {
+	Hosts []agentHostResponse `json:"hosts"`
+}
+
 // ----- Host Agent Handlers -----
 
 // handleHostRegister handles POST /api/v1/hosts/register
@@ -235,7 +240,7 @@ func (s *Server) handleListAgentHosts(w http.ResponseWriter, r *http.Request) {
 		result = append(result, resp)
 	}
 
-	writeJSON(w, http.StatusOK, result)
+	writeJSON(w, http.StatusOK, listHostsResponse{Hosts: result})
 }
 
 // handleGetAgentHost handles GET /api/v1/hosts/{id}

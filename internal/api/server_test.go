@@ -513,6 +513,88 @@ func TestHostScan_NotFound(t *testing.T) {
 	}
 }
 
+// TestListAgentHosts_EmptyReturnsWrappedFormat tests that empty hosts list returns {"hosts": []} not [].
+func TestListAgentHosts_EmptyReturnsWrappedFormat(t *testing.T) {
+	_, mux := setupTestServer(t)
+
+	req := httptest.NewRequest("GET", "/api/v1/hosts", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	// Parse as raw JSON to verify structure
+	var rawResult map[string]interface{}
+	if err := json.NewDecoder(w.Body).Decode(&rawResult); err != nil {
+		t.Fatalf("expected JSON object with 'hosts' key, got error: %v (body: %s)", err, w.Body.String())
+	}
+
+	// Verify "hosts" key exists
+	hosts, ok := rawResult["hosts"]
+	if !ok {
+		t.Fatalf("expected 'hosts' key in response, got: %v", rawResult)
+	}
+
+	// Verify hosts is an array
+	hostsArray, ok := hosts.([]interface{})
+	if !ok {
+		t.Fatalf("expected 'hosts' to be an array, got: %T", hosts)
+	}
+
+	// Verify it's empty
+	if len(hostsArray) != 0 {
+		t.Errorf("expected empty hosts array, got %d items", len(hostsArray))
+	}
+}
+
+// TestListAgentHosts_WithHostsReturnsWrappedFormat tests that hosts list returns {"hosts": [...]} format.
+func TestListAgentHosts_WithHostsReturnsWrappedFormat(t *testing.T) {
+	server, mux := setupTestServer(t)
+
+	// Setup: Add a DPU and register a host
+	server.store.Add("dpu1", "bf3-test", "192.168.1.100", 50051)
+
+	host := &store.AgentHost{
+		DPUName:  "bf3-test",
+		DPUID:    "dpu1",
+		Hostname: "test-host",
+		TenantID: "",
+	}
+	server.store.RegisterAgentHost(host)
+
+	req := httptest.NewRequest("GET", "/api/v1/hosts", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	// Parse as raw JSON to verify structure
+	var rawResult map[string]interface{}
+	if err := json.NewDecoder(w.Body).Decode(&rawResult); err != nil {
+		t.Fatalf("expected JSON object with 'hosts' key, got error: %v", err)
+	}
+
+	// Verify "hosts" key exists
+	hosts, ok := rawResult["hosts"]
+	if !ok {
+		t.Fatalf("expected 'hosts' key in response, got: %v", rawResult)
+	}
+
+	// Verify hosts is an array with one item
+	hostsArray, ok := hosts.([]interface{})
+	if !ok {
+		t.Fatalf("expected 'hosts' to be an array, got: %T", hosts)
+	}
+
+	if len(hostsArray) != 1 {
+		t.Errorf("expected 1 host, got %d", len(hostsArray))
+	}
+}
+
 // TestHostScan_ResponseFormat tests the scan response has all expected fields.
 func TestHostScan_ResponseFormat(t *testing.T) {
 	server, mux := setupTestServer(t)
