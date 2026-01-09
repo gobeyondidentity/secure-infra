@@ -8,7 +8,7 @@ import (
 )
 
 // DefaultPort is the default port for the dpuemu server.
-const DefaultPort = 50051
+const DefaultPort = 18051
 
 // ParseListenAddr parses listen address specifications and returns a normalized address.
 // Accepts formats:
@@ -57,7 +57,7 @@ func ParseListenAddr(input string) (string, error) {
 // Rules:
 //   - If portFlag is set (non-zero), use it (takes precedence)
 //   - If listenFlag is set (non-empty), parse and use it
-//   - Otherwise, use default port 50051
+//   - Otherwise, use default port 18051
 func ResolvePort(portFlag int, listenFlag string) (string, error) {
 	// --port takes precedence if set
 	if portFlag != 0 {

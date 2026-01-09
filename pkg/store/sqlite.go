@@ -180,7 +180,7 @@ func (s *Store) migrate() error {
 		id TEXT PRIMARY KEY,
 		name TEXT UNIQUE NOT NULL,
 		host TEXT NOT NULL,
-		port INTEGER DEFAULT 50051,
+		port INTEGER DEFAULT 18051,
 		status TEXT DEFAULT 'unknown',
 		last_seen INTEGER,
 		created_at INTEGER DEFAULT (strftime('%s', 'now'))

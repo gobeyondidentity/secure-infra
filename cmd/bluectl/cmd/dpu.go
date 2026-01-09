@@ -23,7 +23,7 @@ func init() {
 	dpuCmd.AddCommand(dpuAssignCmd)
 
 	// Add flags
-	dpuAddCmd.Flags().IntP("port", "p", 50051, "gRPC port")
+	dpuAddCmd.Flags().IntP("port", "p", 18051, "gRPC port")
 	dpuAddCmd.Flags().StringP("name", "n", "", "DPU name (default: hostname from agent)")
 	dpuAddCmd.Flags().Bool("offline", false, "Skip connectivity check and add DPU anyway")
 	dpuHealthCmd.Flags().BoolP("verbose", "v", false, "Show detailed component health status")
@@ -90,7 +90,7 @@ Register a new DPU by connecting to its agent and retrieving identity informatio
 
 The host is the DPU's gRPC agent address (IP or hostname). This is the DPU's management
 interface where the agent runs on the ARM cores, NOT the BMC address. The agent listens
-on port 50051 by default.
+on port 18051 by default.
 
 By default, the DPU is named using the hostname reported by the agent. Use --name to
 override with a custom name.

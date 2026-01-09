@@ -156,9 +156,9 @@ demo-step2:
 # Step 3: Start emulator (runs in foreground)
 demo-step3:
 	@echo "=== Step 3: Start DPU Emulator ==="
-	@echo "Starting emulator on :50051..."
+	@echo "Starting emulator on :18051..."
 	@echo "Press Ctrl+C to stop"
-	$(BIN_DIR)/dpuemu serve --port 50051 --fixture dpuemu/fixtures/bf3-static.json
+	$(BIN_DIR)/dpuemu serve --port 18051 --fixture dpuemu/fixtures/bf3-static.json
 
 # Step 4: Register DPU
 demo-step4:
@@ -269,7 +269,7 @@ hw-step3-deploy:
 	@echo ""
 	@echo "Agent copied. SSH to DPU and run:"
 	@echo "  chmod +x ~/agent"
-	@echo "  ~/agent --listen :50051 -local-api -control-plane http://$(CONTROL_PLANE_IP):18080 -dpu-name $(DPU_NAME)"
+	@echo "  ~/agent --listen :18051 -local-api -control-plane http://$(CONTROL_PLANE_IP):18080 -dpu-name $(DPU_NAME)"
 
 # Step 4: Register DPU
 hw-step4:

@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	listenAddr      = flag.String("listen", ":50051", "gRPC listen address")
+	listenAddr      = flag.String("listen", ":18051", "gRPC listen address")
 	bmcAddr         = flag.String("bmc-addr", "", "BMC address for Redfish API (optional)")
 	bmcUser         = flag.String("bmc-user", "root", "BMC username")
 	localAPIEnabled = flag.Bool("local-api", false, "Enable local HTTP API for Host Agent")

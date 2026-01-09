@@ -10,7 +10,7 @@ export function AddDPUButton() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [host, setHost] = useState("");
-  const [port, setPort] = useState("50051");
+  const [port, setPort] = useState("18051");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -32,7 +32,7 @@ export function AddDPUButton() {
     setOpen(false);
     setName("");
     setHost("");
-    setPort("50051");
+    setPort("18051");
     router.refresh();
   };
 
@@ -84,7 +84,7 @@ export function AddDPUButton() {
                 type="number"
                 value={port}
                 onChange={(e) => setPort(e.target.value)}
-                placeholder="50051"
+                placeholder="18051"
                 className="w-full px-3 py-2 border rounded-md bg-background"
               />
             </div>

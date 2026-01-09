@@ -36,9 +36,9 @@ services:
       context: ../..
       dockerfile: Dockerfile.agent
     ports:
-      - "50051:50051"
+      - "18051:18051"
     environment:
-      - LISTEN_ADDR=:50051
+      - LISTEN_ADDR=:18051
     profiles:
       - dev
 

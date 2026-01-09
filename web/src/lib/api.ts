@@ -194,7 +194,7 @@ class ApiClient {
     return this.fetch<DPU>(`/api/dpus/${id}`);
   }
 
-  async addDPU(name: string, host: string, port: number = 50051): Promise<DPU> {
+  async addDPU(name: string, host: string, port: number = 18051): Promise<DPU> {
     return this.fetch<DPU>("/api/dpus", {
       method: "POST",
       body: JSON.stringify({ name, host, port }),

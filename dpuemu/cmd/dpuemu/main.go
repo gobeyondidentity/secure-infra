@@ -44,10 +44,10 @@ Commands:
   serve    Start the emulator server
 
 Examples:
-  dpuemu serve                                      # Uses default fixture, port 50051
+  dpuemu serve                                      # Uses default fixture, port 18051
   dpuemu serve --port 50052                         # Custom port with default fixture
   dpuemu serve --fixture=fixtures/bf3-static.json  # Custom fixture file
-  dpuemu serve --listen=:50051                      # Alternative port syntax
+  dpuemu serve --listen=:18051                      # Alternative port syntax
   dpuemu serve --fixture=fixtures/bf3-blueman.json --instance-id=001`,
 }
 
@@ -88,7 +88,7 @@ Control Plane Integration:
 }
 
 func init() {
-	serveCmd.Flags().StringVarP(&listenAddr, "listen", "l", "", "Address to listen on (e.g., :50051 or 0.0.0.0:50051)")
+	serveCmd.Flags().StringVarP(&listenAddr, "listen", "l", "", "Address to listen on (e.g., :18051 or 0.0.0.0:18051)")
 	serveCmd.Flags().IntVarP(&port, "port", "p", 0, "Port to listen on (takes precedence over --listen)")
 	serveCmd.Flags().StringVarP(&fixturePath, "fixture", "f", "", "Path to fixture JSON file (optional, uses defaults if not set)")
 	serveCmd.Flags().StringVarP(&instanceID, "instance-id", "i", "", "Instance ID for templating")

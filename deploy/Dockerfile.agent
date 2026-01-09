@@ -27,7 +27,7 @@ WORKDIR /app
 
 COPY --from=builder /app/agent .
 
-EXPOSE 50051
+EXPOSE 18051
 
 ENTRYPOINT ["./agent"]
-CMD ["--listen=:50051"]
+CMD ["--listen=:18051"]

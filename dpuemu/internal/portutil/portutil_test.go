@@ -14,7 +14,7 @@ func TestParseListenAddr(t *testing.T) {
 		{
 			name:  "empty uses default",
 			input: "",
-			want:  ":50051",
+			want:  ":18051",
 		},
 		{
 			name:  "port number only",
@@ -104,7 +104,7 @@ func TestResolvePort(t *testing.T) {
 			name:       "both empty uses default",
 			portFlag:   0,
 			listenFlag: "",
-			want:       ":50051",
+			want:       ":18051",
 		},
 		{
 			name:       "port flag only",
@@ -146,7 +146,7 @@ func TestResolvePort(t *testing.T) {
 			name:       "port flag out of range low",
 			portFlag:   0,
 			listenFlag: "",
-			want:       ":50051",
+			want:       ":18051",
 		},
 		{
 			name:       "port flag negative treated as unset",

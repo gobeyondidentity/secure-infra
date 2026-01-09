@@ -223,7 +223,7 @@ func (s *Server) handleAddDPU(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.Port == 0 {
-		req.Port = 50051
+		req.Port = 18051
 	}
 
 	id := uuid.New().String()[:8]

@@ -8,7 +8,7 @@ import (
 
 // Config holds agent configuration.
 type Config struct {
-	// ListenAddr is the gRPC listen address (e.g., ":50051")
+	// ListenAddr is the gRPC listen address (e.g., ":18051")
 	ListenAddr string
 
 	// BMCAddr is the BMC address for Redfish API (optional)
@@ -45,7 +45,7 @@ type Config struct {
 // DefaultConfig returns configuration with defaults.
 func DefaultConfig() *Config {
 	return &Config{
-		ListenAddr:   ":50051",
+		ListenAddr:   ":18051",
 		BMCUser:      "root",
 		LocalAPIAddr: "localhost:9443",
 	}
