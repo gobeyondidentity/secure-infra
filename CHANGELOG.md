@@ -5,6 +5,21 @@ All notable changes to the Secure Infrastructure project will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-01-09
+
+### Added
+- `km discover scan` command to scan hosts for SSH authorized_keys files
+- SSH fallback mode for hosts without agent (`--ssh`, `--ssh-fallback` flags)
+- `ScanSSHKeys` RPC in host-agent for remote key enumeration
+- `POST /api/v1/hosts/{hostname}/scan` API endpoint
+- `pkg/sshscan` package for SSH key parsing and SHA256 fingerprint generation
+- Progress indicators during multi-host scans (suppressed for non-TTY/JSON output)
+- Bootstrap mode warning when using SSH without agent
+- Audit logging for discovery operations
+
+### Changed
+- Exit codes for discover command: 0 (success), 1 (all failed), 2 (partial), 3 (config error)
+
 ## [0.4.1] - 2026-01-08
 
 ### Added
