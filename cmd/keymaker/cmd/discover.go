@@ -191,6 +191,15 @@ func runScanSingleHost(cmd *cobra.Command, config *KMConfig, hostArg string, ssh
 		}
 	}
 
+	// Audit log
+	methodAgent, methodSSH := 0, 0
+	if result.Method == "agent" {
+		methodAgent = 1
+	} else {
+		methodSSH = 1
+	}
+	logDiscoveryAudit(1, 1, 0, len(result.Keys), methodAgent, methodSSH)
+
 	// Output results
 	if outputFormat == "json" {
 		return outputSingleHostJSON(result)
@@ -286,6 +295,9 @@ func runScanAllHosts(cmd *cobra.Command, config *KMConfig, sshFallback bool) err
 	if showProgress {
 		fmt.Fprintf(os.Stderr, "\r%s\r", strings.Repeat(" ", 40))
 	}
+
+	// Audit log
+	logDiscoveryAudit(len(results)+len(failures), len(results), len(failures), totalKeys, methodCounts["agent"], methodCounts["ssh"])
 
 	// Output results
 	if outputFormat == "json" {
@@ -587,4 +599,10 @@ func getDefaultSSHUser() string {
 		return u.Username
 	}
 	return ""
+}
+
+// logDiscoveryAudit logs a summary of the discovery scan to stderr
+func logDiscoveryAudit(hostsScanned, hostsSucceeded, hostsFailed, keysFound, methodAgent, methodSSH int) {
+	fmt.Fprintf(os.Stderr, "Audit: Scanned %d hosts, found %d keys (%d agent, %d ssh)\n",
+		hostsScanned, keysFound, methodAgent, methodSSH)
 }
