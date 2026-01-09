@@ -4,11 +4,12 @@
 
 ---
 
-## Shipped (v0.1–v0.3)
+## Shipped (v0.1–v0.5)
 
 - Connect to BlueField DPUs, collect hardware attestation
 - Create SSH CAs, sign certificates, push to hosts
 - Attestation gate blocks credential distribution to unverified hardware
+- Discover existing SSH keys across hosts before migration
 
 ---
 
@@ -16,7 +17,4 @@
 
 | Version | Focus | Key Deliverable |
 |---------|-------|-----------------|
-| v0.4 | Stability | Trust model fix, CLI polish, docs |
-| v0.5 | Discovery | Scan hosts for existing SSH keys, flag sprawl/risk |
 | v0.6 | Migration | Batch rollout from old keys to CA certs with rollback |
-
