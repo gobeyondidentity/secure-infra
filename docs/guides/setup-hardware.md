@@ -15,32 +15,26 @@ Deploy Secure Infrastructure with real BlueField DPUs. This guide covers the ful
 ```bash
 git clone git@github.com:gobeyondidentity/secure-infra.git
 cd secure-infra
-make release
+make agent
 # Expected:
-# Building release binaries...
-#
-# darwin/arm64:
-#   bin/agent-darwin-arm64
-#   bin/bluectl-darwin-arm64
-#   bin/km-darwin-arm64
-#
-# linux/amd64:
-#   bin/agent-linux-amd64
-#   bin/bluectl-linux-amd64
-#   bin/km-linux-amd64
-#   bin/host-agent-linux-amd64
-#
-# linux/arm64 (BlueField DPU):
-#   bin/agent-linux-arm64
-#   bin/bluectl-linux-arm64
-#   bin/km-linux-arm64
-#
-# Release build complete.
+# Building agent...
+#   bin/agent
+# Cross-compiling agent for BlueField (linux/arm64)...
+#   bin/agent-arm64
+
+make
+# Expected:
+# Building all binaries...
+#   bin/agent
+#   bin/bluectl
+#   bin/km
+#   bin/server
+#   bin/host-agent
+#   bin/dpuemu
+# Done.
 ```
 
-This builds all binaries for all platforms. For the hardware guide, you'll use:
-- `bin/agent-linux-arm64` for the BlueField DPU
-- `bin/host-agent-linux-amd64` for x86_64 hosts
+This builds the DPU agent (cross-compiled for ARM64) and all control plane tools.
 
 ## Step 1: Start the Server
 
@@ -80,7 +74,7 @@ bin/bluectl tenant list
 The DPU agent runs on the BlueField and serves as the hardware trust anchor. It exposes a gRPC interface that the control plane uses to query hardware identity, and a local HTTP API that the host agent uses to receive credentials.
 
 ```bash
-scp bin/agent-linux-arm64 ubuntu@<DPU_IP>:~/agent
+scp bin/agent-arm64 ubuntu@<DPU_IP>:~/agent
 ```
 
 ---
@@ -286,7 +280,7 @@ The host agent runs on the Linux server that contains the BlueField DPU. It pair
 The host agent must be running before you can push credentials. Without a paired host, credential distribution will fail.
 
 ```bash
-scp bin/host-agent-linux-amd64 <user>@<HOST_IP>:~/host-agent
+scp bin/host-agent <user>@<HOST_IP>:~/host-agent
 ```
 
 ---
