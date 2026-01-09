@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nmelo/secure-infra/pkg/clierror"
 	"github.com/nmelo/secure-infra/pkg/store"
+	"github.com/nmelo/secure-infra/pkg/timeutil"
 	"github.com/spf13/cobra"
 )
 
@@ -151,7 +152,7 @@ Examples:
 
 		fmt.Printf("Invite created for %s\n", email)
 		fmt.Printf("Code: %s\n", code)
-		fmt.Printf("Expires: %s\n", invite.ExpiresAt.Format(time.RFC3339))
+		fmt.Printf("Expires: %s\n", timeutil.FormatExpiration(invite.ExpiresAt))
 		fmt.Println()
 		fmt.Println("Share this code with the operator. They will need to:")
 		fmt.Println("  1. Run: km init")
