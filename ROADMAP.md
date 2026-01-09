@@ -18,3 +18,12 @@
 | Version | Focus | Key Deliverable |
 |---------|-------|-----------------|
 | v0.6 | Migration | Batch rollout from old keys to CA certs with rollback |
+
+---
+
+## Backlog
+
+| Item | Description |
+|------|-------------|
+| Production Deployment | Dockerfiles, compose, install scripts, systemd units |
+| Web Dashboard | Next.js admin UI for tenant/DPU management |
