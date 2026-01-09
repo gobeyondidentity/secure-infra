@@ -20,6 +20,9 @@ service HostAgentService {
 
   // HealthCheck verifies the host agent is running and responsive.
   rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+
+  // ScanSSHKeys scans the host for SSH authorized_keys files.
+  rpc ScanSSHKeys(ScanSSHKeysRequest) returns (ScanSSHKeysResponse);
 }
 
 // Host Info
@@ -100,4 +103,24 @@ message HealthCheckResponse {
 message ComponentHealth {
   bool healthy = 1;
   string message = 2;
+}
+
+// SSH Key Scanning
+
+message ScanSSHKeysRequest {
+  // Empty - scans all users
+}
+
+message ScanSSHKeysResponse {
+  repeated SSHKey keys = 1;
+  string scanned_at = 2;  // RFC3339 timestamp
+}
+
+message SSHKey {
+  string user = 1;           // Unix username
+  string key_type = 2;       // ssh-ed25519, ssh-rsa, ecdsa-sha2-nistp256
+  int32 key_bits = 3;        // Key size: 256 (ed25519), 2048/4096 (RSA)
+  string fingerprint = 4;    // SHA256:base64...
+  string comment = 5;        // Key comment (may be empty)
+  string file_path = 6;      // /home/user/.ssh/authorized_keys
 }
