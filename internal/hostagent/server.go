@@ -4,11 +4,20 @@ package hostagent
 import (
 	"context"
 	"log"
+	"os"
+	"path/filepath"
 	"time"
 
 	hostv1 "github.com/nmelo/secure-infra/gen/go/host/v1"
 	"github.com/nmelo/secure-infra/internal/version"
 	"github.com/nmelo/secure-infra/pkg/host"
+	"github.com/nmelo/secure-infra/pkg/sshscan"
+)
+
+// Default paths for SSH key scanning.
+const (
+	defaultRootSSHPath     = "/root/.ssh/authorized_keys"
+	defaultHomeGlobPattern = "/home/*/.ssh/authorized_keys"
 )
 
 // Server implements the HostAgentService gRPC interface.
@@ -19,15 +28,21 @@ type Server struct {
 	collector *host.Collector
 	startTime int64
 	version   string
+
+	// SSH key scanning paths (configurable for testing)
+	rootSSHPath     string
+	homeGlobPattern string
 }
 
 // NewServer creates a new host agent server.
 func NewServer(cfg *Config) *Server {
 	return &Server{
-		config:    cfg,
-		collector: host.NewCollector(),
-		startTime: time.Now().Unix(),
-		version:   version.Version,
+		config:          cfg,
+		collector:       host.NewCollector(),
+		startTime:       time.Now().Unix(),
+		version:         version.Version,
+		rootSSHPath:     defaultRootSSHPath,
+		homeGlobPattern: defaultHomeGlobPattern,
 	}
 }
 
@@ -157,4 +172,62 @@ func (s *Server) HealthCheck(ctx context.Context, req *hostv1.HealthCheckRequest
 		UptimeSeconds: uptime,
 		Components:    components,
 	}, nil
+}
+
+// ScanSSHKeys scans authorized_keys files and returns all SSH public keys.
+func (s *Server) ScanSSHKeys(ctx context.Context, req *hostv1.ScanSSHKeysRequest) (*hostv1.ScanSSHKeysResponse, error) {
+	log.Printf("ScanSSHKeys called")
+
+	var allKeys []*hostv1.SSHKey
+
+	// 1. Scan /root/.ssh/authorized_keys
+	keys, err := s.scanAuthorizedKeysFile(s.rootSSHPath)
+	if err == nil {
+		allKeys = append(allKeys, keys...)
+	}
+
+	// 2. Scan /home/*/.ssh/authorized_keys
+	matches, err := filepath.Glob(s.homeGlobPattern)
+	if err == nil {
+		for _, path := range matches {
+			keys, err := s.scanAuthorizedKeysFile(path)
+			if err == nil {
+				allKeys = append(allKeys, keys...)
+			}
+		}
+	}
+
+	return &hostv1.ScanSSHKeysResponse{
+		Keys:      allKeys,
+		ScannedAt: time.Now().UTC().Format(time.RFC3339),
+	}, nil
+}
+
+// scanAuthorizedKeysFile reads and parses a single authorized_keys file.
+func (s *Server) scanAuthorizedKeysFile(filePath string) ([]*hostv1.SSHKey, error) {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	user := sshscan.ExtractUsername(filePath)
+	keys, err := sshscan.ParseAuthorizedKeys(string(content), user, filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert sshscan.SSHKey to hostv1.SSHKey
+	var result []*hostv1.SSHKey
+	for _, k := range keys {
+		result = append(result, &hostv1.SSHKey{
+			User:        k.User,
+			KeyType:     k.KeyType,
+			KeyBits:     int32(k.KeyBits),
+			Fingerprint: k.Fingerprint,
+			Comment:     k.Comment,
+			FilePath:    k.FilePath,
+		})
+	}
+
+	return result, nil
 }
