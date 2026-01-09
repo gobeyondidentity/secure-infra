@@ -20,10 +20,3 @@
 | v0.5 | Discovery | Scan hosts for existing SSH keys, flag sprawl/risk |
 | v0.6 | Migration | Batch rollout from old keys to CA certs with rollback |
 
----
-
-## Details
-
-- [v0.4 Plan](plans/roadmap-v0.4.md)
-- [v0.5 Plan](plans/roadmap-v0.5.md)
-- [v0.6 Plan](plans/roadmap-v0.6.md)
