@@ -122,18 +122,19 @@ func runRemoteCommand(client *ssh.Client, command string) (string, error) {
 }
 
 // buildAuthorizedKeysCommand returns the shell command to read authorized_keys files.
+// Uses grep -H to ensure file paths are prepended to each line for user extraction.
 func buildAuthorizedKeysCommand(useSudo bool) string {
-	cmd := "cat /root/.ssh/authorized_keys /home/*/.ssh/authorized_keys 2>/dev/null"
+	cmd := "grep -H . /root/.ssh/authorized_keys /home/*/.ssh/authorized_keys 2>/dev/null"
 	if useSudo {
 		cmd = "sudo " + cmd
 	}
 	return cmd
 }
 
-// parseSSHOutput parses the output of the remote authorized_keys cat command.
+// parseSSHOutput parses the output of the remote authorized_keys grep command.
 // The output format is either:
-//   - /path/to/file:key-line (when multiple files are cat'd)
-//   - key-line (when single file output)
+//   - /path/to/file:key-line (grep -H output with file paths)
+//   - key-line (fallback for single file or raw output)
 func parseSSHOutput(output, hostname string) []ScanResultKey {
 	var keys []ScanResultKey
 

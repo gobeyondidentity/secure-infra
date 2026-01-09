@@ -164,6 +164,9 @@ func TestBuildSSHCommand(t *testing.T) {
 		if !strings.Contains(cmd, "sudo") {
 			t.Error("command should contain sudo when useSudo=true")
 		}
+		if !strings.Contains(cmd, "grep -H") {
+			t.Error("command should use grep -H to prepend file paths")
+		}
 		if !strings.Contains(cmd, "/root/.ssh/authorized_keys") {
 			t.Error("command should include root authorized_keys path")
 		}
