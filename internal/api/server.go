@@ -110,6 +110,9 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 
 	// Host certificate issuance (DPU Agent calls on behalf of Host Agent)
 	mux.HandleFunc("POST /api/v1/hosts/{hostname}/cert", s.handleHostCertRequest)
+
+	// Host scan endpoint (triggers SSH key scan on host-agent)
+	mux.HandleFunc("POST /api/v1/hosts/{hostname}/scan", s.handleHostScan)
 }
 
 // ----- DPU Types -----

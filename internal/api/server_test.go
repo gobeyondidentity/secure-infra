@@ -446,3 +446,117 @@ func TestTenantListWithDPUCount(t *testing.T) {
 		t.Errorf("expected DPUCount 2, got %d", tenants[0].DPUCount)
 	}
 }
+
+// ----- Host Scan Endpoint Tests -----
+
+// TestHostScan_Success tests the host scan endpoint returns correct structure.
+func TestHostScan_Success(t *testing.T) {
+	server, mux := setupTestServer(t)
+
+	// Setup: Add a DPU and register a host
+	server.store.Add("dpu1", "bf3-test", "192.168.1.100", 50051)
+
+	host := &store.AgentHost{
+		DPUName:  "bf3-test",
+		DPUID:    "dpu1",
+		Hostname: "gpu-node-01",
+		TenantID: "",
+	}
+	server.store.RegisterAgentHost(host)
+
+	// Call the scan endpoint
+	req := httptest.NewRequest("POST", "/api/v1/hosts/gpu-node-01/scan", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var result hostScanResponse
+	if err := json.NewDecoder(w.Body).Decode(&result); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	// Verify response structure
+	if result.Host != "gpu-node-01" {
+		t.Errorf("expected host 'gpu-node-01', got '%s'", result.Host)
+	}
+	if result.Method != "agent" {
+		t.Errorf("expected method 'agent', got '%s'", result.Method)
+	}
+	if result.Keys == nil {
+		t.Error("expected keys array to be present (not nil)")
+	}
+	if result.ScannedAt == "" {
+		t.Error("expected scanned_at to be set")
+	}
+}
+
+// TestHostScan_NotFound tests scan endpoint returns 404 for unknown host.
+func TestHostScan_NotFound(t *testing.T) {
+	_, mux := setupTestServer(t)
+
+	req := httptest.NewRequest("POST", "/api/v1/hosts/nonexistent-host/scan", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected status 404, got %d", w.Code)
+	}
+
+	var result map[string]string
+	json.NewDecoder(w.Body).Decode(&result)
+
+	if result["error"] == "" {
+		t.Error("expected error message in response")
+	}
+}
+
+// TestHostScan_ResponseFormat tests the scan response has all expected fields.
+func TestHostScan_ResponseFormat(t *testing.T) {
+	server, mux := setupTestServer(t)
+
+	// Setup: Add a DPU and register a host
+	server.store.Add("dpu1", "bf3-test", "192.168.1.100", 50051)
+
+	host := &store.AgentHost{
+		DPUName:  "bf3-test",
+		DPUID:    "dpu1",
+		Hostname: "test-host",
+		TenantID: "",
+	}
+	server.store.RegisterAgentHost(host)
+
+	// Call the scan endpoint
+	req := httptest.NewRequest("POST", "/api/v1/hosts/test-host/scan", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Parse as raw JSON to verify field names
+	var rawResult map[string]interface{}
+	if err := json.NewDecoder(w.Body).Decode(&rawResult); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	// Verify all required fields are present
+	expectedFields := []string{"host", "method", "keys", "scanned_at"}
+	for _, field := range expectedFields {
+		if _, ok := rawResult[field]; !ok {
+			t.Errorf("missing required field: %s", field)
+		}
+	}
+
+	// Verify keys is an array
+	keys, ok := rawResult["keys"].([]interface{})
+	if !ok {
+		t.Error("keys field should be an array")
+	}
+	if keys == nil {
+		t.Error("keys array should not be nil")
+	}
+}

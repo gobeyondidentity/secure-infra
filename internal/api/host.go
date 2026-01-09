@@ -313,3 +313,56 @@ func agentPostureToResponse(p *store.AgentHostPosture) *agentPostureResponse {
 		CollectedAt:    p.CollectedAt.Format(time.RFC3339),
 	}
 }
+
+// ----- Host Scan Types -----
+
+// sshKeyInfo represents a single SSH key discovered on a host.
+type sshKeyInfo struct {
+	User        string `json:"user"`
+	KeyType     string `json:"key_type"`
+	KeyBits     int    `json:"key_bits"`
+	Fingerprint string `json:"fingerprint"`
+	Comment     string `json:"comment"`
+	FilePath    string `json:"file_path"`
+}
+
+// hostScanResponse is the response for the host scan endpoint.
+type hostScanResponse struct {
+	Host      string       `json:"host"`
+	Method    string       `json:"method"`
+	Keys      []sshKeyInfo `json:"keys"`
+	ScannedAt string       `json:"scanned_at"`
+}
+
+// ----- Host Scan Handler -----
+
+// handleHostScan handles POST /api/v1/hosts/{hostname}/scan
+// Triggers an SSH key scan on the host-agent and returns discovered keys.
+func (s *Server) handleHostScan(w http.ResponseWriter, r *http.Request) {
+	hostname := r.PathValue("hostname")
+	if hostname == "" {
+		writeError(w, r, http.StatusBadRequest, "hostname is required in path")
+		return
+	}
+
+	// Look up host by hostname in store
+	host, err := s.store.GetAgentHostByHostname(hostname)
+	if err != nil {
+		writeError(w, r, http.StatusNotFound, "Host not found: "+hostname)
+		return
+	}
+
+	// TODO: Connect to host-agent via gRPC and call ScanSSHKeys RPC
+	// For now, return a stub response with empty keys array.
+	// The actual host-agent connection will be wired up during integration.
+	_ = host // Will be used to determine host-agent address
+
+	response := hostScanResponse{
+		Host:      hostname,
+		Method:    "agent",
+		Keys:      []sshKeyInfo{},
+		ScannedAt: time.Now().Format(time.RFC3339),
+	}
+
+	writeJSON(w, http.StatusOK, response)
+}
