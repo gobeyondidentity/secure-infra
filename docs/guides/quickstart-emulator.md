@@ -294,13 +294,18 @@ For encryption key issues (CI/CD, multi-machine setups), see [Encryption Key Man
 
 To reset and start fresh:
 
-```bash
-# Remove server database
-rm -f ~/.local/share/bluectl/dpus.db
+1. **Stop the server and emulator** (Ctrl+C in Terminals 1 and 2)
 
-# Remove km configuration (if initialized)
+2. **Delete state files:**
+```bash
+rm -f ~/.local/share/bluectl/dpus.db
+rm -f ~/.local/share/bluectl/key
 rm -rf ~/.km
 ```
+
+3. **Restart server and emulator** (Steps 1 and 3)
+
+The server caches data in memory, so you must stop it before deleting the database.
 
 ---
 
