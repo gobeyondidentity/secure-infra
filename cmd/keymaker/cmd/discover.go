@@ -119,6 +119,13 @@ func runDiscoverScan(cmd *cobra.Command, args []string) error {
 	scanAll, _ := cmd.Flags().GetBool("all")
 	sshMode, _ := cmd.Flags().GetBool("ssh")
 	sshFallback, _ := cmd.Flags().GetBool("ssh-fallback")
+	parallel, _ := cmd.Flags().GetInt("parallel")
+
+	// Validate --parallel flag
+	if err := validateParallelFlag(parallel); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(ExitDiscoverConfigError)
+	}
 
 	// Validate flag combinations
 	if sshMode && scanAll {
@@ -637,4 +644,12 @@ func buildMethodBreakdown(methodCounts map[string]int) string {
 		}
 	}
 	return strings.Join(parts, ", ")
+}
+
+// validateParallelFlag validates that the parallel flag value is at least 1
+func validateParallelFlag(parallel int) error {
+	if parallel < 1 {
+		return fmt.Errorf("--parallel must be >= 1 (got %d)", parallel)
+	}
+	return nil
 }

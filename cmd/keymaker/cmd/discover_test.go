@@ -512,3 +512,59 @@ func TestBuildMethodBreakdownString(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateParallelFlag(t *testing.T) {
+	tests := []struct {
+		name      string
+		parallel  int
+		wantError bool
+	}{
+		{
+			name:      "valid parallel value",
+			parallel:  10,
+			wantError: false,
+		},
+		{
+			name:      "parallel equals 1",
+			parallel:  1,
+			wantError: false,
+		},
+		{
+			name:      "parallel zero should error",
+			parallel:  0,
+			wantError: true,
+		},
+		{
+			name:      "negative parallel should error",
+			parallel:  -1,
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateParallelFlag(tt.parallel)
+			if tt.wantError && err == nil {
+				t.Errorf("validateParallelFlag(%d) expected error, got nil", tt.parallel)
+			}
+			if !tt.wantError && err != nil {
+				t.Errorf("validateParallelFlag(%d) unexpected error: %v", tt.parallel, err)
+			}
+		})
+	}
+}
+
+func TestValidateParallelFlagErrorMessage(t *testing.T) {
+	err := validateParallelFlag(0)
+	if err == nil {
+		t.Fatal("expected error for parallel=0")
+	}
+
+	errMsg := err.Error()
+	if !strings.Contains(errMsg, "--parallel") {
+		t.Errorf("error message should mention '--parallel', got: %s", errMsg)
+	}
+	if !strings.Contains(errMsg, "1") {
+		t.Errorf("error message should mention minimum value '1', got: %s", errMsg)
+	}
+}
