@@ -2,7 +2,7 @@
 
 Audit existing SSH keys across your infrastructure before migrating to certificate-based authentication.
 
-## Why Discovery?
+## 1. Why Discovery?
 
 Most environments have accumulated SSH keys over years: personal keys, service accounts, deployment keys, forgotten test keys. Before migrating to certificates, you need to know what exists.
 
@@ -12,25 +12,26 @@ Discovery answers:
 - Are there unknown or suspicious keys?
 - Which service accounts need certificate migration?
 
-## Prerequisites
+## 2. Prerequisites
 
-- `km` CLI initialized (`km init` completed)
-- SSH access to target hosts, OR
-- Host agents running on target hosts
+- `km` CLI initialized (see [Quickstart](quickstart-emulator.md) Steps 1-7)
+- Plus one of:
+  - SSH access to target hosts (for Bootstrap mode), OR
+  - Host agents running on target hosts (for Agent mode)
 
-## Bootstrap Mode (No Agent)
+## 3. Bootstrap Mode (No Agent)
 
 Scan hosts directly via SSH without deploying host-agent first. Useful for initial audits and migration planning.
 
 ```bash
 bin/km discover scan <HOST> --ssh --ssh-user <USER> --ssh-key <KEY_PATH>
 # Expected:
-# HOST           METHOD  USER  TYPE        FINGERPRINT                                   COMMENT
-# 192.168.1.235  ssh           ssh-ed2...  SHA256:wxW686dl+4sjpMTltHxZ0omAYax1tTDTkx...  fabric-agent@bf3-...
-# 192.168.1.235  ssh           ssh-rsa     SHA256:5EY6l2867TSH0ZfHdUhnsj9ZJYI/MYRPOe...  deploy-key
+# HOST           METHOD  USER    TYPE        FINGERPRINT                                   COMMENT
+# 192.168.1.100  ssh     root    ssh-ed2...  SHA256:abc123...                              admin@company.com
+# 192.168.1.100  ssh     ubuntu  ssh-rsa     SHA256:def456...                              deploy-key
 # ...
 #
-# Found 12 keys on 1 host (ssh)
+# Found N keys on 1 host (ssh)
 # Warning: Bootstrap mode. Install host-agent for production use.
 ```
 
@@ -40,9 +41,9 @@ Options:
 - `--ssh-key`: Path to SSH private key
 - `--timeout`: Per-host timeout in seconds (default: 30)
 
-## Agent Mode (Production)
+## 4. Agent Mode (Production)
 
-Once host-agents are deployed, scan through the secure agent channel instead of SSH.
+Once host-agents are deployed, scan through the agent channel instead of SSH. No SSH key management required, and scans scale to hundreds of hosts with `--parallel`.
 
 ### Scan a single host
 
@@ -72,86 +73,17 @@ Options:
 - `--parallel`: Max concurrent scans (default: 10)
 - `--ssh-fallback`: Use SSH for hosts without running agents
 
-## Output Formats
+## 5. Exporting Results
 
-### Table (default)
-
-Human-readable format for interactive use.
+Export scan results to JSON for further analysis:
 
 ```bash
-bin/km discover scan --all
-```
-
-### JSON
-
-Machine-readable format for scripts and integrations.
-
-```bash
-bin/km discover scan --all -o json
-```
-
-```json
-{
-  "scan_time": "2026-01-09T16:56:22Z",
-  "hosts_scanned": 2,
-  "hosts_succeeded": 2,
-  "hosts_failed": 0,
-  "total_keys": 15,
-  "method_breakdown": {
-    "agent": 2
-  },
-  "keys": [
-    {
-      "host": "gpu-node-1",
-      "method": "agent",
-      "user": "root",
-      "key_type": "ssh-ed25519",
-      "key_bits": 256,
-      "fingerprint": "SHA256:abc123...",
-      "comment": "admin@company.com",
-      "file_path": "/root/.ssh/authorized_keys"
-    }
-  ]
-}
-```
-
-## Common Workflows
-
-### Pre-migration audit
-
-Before deploying certificate-based auth, inventory all static keys:
-
-```bash
-# Export full inventory
 bin/km discover scan --all -o json > ssh-key-inventory.json
-
-# Count keys by host
-cat ssh-key-inventory.json | jq '.keys | group_by(.host) | map({host: .[0].host, count: length})'
 ```
 
-### Find duplicate keys
+See [Discovery Reference](../reference/discovery.md) for jq recipes and analysis workflows.
 
-Keys shared across hosts may indicate service accounts that need certificate migration:
-
-```bash
-bin/km discover scan --all -o json | jq '
-  .keys | group_by(.fingerprint) |
-  map(select(length > 1)) |
-  map({fingerprint: .[0].fingerprint, comment: .[0].comment, hosts: [.[].host]})'
-```
-
-### Bootstrap a new environment
-
-Audit hosts before deploying agents:
-
-```bash
-# Scan multiple hosts via SSH
-for host in gpu-node-{1..10}; do
-  bin/km discover scan $host --ssh --ssh-user ubuntu --ssh-key ~/.ssh/id_ed25519
-done
-```
-
-## Troubleshooting
+## 6. Troubleshooting
 
 | Error | Cause | Fix |
 |-------|-------|-----|
@@ -160,11 +92,11 @@ done
 | `no hosts registered` | No host-agents connected | Use `--ssh` bootstrap mode |
 | `timeout` | Host unreachable or slow | Increase `--timeout` value |
 
-## What's Next?
+## 7. What's Next?
 
 After auditing existing keys:
 
-1. **Deploy host-agents** - Switch from SSH bootstrap to agent-based scanning
-2. **Create SSH CA** - Set up certificate authority (`km ssh-ca create`)
-3. **Migrate users** - Issue certificates to replace static keys
+1. **Deploy host-agents** - Switch from SSH bootstrap to agent-based scanning ([Hardware Setup](setup-hardware.md) Steps 12-13)
+2. **Create SSH CA** - Set up certificate authority ([Quickstart](quickstart-emulator.md) Step 8)
+3. **Migrate users** - Issue certificates to replace static keys ([Quickstart](quickstart-emulator.md) Step 13)
 4. **Remove static keys** - Clean up authorized_keys after migration
