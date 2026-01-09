@@ -15,28 +15,32 @@ Deploy Secure Infrastructure with real BlueField DPUs. This guide covers the ful
 ```bash
 git clone git@github.com:gobeyondidentity/secure-infra.git
 cd secure-infra
-make agent
+make release
 # Expected:
-# Building agent...
-#   bin/agent
-# Cross-compiling agent for BlueField (linux/arm64)...
-#   bin/agent-arm64
+# Building release binaries...
+#
+# darwin/arm64:
+#   bin/agent-darwin-arm64
+#   bin/bluectl-darwin-arm64
+#   bin/km-darwin-arm64
+#
+# linux/amd64:
+#   bin/agent-linux-amd64
+#   bin/bluectl-linux-amd64
+#   bin/km-linux-amd64
+#   bin/host-agent-linux-amd64
+#
+# linux/arm64 (BlueField DPU):
+#   bin/agent-linux-arm64
+#   bin/bluectl-linux-arm64
+#   bin/km-linux-arm64
+#
+# Release build complete.
 ```
 
-This builds the local agent and cross-compiles for BlueField (ARM64). Then build the remaining tools:
-
-```bash
-make
-# Expected:
-# Building all binaries...
-#   bin/agent
-#   bin/bluectl
-#   bin/km
-#   bin/server
-#   bin/host-agent
-#   bin/dpuemu
-# Done.
-```
+This builds all binaries for all platforms. For the hardware guide, you'll use:
+- `bin/agent-linux-arm64` for the BlueField DPU
+- `bin/host-agent-linux-amd64` for x86_64 hosts
 
 ## Step 1: Start the Server
 
@@ -76,7 +80,7 @@ bin/bluectl tenant list
 The DPU agent runs on the BlueField and serves as the hardware trust anchor. It exposes a gRPC interface that the control plane uses to query hardware identity, and a local HTTP API that the host agent uses to receive credentials.
 
 ```bash
-scp bin/agent-arm64 ubuntu@<DPU_IP>:~/agent
+scp bin/agent-linux-arm64 ubuntu@<DPU_IP>:~/agent
 ```
 
 ---
@@ -271,35 +275,23 @@ bin/bluectl attestation bf3-prod-01
 # Attestation saved: status=unavailable, last_validated=<timestamp>
 ```
 
-Attestation may be unavailable if DOCA is not configured or the BlueField firmware doesn't support DICE attestation. You can still proceed with `--force` in Step 15, but this bypasses the security guarantee.
+Attestation may be unavailable if DOCA is not configured or the BlueField firmware doesn't support DICE attestation. You can still proceed with `--force` in Step 14, but this bypasses the security guarantee.
 
 ---
 
-## Step 12: Build Host Agent
+## Step 12: Copy Host Agent to Host
 
 The host agent runs on the Linux server that contains the BlueField DPU. It pairs with the DPU agent to receive credentials through the hardware-secured tmfifo channel (or network fallback).
 
 The host agent must be running before you can push credentials. Without a paired host, credential distribution will fail.
 
 ```bash
-# For x86_64 hosts (most common)
-GOOS=linux GOARCH=amd64 go build -o bin/host-agent-linux ./cmd/host-agent
-
-# For ARM64 hosts
-GOOS=linux GOARCH=arm64 go build -o bin/host-agent-arm64 ./cmd/host-agent
+scp bin/host-agent-linux-amd64 <user>@<HOST_IP>:~/host-agent
 ```
 
 ---
 
-## Step 13: Copy Host Agent to Host
-
-```bash
-scp bin/host-agent-linux <user>@<HOST_IP>:~/host-agent
-```
-
----
-
-## Step 14: Run Host Agent
+## Step 13: Run Host Agent
 
 SSH to the host server (not the DPU) and start the agent:
 
@@ -337,7 +329,7 @@ Options:
 
 ---
 
-## Step 15: Distribute Credentials
+## Step 14: Distribute Credentials
 
 With the host agent running and registered, push the SSH CA through the DPU to the host:
 
@@ -370,7 +362,7 @@ On success, the CA public key is installed at `/etc/ssh/trusted-user-ca-keys.d/p
 
 ---
 
-## Step 16: Sign and Use Certificates
+## Step 15: Sign and Use Certificates
 
 This is the payoff. Your host now trusts the CA. Sign a certificate and SSH in.
 
@@ -411,7 +403,7 @@ Trust relationships let hosts authenticate each other for SSH or mTLS connection
 ### Prerequisites
 
 You need two hosts, each with:
-- A running host-agent (Steps 12-14)
+- A running host-agent (Steps 12-13)
 - A paired DPU with attestation (Step 11)
 
 Check your registered hosts:
@@ -440,7 +432,7 @@ bin/bluectl operator grant operator@example.com gpu-prod prod-ca bf3-prod-02
 bin/bluectl attestation bf3-prod-02
 ```
 
-Deploy and run host-agent on the second host (Steps 12-14).
+Deploy and run host-agent on the second host (Steps 12-13).
 
 ### Create trust relationship
 
