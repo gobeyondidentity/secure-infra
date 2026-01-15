@@ -85,10 +85,10 @@ The fixture file defines the emulated DPU's identity: serial number, model, and 
 In Terminal 2:
 
 ```bash
-bin/dpuemu serve --port 18051 --fixture dpuemu/fixtures/bf3-static.json
+bin/dpuemu serve --fixture dpuemu/fixtures/bf3-static.json
 # Expected:
 # Loading fixture from dpuemu/fixtures/bf3-static.json
-# dpuemu gRPC server listening on :50051
+# dpuemu gRPC server listening on :18051
 # emulating: bluefield3 (serial: MT2542600N23)
 # dpuemu local API listening on :9443
 ```
@@ -104,11 +104,11 @@ The server needs to know about each DPU before it can track attestation status o
 ```bash
 bin/bluectl dpu add localhost --name bf3
 # Expected:
-# Checking connectivity to localhost:50051...
+# Checking connectivity to localhost:18051...
 # Connected to DPU:
 #   Hostname: bluefield3
 #   Serial:   MT2542600N23
-# Added DPU 'bf3' at localhost:50051.
+# Added DPU 'bf3' at localhost:18051.
 #
 # Next: Assign to a tenant with 'bluectl tenant assign <tenant> bf3'
 ```
@@ -348,7 +348,7 @@ The emulator demonstrates the workflow but can't show hardware-specific features
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `address already in use` | Port 18080 or 50051 busy | Kill existing process or use different port |
+| `address already in use` | Port 18080 or 18051 busy | Kill existing process or use different port |
 | `UNIQUE constraint failed` | Stale data from previous run | See [Clean Slate](#appendix-a-clean-slate) |
 | `not authorized to access CA` | Grant not applied | Re-run `bluectl operator grant ...` |
 | `connection refused` | Server or emulator not running | Check Terminals 1 and 2 |

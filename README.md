@@ -1,6 +1,6 @@
 # Secure Infrastructure
 
-**v0.5.1** | [Quickstart](docs/guides/quickstart-emulator.md) | [Hardware Setup](docs/guides/setup-hardware.md) | [Changelog](CHANGELOG.md)
+**v0.4.0** | [Quickstart](docs/guides/quickstart-emulator.md) | [Hardware Setup](docs/guides/setup-hardware.md) | [Changelog](CHANGELOG.md)
 
 Hardware-bound credential management for AI infrastructure using NVIDIA BlueField DPUs.
 
@@ -33,6 +33,25 @@ Choose your path:
 **Try the emulator first** to learn the system without hardware. The quickstart walks you through the full flow: create a tenant, register a DPU, set up operators, and push credentials to attested infrastructure.
 
 The core security property: credentials only flow to verified infrastructure. When attestation is stale or failed, credential distribution is blocked.
+
+## Documentation
+
+### Guides
+
+| Guide | Description |
+|-------|-------------|
+| [Quickstart: Emulator](guides/quickstart-emulator.md) | Get started without hardware |
+| [Hardware Setup](guides/setup-hardware.md) | Deploy on BlueField-3 DPU |
+| [fTPM Key Storage](guides/ftpm-key-storage.md) | Store secrets in firmware TPM |
+| [Discovery](guides/discovery.md) | Scan infrastructure for SSH keys |
+
+### Reference
+
+| Reference | Description |
+|-----------|-------------|
+| [Attestation Architecture](reference/attestation-architecture.md) | DICE/SPDM via PSC and BMC |
+| [Discovery Schema](reference/discovery.md) | JSON output format and jq recipes |
+| [Encryption Keys](reference/encryption-keys.md) | Key management internals |
 
 ## Components
 

@@ -150,7 +150,7 @@ bin/bluectl tenant assign gpu-prod bf3-prod-01
 bin/bluectl dpu list
 # Expected:
 # NAME          HOST        PORT   STATUS*  LAST SEEN
-# bf3-prod-01   <DPU_IP>    50051  healthy  <timestamp>
+# bf3-prod-01   <DPU_IP>    50052  healthy  <timestamp>
 #
 # * Status reflects last known state. Use 'bluectl dpu health <name>' for live status.
 ```
