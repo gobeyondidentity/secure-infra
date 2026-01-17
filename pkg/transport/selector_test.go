@@ -84,8 +84,8 @@ func TestNewHostTransport_NilConfig(t *testing.T) {
 	}
 }
 
-func TestNewHostTransport_NetworkRequiresBothParams(t *testing.T) {
-	// Only invite code, no DPU address
+func TestNewHostTransport_NetworkRequiresDPUAddr(t *testing.T) {
+	// Only invite code, no DPU address - should error
 	cfg := &Config{
 		InviteCode: "test-invite",
 		TmfifoPath: "/nonexistent/device",
@@ -96,15 +96,64 @@ func TestNewHostTransport_NetworkRequiresBothParams(t *testing.T) {
 		t.Error("Expected error when DPUAddr missing")
 	}
 
-	// Only DPU address, no invite code
+	// DPU address provided, no invite code - should succeed (legacy HTTP mode)
 	cfg = &Config{
 		DPUAddr:    "localhost:8443",
 		TmfifoPath: "/nonexistent/device",
 	}
 
-	_, err = NewHostTransport(cfg)
+	transport, err := NewHostTransport(cfg)
+	if err != nil {
+		t.Errorf("Should not error when only DPUAddr provided (legacy HTTP mode): %v", err)
+	}
+	if transport == nil {
+		t.Error("Expected transport to be returned")
+	}
+	if transport != nil && transport.Type() != TransportNetwork {
+		t.Errorf("Expected network transport, got %s", transport.Type())
+	}
+}
+
+func TestNewHostTransport_ForceTmfifo(t *testing.T) {
+	// ForceTmfifo with nonexistent device should error
+	cfg := &Config{
+		ForceTmfifo: true,
+		TmfifoPath:  "/nonexistent/device",
+		DPUAddr:     "localhost:8443", // Should be ignored
+	}
+
+	_, err := NewHostTransport(cfg)
 	if err == nil {
-		t.Error("Expected error when InviteCode missing")
+		t.Error("Expected error when ForceTmfifo set but device doesn't exist")
+	}
+}
+
+func TestNewHostTransport_ForceNetwork(t *testing.T) {
+	// ForceNetwork skips hardware detection
+	cfg := &Config{
+		ForceNetwork: true,
+		DPUAddr:      "localhost:8443",
+		TmfifoPath:   "/dev/tmfifo_net0", // Would normally be checked first
+	}
+
+	transport, err := NewHostTransport(cfg)
+	if err != nil {
+		t.Fatalf("ForceNetwork should not error when DPUAddr provided: %v", err)
+	}
+	if transport.Type() != TransportNetwork {
+		t.Errorf("Expected network transport, got %s", transport.Type())
+	}
+}
+
+func TestNewHostTransport_ForceNetworkRequiresDPUAddr(t *testing.T) {
+	// ForceNetwork without DPUAddr should error
+	cfg := &Config{
+		ForceNetwork: true,
+	}
+
+	_, err := NewHostTransport(cfg)
+	if err == nil {
+		t.Error("Expected error when ForceNetwork set but DPUAddr missing")
 	}
 }
 

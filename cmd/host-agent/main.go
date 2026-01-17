@@ -63,26 +63,24 @@ func main() {
 		return
 	}
 
-	// Detect tmfifo availability
-	tmfifoPath, tmfifoAvailable := hostagent.DetectTmfifo()
-
-	// Handle force flags
-	if *forceTmfifo && !tmfifoAvailable {
-		log.Fatalf("tmfifo not available at %s (required by --force-tmfifo)", hostagent.DefaultTmfifoPath)
-	}
-	if *forceNetwork {
-		tmfifoAvailable = false
+	// Build transport configuration
+	transportCfg := &transport.Config{
+		TmfifoPath:   "", // Use default
+		DPUAddr:      *dpuAgent,
+		Hostname:     hostname,
+		ForceTmfifo:  *forceTmfifo,
+		ForceNetwork: *forceNetwork,
 	}
 
-	// Create appropriate transport based on availability and flags
-	var t transport.Transport
-	if tmfifoAvailable {
-		log.Printf("Detected BlueField DPU via tmfifo")
-		t = hostagent.NewTmfifoTransport(tmfifoPath)
-	} else {
-		log.Printf("No tmfifo detected. Using network transport.")
+	// Select transport via NewHostTransport
+	t, err := transport.NewHostTransport(transportCfg)
+	if err != nil {
+		log.Fatalf("Failed to create transport: %v", err)
+	}
+
+	log.Printf("Transport: %s", t.Type())
+	if t.Type() == transport.TransportNetwork {
 		log.Printf("DPU Agent: %s", *dpuAgent)
-		t = hostagent.NewNetworkTransport(*dpuAgent, hostname)
 	}
 
 	// Collect initial posture
