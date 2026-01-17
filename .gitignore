@@ -1,10 +1,6 @@
 # macOS
 .DS_Store
 
-# Gas Town runtime (local polecat state)
-.beads/
-.runtime/
-
 # Embedded repos (cloned from external sources)
 reference/doca-samples/
 
@@ -42,4 +38,7 @@ claude.md
 /keymaker
 web-v0/
 WALKTHROUGH-NOTES.md
+
+# Gas Town runtime
 .beads/
+.runtime/
