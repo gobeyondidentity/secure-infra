@@ -1,6 +1,10 @@
 # macOS
 .DS_Store
 
+# Gas Town runtime (local polecat state)
+.beads/
+.runtime/
+
 # Embedded repos (cloned from external sources)
 reference/doca-samples/
 
