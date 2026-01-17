@@ -387,7 +387,7 @@ qa-help:
 	@echo "  qa-host    GPU host with host-agent (connects via TMFIFO)"
 	@echo ""
 	@echo "TMFIFO emulation:"
-	@echo "  qa-emu:/dev/tmfifo  <--TCP:$(QA_TMFIFO_PORT)-->  qa-host:/dev/tmfifo"
+	@echo "  qa-emu:/dev/tmfifo_net0  <--TCP:$(QA_TMFIFO_PORT)-->  qa-host:/dev/tmfifo_net0"
 
 # Create all three QA VMs in parallel
 qa-vm-create:
@@ -450,12 +450,12 @@ qa-vm-status:
 	@echo "=== Emulator VM (DPU) ==="
 	@multipass info $(QA_VM_EMU) 2>/dev/null | grep -E "^(Name|State|IPv4)" || echo "Not running"
 	@multipass exec $(QA_VM_EMU) -- pgrep -a dpuemu 2>/dev/null || echo "  dpuemu: not running"
-	@multipass exec $(QA_VM_EMU) -- pgrep -a "socat.*tmfifo" 2>/dev/null || echo "  tmfifo: not running"
+	@multipass exec $(QA_VM_EMU) -- pgrep -a "socat.*tmfifo_net0" 2>/dev/null || echo "  tmfifo: not running"
 	@echo ""
 	@echo "=== Host VM ==="
 	@multipass info $(QA_VM_HOST) 2>/dev/null | grep -E "^(Name|State|IPv4)" || echo "Not running"
 	@multipass exec $(QA_VM_HOST) -- pgrep -a host-agent 2>/dev/null || echo "  host-agent: not running"
-	@multipass exec $(QA_VM_HOST) -- pgrep -a "socat.*tmfifo" 2>/dev/null || echo "  tmfifo: not running"
+	@multipass exec $(QA_VM_HOST) -- pgrep -a "socat.*tmfifo_net0" 2>/dev/null || echo "  tmfifo: not running"
 
 # Build and push binaries to QA VMs (uses local repo)
 qa-build:
@@ -485,9 +485,9 @@ qa-push-binaries:
 qa-tmfifo-up:
 	@EMU_IP=$$(multipass info $(QA_VM_EMU) | grep IPv4 | awk '{print $$2}'); \
 	echo "=== Starting TMFIFO on $$EMU_IP:$(QA_TMFIFO_PORT) ==="; \
-	multipass exec $(QA_VM_EMU) -- sudo socat -d PTY,raw,echo=0,link=/dev/tmfifo,mode=666 TCP-LISTEN:$(QA_TMFIFO_PORT),reuseaddr,fork >/dev/null 2>&1 & \
+	multipass exec $(QA_VM_EMU) -- sudo socat -d PTY,raw,echo=0,link=/dev/tmfifo_net0,mode=666 TCP-LISTEN:$(QA_TMFIFO_PORT),reuseaddr,fork >/dev/null 2>&1 & \
 	sleep 2; \
-	multipass exec $(QA_VM_HOST) -- sudo socat -d PTY,raw,echo=0,link=/dev/tmfifo,mode=666 TCP:$$EMU_IP:$(QA_TMFIFO_PORT) >/dev/null 2>&1 & \
+	multipass exec $(QA_VM_HOST) -- sudo socat -d PTY,raw,echo=0,link=/dev/tmfifo_net0,mode=666 TCP:$$EMU_IP:$(QA_TMFIFO_PORT) >/dev/null 2>&1 & \
 	sleep 2; \
 	echo "TMFIFO ready"
 
@@ -500,14 +500,14 @@ qa-tmfifo-down:
 qa-test-tmfifo:
 	@echo "=== Testing TMFIFO communication ==="
 	@echo "Test 1: Host -> DPU"
-	@multipass exec $(QA_VM_HOST) -- bash -c 'echo "PING_FROM_HOST" > /dev/tmfifo' & \
+	@multipass exec $(QA_VM_HOST) -- bash -c 'echo "PING_FROM_HOST" > /dev/tmfifo_net0' & \
 	sleep 1; \
-	multipass exec $(QA_VM_EMU) -- bash -c 'timeout 3 head -n1 /dev/tmfifo || echo "FAIL: timeout"'
+	multipass exec $(QA_VM_EMU) -- bash -c 'timeout 3 head -n1 /dev/tmfifo_net0 || echo "FAIL: timeout"'
 	@echo ""
 	@echo "Test 2: DPU -> Host"
-	@multipass exec $(QA_VM_EMU) -- bash -c 'echo "PONG_FROM_DPU" > /dev/tmfifo' & \
+	@multipass exec $(QA_VM_EMU) -- bash -c 'echo "PONG_FROM_DPU" > /dev/tmfifo_net0' & \
 	sleep 1; \
-	multipass exec $(QA_VM_HOST) -- bash -c 'timeout 3 head -n1 /dev/tmfifo || echo "FAIL: timeout"'
+	multipass exec $(QA_VM_HOST) -- bash -c 'timeout 3 head -n1 /dev/tmfifo_net0 || echo "FAIL: timeout"'
 	@echo ""
 	@echo "=== TMFIFO test complete ==="
 
@@ -598,7 +598,7 @@ qa-test-transport-mock:
 qa-test-transport-tmfifo:
 	@echo "=== TmfifoNetTransport Test ==="
 	@echo "Checking prerequisites..."
-	@multipass exec $(QA_VM_HOST) -- ls /dev/tmfifo >/dev/null 2>&1 || (echo "ERROR: TMFIFO not available. Run 'make qa-up' first." && exit 1)
+	@multipass exec $(QA_VM_HOST) -- ls /dev/tmfifo_net0 >/dev/null 2>&1 || (echo "ERROR: TMFIFO not available. Run 'make qa-up' first." && exit 1)
 	@echo "Running host-agent with --force-tmfifo --oneshot..."
 	@HOST_IP=$$(multipass info $(QA_VM_HOST) | grep IPv4 | awk '{print $$2}'); \
 	EMU_IP=$$(multipass info $(QA_VM_EMU) | grep IPv4 | awk '{print $$2}'); \
@@ -634,8 +634,8 @@ qa-test-transport-integration:
 	@$(MAKE) qa-health
 	@echo ""
 	@echo "Step 2: Verify TMFIFO is connected..."
-	@multipass exec $(QA_VM_HOST) -- ls /dev/tmfifo >/dev/null 2>&1 || (echo "ERROR: TMFIFO not available" && exit 1)
-	@multipass exec $(QA_VM_EMU) -- ls /dev/tmfifo >/dev/null 2>&1 || (echo "ERROR: TMFIFO not available on EMU" && exit 1)
+	@multipass exec $(QA_VM_HOST) -- ls /dev/tmfifo_net0 >/dev/null 2>&1 || (echo "ERROR: TMFIFO not available" && exit 1)
+	@multipass exec $(QA_VM_EMU) -- ls /dev/tmfifo_net0 >/dev/null 2>&1 || (echo "ERROR: TMFIFO not available on EMU" && exit 1)
 	@echo "✓ TMFIFO connected"
 	@echo ""
 	@echo "Step 3: Run host-agent enrollment..."
