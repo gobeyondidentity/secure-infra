@@ -8,7 +8,8 @@ Deploy Secure Infrastructure with real BlueField DPUs. This guide covers the ful
 - Make
 - NVIDIA BlueField-3 DPU with network access
 - SSH access to the DPU (default: `ubuntu@<DPU_IP>`)
-- Linux host paired with the DPU
+- Linux host with the BlueField DPU installed
+- rshim driver on host (for tmfifo communication)
 
 ## Clone and Build
 
@@ -98,15 +99,15 @@ SSH into the DPU and start the agent with local API enabled:
 ```bash
 ssh ubuntu@<DPU_IP>
 chmod +x ~/agent
-~/agent --listen :50052 -local-api -control-plane http://<CONTROL_PLANE_IP>:18080 -dpu-name bf3-prod-01
+~/agent -local-api -control-plane http://<CONTROL_PLANE_IP>:18080 -dpu-name bf3-prod-01
 ```
 
-Replace `<CONTROL_PLANE_IP>` with the IP of the machine running the server. We use port 50052 because NVIDIA's BlueMan service uses 50051 on BlueField DPUs. The `-dpu-name` should match what you'll use in Step 5.
+Replace `<CONTROL_PLANE_IP>` with the IP of the machine running the server. The `-dpu-name` should match what you'll use in Step 5.
 
 ```
 # Expected:
 # Fabric Console Agent v0.4.1 starting...
-# gRPC server listening on :50052
+# gRPC server listening on :18051
 # Starting local API for Host Agent communication...
 # Local API listening on localhost:9443
 # Local API enabled: localhost:9443
@@ -126,15 +127,15 @@ Leave this terminal open. The agent must be running for registration and credent
 Back on your control plane, register the DPU:
 
 ```bash
-bin/bluectl dpu add <DPU_IP> --port 50052 --name bf3-prod-01
+bin/bluectl dpu add <DPU_IP> --name bf3-prod-01
 # Expected:
-# Checking connectivity to <DPU_IP>:50052...
+# Checking connectivity to <DPU_IP>:18051...
 # Connected to DPU:
 #   Hostname: <hostname>
 #   Serial:   <serial>
 #   Model:    BlueField-3
 # Connection verified: agent is healthy
-# Added DPU 'bf3-prod-01' at <DPU_IP>:50052
+# Added DPU 'bf3-prod-01' at <DPU_IP>:18051
 #
 # Next: Assign to a tenant with 'bluectl tenant assign <tenant> bf3-prod-01'
 ```
@@ -150,7 +151,7 @@ bin/bluectl tenant assign gpu-prod bf3-prod-01
 bin/bluectl dpu list
 # Expected:
 # NAME          HOST        PORT   STATUS*  LAST SEEN
-# bf3-prod-01   <DPU_IP>    50052  healthy  <timestamp>
+# bf3-prod-01   <DPU_IP>    18051  healthy  <timestamp>
 #
 # * Status reflects last known state. Use 'bluectl dpu health <name>' for live status.
 ```
@@ -281,43 +282,97 @@ bin/bluectl attestation bf3-prod-01
 # Attestation saved: status=unavailable, last_validated=<timestamp>
 ```
 
-Attestation may be unavailable if DOCA is not configured or the BlueField firmware doesn't support DICE attestation. You can still proceed with `--force` in Step 14, but this bypasses the security guarantee.
+Attestation may be unavailable if DOCA is not configured or the BlueField firmware doesn't support DICE attestation. You can still proceed with `--force` in Step 15, but this bypasses the security guarantee.
 
 ---
 
-## Step 12: Copy Host Agent to Host
+## Step 12: Verify tmfifo on Host
 
-The host agent runs on the Linux server that contains the BlueField DPU. It pairs with the DPU agent to receive credentials through the hardware-secured tmfifo channel (or network fallback).
+The host agent communicates with the DPU agent through tmfifo, a hardware FIFO channel over PCIe. This is more secure than network communication because identity is physical: bytes arriving via tmfifo on the DPU can only come from the physically-attached host.
 
-The host agent must be running before you can push credentials. Without a paired host, credential distribution will fail.
+SSH to the host server (not the DPU) and verify tmfifo is available:
+
+```bash
+ssh <user>@<HOST_IP>
+
+# Check rshim driver is loaded
+lsmod | grep rshim
+# Expected: rshim  <size>  0
+
+# Check tmfifo device exists
+ls -la /dev/rshim0/
+# Expected:
+# crw-rw---- 1 root root ... /dev/rshim0/boot
+# crw-rw---- 1 root root ... /dev/rshim0/console
+# crw-rw---- 1 root root ... /dev/rshim0/misc
+# crw-rw---- 1 root root ... /dev/rshim0/rshim
+```
+
+If rshim is not loaded:
+
+```bash
+sudo modprobe rshim
+sudo systemctl enable rshim
+sudo systemctl start rshim
+```
+
+**Why tmfifo matters:** Network-based enrollment (HTTP fallback) works but is less secure. A compromised host could potentially spoof network traffic. With tmfifo, the DPU knows with hardware certainty which physical host is communicating.
+
+---
+
+## Step 13: Pair Host with DPU
+
+Before the host agent can enroll, the admin must authorize the host-DPU pairing. This prevents rogue hosts from enrolling.
+
+On the control plane:
+
+```bash
+bin/bluectl host pair bf3-prod-01
+# Expected:
+# Host pairing enabled for DPU 'bf3-prod-01'
+# The next host agent to connect via tmfifo will be registered.
+```
+
+---
+
+## Step 14: Copy and Run Host Agent
+
+Copy the host agent binary:
 
 ```bash
 scp bin/host-agent-amd64 <user>@<HOST_IP>:~/host-agent
 ```
 
----
-
-## Step 13: Run Host Agent
-
-SSH to the host server (not the DPU) and start the agent:
+SSH to the host and start the agent:
 
 ```bash
 ssh <user>@<HOST_IP>
 chmod +x ~/host-agent
-~/host-agent --dpu-agent http://localhost:9443
+~/host-agent
 ```
 
-The agent connects to the DPU agent's local API. If tmfifo is available, it will use the hardware channel automatically.
+With tmfifo available, the agent enrolls through the hardware channel:
 
 ```
-# Expected:
+# Expected (tmfifo path):
 # Host Agent v0.4.1 starting...
 # Initial posture collected: hash=<hash>
-# No tmfifo detected. Using network enrollment.
-# DPU Agent: http://localhost:9443
+# tmfifo detected: /dev/rshim0/misc
+# Enrolling via tmfifo...
 # Hostname: <hostname>
 # Paired with DPU: bf3-prod-01
-# Registered as host <host_id> via DPU Agent
+# Registered as host <host_id>
+```
+
+**Fallback (no tmfifo):** If tmfifo is unavailable, use the network path:
+
+```bash
+~/host-agent --dpu-agent http://localhost:9443
+# Expected:
+# Host Agent v0.4.1 starting...
+# No tmfifo detected. Using network enrollment.
+# DPU Agent: http://localhost:9443
+# ...
 ```
 
 Verify registration on the control plane:
@@ -325,17 +380,17 @@ Verify registration on the control plane:
 ```bash
 bin/bluectl host list
 # Expected:
-# NAME          DPU           STATUS   LAST SEEN
-# <hostname>    bf3-prod-01   online   <timestamp>
+# NAME          DPU           STATUS   LAST SEEN    CHANNEL
+# <hostname>    bf3-prod-01   online   <timestamp>  tmfifo
 ```
 
 Options:
 - `--oneshot`: Register once and exit (useful for testing)
-- `--dpu-agent <url>`: DPU agent local API URL (default: http://localhost:9443)
+- `--dpu-agent <url>`: Force network enrollment to specified URL
 
 ---
 
-## Step 14: Distribute Credentials
+## Step 15: Distribute Credentials
 
 With the host agent running and registered, push the SSH CA through the DPU to the host:
 
@@ -368,7 +423,7 @@ On success, the CA public key is installed at `/etc/ssh/trusted-user-ca-keys.d/p
 
 ---
 
-## Step 15: Sign and Use Certificates
+## Step 16: Sign and Use Certificates
 
 This is the payoff. Your host now trusts the CA. Sign a certificate and SSH in.
 
@@ -409,7 +464,7 @@ Trust relationships let hosts authenticate each other for SSH or mTLS connection
 ### Prerequisites
 
 You need two hosts, each with:
-- A running host-agent (Steps 12-13)
+- A running host-agent (Steps 12-14)
 - A paired DPU with attestation (Step 11)
 
 Check your registered hosts:
@@ -424,11 +479,11 @@ bin/bluectl host list
 
 ### Add a second DPU and host
 
-Repeat Steps 3-6 and 11-14 for the second host/DPU pair:
+Repeat Steps 3-6 and 11-15 for the second host/DPU pair:
 
 ```bash
 # Register second DPU
-bin/bluectl dpu add <DPU2_IP> --port 50052 --name bf3-prod-02
+bin/bluectl dpu add <DPU2_IP> --name bf3-prod-02
 bin/bluectl tenant assign gpu-prod bf3-prod-02
 
 # Grant operator access
@@ -438,7 +493,7 @@ bin/bluectl operator grant operator@example.com gpu-prod prod-ca bf3-prod-02
 bin/bluectl attestation bf3-prod-02
 ```
 
-Deploy and run host-agent on the second host (Steps 12-13).
+Deploy and run host-agent on the second host (Steps 12-14).
 
 ### Create trust relationship
 
