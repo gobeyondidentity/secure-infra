@@ -8,13 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- DOCA ComCh transport wrapper for BlueField DPU communication (si-w4z.1)
-  - `DOCAComchClient` for host-side connections with epoll-based event loop
-  - `DOCAComchServer` for DPU-side listener with multi-client support
-  - PCI device discovery and automatic device selection
-  - Retry with exponential backoff for transient DOCA errors
-  - Circuit breaker pattern (trips after 5 consecutive failures)
-  - C shim layer bridging DOCA SDK to Go via CGO
+- DOCA ComCh transport for BlueField DPU communication (si-w4z.1)
+  - Replaces tmfifo with NVIDIA's production-grade PCIe channel (higher throughput, no IP config required)
+  - Automatic PCI device discovery eliminates manual address configuration
+  - Built-in retry with exponential backoff and circuit breaker for connection resilience
+  - Note: Transport selection config coming in next release (si-w4z.2)
 
 ## [0.5.1] - 2026-01-09
 
