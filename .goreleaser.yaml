@@ -1,0 +1,145 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+project_name: secureinfra
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: bluectl
+    main: ./cmd/bluectl
+    binary: bluectl
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X github.com/nmelo/secure-infra/internal/version.Version={{.Version}}
+
+  - id: km
+    main: ./cmd/keymaker
+    binary: km
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X github.com/nmelo/secure-infra/internal/version.Version={{.Version}}
+
+  - id: host-agent
+    main: ./cmd/host-agent
+    binary: host-agent
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/nmelo/secure-infra/internal/version.Version={{.Version}}
+
+  - id: control-plane
+    main: ./cmd/server
+    binary: control-plane
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/nmelo/secure-infra/internal/version.Version={{.Version}}
+
+archives:
+  - id: bluectl-archive
+    ids:
+      - bluectl
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: "bluectl_{{ .Os }}_{{ .Arch }}"
+    files:
+      - none*
+
+  - id: km-archive
+    ids:
+      - km
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: "km_{{ .Os }}_{{ .Arch }}"
+    files:
+      - none*
+
+  - id: host-agent-archive
+    ids:
+      - host-agent
+    formats:
+      - tar.gz
+    name_template: "host-agent_{{ .Os }}_{{ .Arch }}"
+    files:
+      - none*
+
+  - id: control-plane-archive
+    ids:
+      - control-plane
+    formats:
+      - tar.gz
+    name_template: "control-plane_{{ .Os }}_{{ .Arch }}"
+    files:
+      - none*
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ .Version }}-snapshot"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+
+release:
+  github:
+    owner: gobeyondidentity
+    name: secure-infra
+  draft: false
+  prerelease: auto
+  name_template: "v{{.Version}}"
