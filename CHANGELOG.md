@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-01-20
+
+### Changed
+- **Package Renames** for clearer product identity:
+  - `host-agent` → `sentry` (host security agent)
+  - `control-plane` → `nexus` (central management server)
+  - `dpu-agent` → `aegis` (DPU security agent)
+- Linux packages now published to Cloudsmith at `packages.beyondidentity.com`
+  - Debian/Ubuntu: `deb [signed-by=...] https://packages.beyondidentity.com/public/secure-infra/deb/ubuntu jammy main`
+  - RHEL/Fedora: `https://packages.beyondidentity.com/public/secure-infra/rpm/any-distro/any-version/$basearch`
+
+### Added
+- README installation instructions for apt and yum/dnf package managers
+- Cloudsmith GPG key and repository setup commands
+
 ## [0.6.0] - 2026-01-20
 
 ### Added
