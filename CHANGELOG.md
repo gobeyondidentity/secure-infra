@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `control-plane` → `nexus` (central management server)
   - `dpu-agent` → `aegis` (DPU security agent)
 - Linux packages now published to Cloudsmith at `packages.beyondidentity.com`
-  - Debian/Ubuntu: `deb [signed-by=...] https://packages.beyondidentity.com/public/secure-infra/deb/ubuntu jammy main`
+  - Debian/Ubuntu: `deb [signed-by=...] https://packages.beyondidentity.com/public/secure-infra/deb/any-distro any-version main`
   - RHEL/Fedora: `https://packages.beyondidentity.com/public/secure-infra/rpm/any-distro/any-version/$basearch`
 
 ### Added
