@@ -118,7 +118,7 @@ func (c *TmfifoClient) Enroll(posture json.RawMessage) (hostID string, dpuName s
 	req := tmfifo.Message{
 		Type:    tmfifo.TypeEnrollRequest,
 		Payload: payloadBytes,
-		Nonce:   generateNonce(),
+		ID:   generateNonce(),
 	}
 
 	// Send request
@@ -166,7 +166,7 @@ func (c *TmfifoClient) ReportPosture(posture json.RawMessage) error {
 	req := tmfifo.Message{
 		Type:    tmfifo.TypePostureReport,
 		Payload: payloadBytes,
-		Nonce:   generateNonce(),
+		ID:   generateNonce(),
 	}
 
 	if err := c.sendMessage(&req); err != nil {
@@ -317,7 +317,7 @@ func (c *TmfifoClient) sendCredentialAck(success bool, installedPath, errMsg str
 	msg := tmfifo.Message{
 		Type:    tmfifo.TypeCredentialAck,
 		Payload: payloadBytes,
-		Nonce:   generateNonce(),
+		ID:   generateNonce(),
 	}
 
 	return c.sendMessage(&msg)

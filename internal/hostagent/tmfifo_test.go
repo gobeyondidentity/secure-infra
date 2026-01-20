@@ -100,7 +100,7 @@ func TestTmfifoClient_handleCredentialPush_sshCA(t *testing.T) {
 	msg := &tmfifo.Message{
 		Type:    tmfifo.TypeCredentialPush,
 		Payload: payloadBytes,
-		Nonce:   "test-nonce",
+		ID:   "test-nonce",
 	}
 
 	// Handle the message (will fail on sendCredentialAck since device is /dev/null)
@@ -138,7 +138,7 @@ func TestTmfifoClient_handleCredentialPush_unsupportedType(t *testing.T) {
 	msg := &tmfifo.Message{
 		Type:    tmfifo.TypeCredentialPush,
 		Payload: payloadBytes,
-		Nonce:   "test-nonce",
+		ID:   "test-nonce",
 	}
 
 	// Handle should fail with unsupported type error
@@ -155,7 +155,7 @@ func TestTmfifoClient_handleCredentialPush_invalidPayload(t *testing.T) {
 	msg := &tmfifo.Message{
 		Type:    tmfifo.TypeCredentialPush,
 		Payload: []byte("not json"),
-		Nonce:   "test-nonce",
+		ID:   "test-nonce",
 	}
 
 	// Handle should fail with parse error
@@ -172,7 +172,7 @@ func TestTmfifoClient_handleMessage_unknownType(t *testing.T) {
 	msg := &tmfifo.Message{
 		Type:    "UNKNOWN_TYPE",
 		Payload: []byte("{}"),
-		Nonce:   "test-nonce",
+		ID:   "test-nonce",
 	}
 
 	// Unknown types should be ignored without error

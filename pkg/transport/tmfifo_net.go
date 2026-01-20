@@ -118,7 +118,7 @@ func (t *TmfifoNetTransport) Send(msg *Message) error {
 		return fmt.Errorf("write to tmfifo: %w", err)
 	}
 
-	log.Printf("tmfifo: sent %s message (nonce=%s)", msg.Type, msg.Nonce)
+	log.Printf("tmfifo: sent %s message (nonce=%s)", msg.Type, msg.ID)
 	return nil
 }
 
@@ -155,7 +155,7 @@ func (t *TmfifoNetTransport) Recv() (*Message, error) {
 		return nil, fmt.Errorf("parse message: %w", err)
 	}
 
-	log.Printf("tmfifo: received %s message (nonce=%s)", msg.Type, msg.Nonce)
+	log.Printf("tmfifo: received %s message (nonce=%s)", msg.Type, msg.ID)
 	return &msg, nil
 }
 

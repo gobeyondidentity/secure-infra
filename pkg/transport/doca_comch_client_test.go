@@ -125,7 +125,7 @@ func TestDOCAComchClient_MessageSerialization(t *testing.T) {
 			msg: &Message{
 				Type:    MessageEnrollRequest,
 				Payload: json.RawMessage(`{"hostname":"test-host"}`),
-				Nonce:   "nonce-123",
+				ID:   "nonce-123",
 			},
 		},
 		{
@@ -133,7 +133,7 @@ func TestDOCAComchClient_MessageSerialization(t *testing.T) {
 			msg: &Message{
 				Type:    MessagePostureReport,
 				Payload: json.RawMessage(`{"score":95}`),
-				Nonce:   "posture-456",
+				ID:   "posture-456",
 			},
 		},
 		{
@@ -141,7 +141,7 @@ func TestDOCAComchClient_MessageSerialization(t *testing.T) {
 			msg: &Message{
 				Type:    MessageCredentialPush,
 				Payload: json.RawMessage(`{"type":"ssh-ca","data":"base64..."}`),
-				Nonce:   "cred-789",
+				ID:   "cred-789",
 			},
 		},
 	}
@@ -164,8 +164,8 @@ func TestDOCAComchClient_MessageSerialization(t *testing.T) {
 			if decoded.Type != tt.msg.Type {
 				t.Errorf("type mismatch: got %s, want %s", decoded.Type, tt.msg.Type)
 			}
-			if decoded.Nonce != tt.msg.Nonce {
-				t.Errorf("nonce mismatch: got %s, want %s", decoded.Nonce, tt.msg.Nonce)
+			if decoded.ID != tt.msg.ID {
+				t.Errorf("nonce mismatch: got %s, want %s", decoded.ID, tt.msg.ID)
 			}
 			if string(decoded.Payload) != string(tt.msg.Payload) {
 				t.Errorf("payload mismatch: got %s, want %s", decoded.Payload, tt.msg.Payload)
@@ -183,7 +183,7 @@ func TestDOCAComchClient_MessageSizeValidation(t *testing.T) {
 	smallMsg := &Message{
 		Type:    MessageEnrollRequest,
 		Payload: json.RawMessage(smallPayload),
-		Nonce:   "test",
+		ID:   "test",
 	}
 	smallData, _ := json.Marshal(smallMsg)
 	if uint32(len(smallData)) > maxSize {
@@ -202,7 +202,7 @@ func TestDOCAComchClient_MessageSizeValidation(t *testing.T) {
 	largeMsg := &Message{
 		Type:    MessagePostureReport,
 		Payload: json.RawMessage(largePayloadJSON),
-		Nonce:   "large-test",
+		ID:   "large-test",
 	}
 	largeData, _ := json.Marshal(largeMsg)
 	if uint32(len(largeData)) <= maxSize {
@@ -232,7 +232,7 @@ func BenchmarkMessageMarshal(b *testing.B) {
 	msg := &Message{
 		Type:    MessagePostureReport,
 		Payload: json.RawMessage(`{"score":95,"checks":["firewall","disk","software"],"timestamp":"2026-01-20T12:00:00Z"}`),
-		Nonce:   "benchmark-nonce-12345",
+		ID:   "benchmark-nonce-12345",
 	}
 
 	b.ResetTimer()

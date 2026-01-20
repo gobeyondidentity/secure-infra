@@ -96,17 +96,24 @@ const (
 	MessageCertResponse MessageType = "CERT_RESPONSE"
 )
 
+// ProtocolVersion is the current protocol version for message envelopes.
+const ProtocolVersion uint8 = 1
+
 // Message is the wire format for transport protocol messages.
 // All communication between DPU Agent and Host Agent uses this envelope.
-// This structure matches the existing tmfifo.Message for compatibility.
 type Message struct {
+	// Version is the protocol version. Current: 1
+	Version uint8 `json:"v"`
+
 	// Type identifies the message type (e.g., ENROLL_REQUEST, POSTURE_REPORT).
 	Type MessageType `json:"type"`
 
+	// ID is the correlation ID (UUID v4). Request and response share the same ID.
+	ID string `json:"id"`
+
+	// TS is the sender's Unix timestamp in milliseconds.
+	TS int64 `json:"ts"`
+
 	// Payload contains the message-specific data as JSON.
 	Payload json.RawMessage `json:"payload"`
-
-	// Nonce is a unique identifier for replay protection.
-	// Each message should have a unique nonce; receivers may reject duplicates.
-	Nonce string `json:"nonce"`
 }

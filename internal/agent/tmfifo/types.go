@@ -5,12 +5,17 @@ package tmfifo
 
 import "encoding/json"
 
+// ProtocolVersion is the current protocol version for message envelopes.
+const ProtocolVersion uint8 = 1
+
 // Message is the wire format for tmfifo protocol messages.
 // All communication between DPU Agent and Host Agent uses this envelope.
 type Message struct {
+	Version uint8           `json:"v"`
 	Type    string          `json:"type"`
+	ID      string          `json:"id"`
+	TS      int64           `json:"ts"`
 	Payload json.RawMessage `json:"payload"`
-	Nonce   string          `json:"nonce"`
 }
 
 // Message types for the tmfifo protocol.

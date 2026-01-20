@@ -69,7 +69,7 @@ func (c *Client) Enroll(ctx context.Context, posture json.RawMessage) (hostID, d
 	req := &transport.Message{
 		Type:    transport.MessageEnrollRequest,
 		Payload: payloadBytes,
-		Nonce:   generateNonce(),
+		ID:   generateNonce(),
 	}
 
 	// Send request
@@ -118,7 +118,7 @@ func (c *Client) ReportPosture(posture json.RawMessage) error {
 	req := &transport.Message{
 		Type:    transport.MessagePostureReport,
 		Payload: payloadBytes,
-		Nonce:   generateNonce(),
+		ID:   generateNonce(),
 	}
 
 	if err := c.transport.Send(req); err != nil {
@@ -243,7 +243,7 @@ func (c *Client) sendCredentialAck(success bool, installedPath, errMsg string) e
 	msg := &transport.Message{
 		Type:    transport.MessageCredentialAck,
 		Payload: payloadBytes,
-		Nonce:   generateNonce(),
+		ID:   generateNonce(),
 	}
 
 	return c.transport.Send(msg)

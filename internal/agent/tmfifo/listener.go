@@ -157,7 +157,7 @@ func (l *Listener) SendCredentialPush(credType, credName string, data []byte) er
 	msg := Message{
 		Type:    TypeCredentialPush,
 		Payload: payloadBytes,
-		Nonce:   generateNonce(),
+		ID:   generateNonce(),
 	}
 
 	return l.sendMessage(&msg)
@@ -183,7 +183,7 @@ func (l *Listener) sendMessage(msg *Message) error {
 		return fmt.Errorf("write to tmfifo: %w", err)
 	}
 
-	log.Printf("tmfifo: sent %s message (nonce=%s)", msg.Type, msg.Nonce)
+	log.Printf("tmfifo: sent %s message (nonce=%s)", msg.Type, msg.ID)
 	return nil
 }
 
@@ -235,13 +235,13 @@ func (l *Listener) handleMessage(ctx context.Context, data []byte) error {
 	}
 
 	// Check for replay attacks
-	if msg.Nonce != "" {
-		if !l.recordNonce(msg.Nonce) {
+	if msg.ID != "" {
+		if !l.recordNonce(msg.ID) {
 			return ErrReplayDetected
 		}
 	}
 
-	log.Printf("tmfifo: received %s message (nonce=%s)", msg.Type, msg.Nonce)
+	log.Printf("tmfifo: received %s message (nonce=%s)", msg.Type, msg.ID)
 
 	switch msg.Type {
 	case TypeEnrollRequest:
@@ -283,7 +283,7 @@ func (l *Listener) handleEnrollRequest(ctx context.Context, msg *Message) error 
 	respMsg := Message{
 		Type:    TypeEnrollResponse,
 		Payload: respBytes,
-		Nonce:   generateNonce(),
+		ID:   generateNonce(),
 	}
 
 	return l.sendMessage(&respMsg)
@@ -316,7 +316,7 @@ func (l *Listener) handlePostureReport(ctx context.Context, msg *Message) error 
 	respMsg := Message{
 		Type:    TypePostureAck,
 		Payload: respBytes,
-		Nonce:   generateNonce(),
+		ID:   generateNonce(),
 	}
 
 	return l.sendMessage(&respMsg)

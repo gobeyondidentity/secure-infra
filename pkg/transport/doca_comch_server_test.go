@@ -191,7 +191,7 @@ func TestDOCAComchServer_MessageSerialization(t *testing.T) {
 			msg: &Message{
 				Type:    MessageEnrollResponse,
 				Payload: json.RawMessage(`{"host_id":"h-123","status":"enrolled"}`),
-				Nonce:   "nonce-123",
+				ID:   "nonce-123",
 			},
 		},
 		{
@@ -199,7 +199,7 @@ func TestDOCAComchServer_MessageSerialization(t *testing.T) {
 			msg: &Message{
 				Type:    MessagePostureAck,
 				Payload: json.RawMessage(`{"accepted":true}`),
-				Nonce:   "posture-456",
+				ID:   "posture-456",
 			},
 		},
 		{
@@ -207,7 +207,7 @@ func TestDOCAComchServer_MessageSerialization(t *testing.T) {
 			msg: &Message{
 				Type:    MessageCredentialPush,
 				Payload: json.RawMessage(`{"type":"ssh-ca","data":"base64..."}`),
-				Nonce:   "cred-789",
+				ID:   "cred-789",
 			},
 		},
 	}
@@ -230,8 +230,8 @@ func TestDOCAComchServer_MessageSerialization(t *testing.T) {
 			if decoded.Type != tt.msg.Type {
 				t.Errorf("type mismatch: got %s, want %s", decoded.Type, tt.msg.Type)
 			}
-			if decoded.Nonce != tt.msg.Nonce {
-				t.Errorf("nonce mismatch: got %s, want %s", decoded.Nonce, tt.msg.Nonce)
+			if decoded.ID != tt.msg.ID {
+				t.Errorf("nonce mismatch: got %s, want %s", decoded.ID, tt.msg.ID)
 			}
 			if string(decoded.Payload) != string(tt.msg.Payload) {
 				t.Errorf("payload mismatch: got %s, want %s", decoded.Payload, tt.msg.Payload)
@@ -261,7 +261,7 @@ func BenchmarkServerMessageMarshal(b *testing.B) {
 	msg := &Message{
 		Type:    MessageEnrollResponse,
 		Payload: json.RawMessage(`{"host_id":"h-12345","status":"enrolled","assigned_policies":["base","high-security"]}`),
-		Nonce:   "benchmark-nonce-server",
+		ID:   "benchmark-nonce-server",
 	}
 
 	b.ResetTimer()

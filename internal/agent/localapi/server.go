@@ -361,7 +361,7 @@ func (s *Server) pushCredentialViaTransport(t transport.Transport, credType, cre
 	msg := &transport.Message{
 		Type:    transport.MessageCredentialPush,
 		Payload: payload,
-		Nonce:   generateNonce(),
+		ID:   generateNonce(),
 	}
 
 	return t.Send(msg)

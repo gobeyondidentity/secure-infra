@@ -301,7 +301,7 @@ func handleEnrollRequest(ctx context.Context, msg *transport.Message) *transport
 	return &transport.Message{
 		Type:    transport.MessageEnrollResponse,
 		Payload: respPayload,
-		Nonce:   generateMessageNonce(),
+		ID:   generateMessageNonce(),
 	}
 }
 
@@ -326,7 +326,7 @@ func handlePostureReport(ctx context.Context, msg *transport.Message) *transport
 	return &transport.Message{
 		Type:    transport.MessagePostureAck,
 		Payload: respPayload,
-		Nonce:   generateMessageNonce(),
+		ID:   generateMessageNonce(),
 	}
 }
 

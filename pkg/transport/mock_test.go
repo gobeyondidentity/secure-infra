@@ -29,7 +29,7 @@ func TestMockTransport_BasicSendRecv(t *testing.T) {
 	msg := &Message{
 		Type:    MessageEnrollRequest,
 		Payload: payload,
-		Nonce:   "test-nonce-123",
+		ID:   "test-nonce-123",
 	}
 
 	// Host sends message
@@ -47,8 +47,8 @@ func TestMockTransport_BasicSendRecv(t *testing.T) {
 	if received.Type != MessageEnrollRequest {
 		t.Errorf("expected type %s, got %s", MessageEnrollRequest, received.Type)
 	}
-	if received.Nonce != "test-nonce-123" {
-		t.Errorf("expected nonce test-nonce-123, got %s", received.Nonce)
+	if received.ID != "test-nonce-123" {
+		t.Errorf("expected nonce test-nonce-123, got %s", received.ID)
 	}
 
 	// Verify message was recorded
@@ -62,7 +62,7 @@ func TestMockTransport_BasicSendRecv(t *testing.T) {
 	response := &Message{
 		Type:    MessageEnrollResponse,
 		Payload: responsePayload,
-		Nonce:   "response-nonce-456",
+		ID:   "response-nonce-456",
 	}
 
 	if err := hostTransport.Enqueue(response); err != nil {
@@ -247,8 +247,8 @@ func TestMockTransport_ClearRecords(t *testing.T) {
 	m.Connect(context.Background())
 
 	// Send some messages
-	m.Send(&Message{Type: MessagePostureReport, Nonce: "1"})
-	m.Send(&Message{Type: MessagePostureReport, Nonce: "2"})
+	m.Send(&Message{Type: MessagePostureReport, ID: "1"})
+	m.Send(&Message{Type: MessagePostureReport, ID: "2"})
 
 	if len(m.SentMessages()) != 2 {
 		t.Errorf("expected 2 sent messages, got %d", len(m.SentMessages()))

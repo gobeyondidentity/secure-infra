@@ -16,7 +16,7 @@ func TestMessage_Serialization(t *testing.T) {
 			message: &Message{
 				Type:    MessageEnrollRequest,
 				Payload: json.RawMessage(`{"hostname":"test-host","os":"linux"}`),
-				Nonce:   "nonce-12345",
+				ID:   "nonce-12345",
 			},
 		},
 		{
@@ -24,7 +24,7 @@ func TestMessage_Serialization(t *testing.T) {
 			message: &Message{
 				Type:    MessageEnrollResponse,
 				Payload: json.RawMessage(`{"host_id":"host-001","status":"enrolled"}`),
-				Nonce:   "nonce-67890",
+				ID:   "nonce-67890",
 			},
 		},
 		{
@@ -32,7 +32,7 @@ func TestMessage_Serialization(t *testing.T) {
 			message: &Message{
 				Type:    MessagePostureReport,
 				Payload: json.RawMessage(`{"posture_score":85,"checks":["firewall","antivirus"]}`),
-				Nonce:   "posture-nonce",
+				ID:   "posture-nonce",
 			},
 		},
 		{
@@ -40,7 +40,7 @@ func TestMessage_Serialization(t *testing.T) {
 			message: &Message{
 				Type:    MessagePostureAck,
 				Payload: json.RawMessage(`{}`),
-				Nonce:   "ack-nonce",
+				ID:   "ack-nonce",
 			},
 		},
 		{
@@ -48,7 +48,7 @@ func TestMessage_Serialization(t *testing.T) {
 			message: &Message{
 				Type:    MessageCredentialAck,
 				Payload: json.RawMessage(`null`),
-				Nonce:   "cred-ack-nonce",
+				ID:   "cred-ack-nonce",
 			},
 		},
 	}
@@ -71,8 +71,8 @@ func TestMessage_Serialization(t *testing.T) {
 			if decoded.Type != tt.message.Type {
 				t.Errorf("type mismatch: got %s, want %s", decoded.Type, tt.message.Type)
 			}
-			if decoded.Nonce != tt.message.Nonce {
-				t.Errorf("nonce mismatch: got %s, want %s", decoded.Nonce, tt.message.Nonce)
+			if decoded.ID != tt.message.ID {
+				t.Errorf("nonce mismatch: got %s, want %s", decoded.ID, tt.message.ID)
 			}
 
 			// Verify payload (compare as strings for RawMessage)
@@ -85,9 +85,11 @@ func TestMessage_Serialization(t *testing.T) {
 
 func TestMessage_JSONFields(t *testing.T) {
 	msg := &Message{
+		Version: ProtocolVersion,
 		Type:    MessageEnrollRequest,
+		ID:      "550e8400-e29b-41d4-a716-446655440000",
+		TS:      1737244800000,
 		Payload: json.RawMessage(`{"key":"value"}`),
-		Nonce:   "test-nonce",
 	}
 
 	data, err := json.Marshal(msg)
@@ -101,7 +103,7 @@ func TestMessage_JSONFields(t *testing.T) {
 		t.Fatalf("unmarshal to map failed: %v", err)
 	}
 
-	expectedFields := []string{"type", "payload", "nonce"}
+	expectedFields := []string{"v", "type", "id", "ts", "payload"}
 	for _, field := range expectedFields {
 		if _, ok := raw[field]; !ok {
 			t.Errorf("expected JSON field %q not found", field)
@@ -173,7 +175,7 @@ func TestMessage_PayloadExtraction(t *testing.T) {
 	msg := &Message{
 		Type:    MessageEnrollRequest,
 		Payload: payloadBytes,
-		Nonce:   "extraction-test",
+		ID:   "extraction-test",
 	}
 
 	// Serialize full message
@@ -213,7 +215,7 @@ func TestMessage_RoundTrip(t *testing.T) {
 	original := &Message{
 		Type:    MessagePostureReport,
 		Payload: json.RawMessage(`{"score":95,"timestamp":"2026-01-17T12:00:00Z"}`),
-		Nonce:   "round-trip-nonce",
+		ID:   "round-trip-nonce",
 	}
 
 	// Send the message
@@ -231,8 +233,8 @@ func TestMessage_RoundTrip(t *testing.T) {
 	if received.Type != original.Type {
 		t.Errorf("type mismatch: got %s, want %s", received.Type, original.Type)
 	}
-	if received.Nonce != original.Nonce {
-		t.Errorf("nonce mismatch: got %s, want %s", received.Nonce, original.Nonce)
+	if received.ID != original.ID {
+		t.Errorf("nonce mismatch: got %s, want %s", received.ID, original.ID)
 	}
 	if string(received.Payload) != string(original.Payload) {
 		t.Errorf("payload mismatch: got %s, want %s", received.Payload, original.Payload)

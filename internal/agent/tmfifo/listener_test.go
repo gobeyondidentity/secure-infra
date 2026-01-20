@@ -92,7 +92,7 @@ func TestMessageMarshalUnmarshal(t *testing.T) {
 			msg := Message{
 				Type:    tc.msgType,
 				Payload: payloadBytes,
-				Nonce:   "test-nonce-12345",
+				ID:   "test-nonce-12345",
 			}
 
 			// Marshal message
@@ -111,8 +111,8 @@ func TestMessageMarshalUnmarshal(t *testing.T) {
 			if decoded.Type != tc.msgType {
 				t.Errorf("type mismatch: got %s, want %s", decoded.Type, tc.msgType)
 			}
-			if decoded.Nonce != msg.Nonce {
-				t.Errorf("nonce mismatch: got %s, want %s", decoded.Nonce, msg.Nonce)
+			if decoded.ID != msg.ID {
+				t.Errorf("nonce mismatch: got %s, want %s", decoded.ID, msg.ID)
 			}
 			if len(decoded.Payload) == 0 {
 				t.Error("payload is empty")
