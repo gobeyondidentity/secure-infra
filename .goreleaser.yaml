@@ -136,6 +136,39 @@ changelog:
       - "^ci:"
       - "^chore:"
 
+brews:
+  - name: bluectl
+    ids:
+      - bluectl-archive
+    repository:
+      owner: beyondidentity
+      name: homebrew-secureinfra
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/gobeyondidentity/secure-infra"
+    description: "CLI for managing BlueField DPUs via Secure Infrastructure"
+    license: "Apache-2.0"
+    install: |
+      bin.install "bluectl"
+    test: |
+      system "#{bin}/bluectl", "--help"
+
+  - name: km
+    ids:
+      - km-archive
+    repository:
+      owner: beyondidentity
+      name: homebrew-secureinfra
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/gobeyondidentity/secure-infra"
+    description: "Key management CLI for Secure Infrastructure"
+    license: "Apache-2.0"
+    install: |
+      bin.install "km"
+    test: |
+      system "#{bin}/km", "--help"
+
 release:
   github:
     owner: gobeyondidentity
