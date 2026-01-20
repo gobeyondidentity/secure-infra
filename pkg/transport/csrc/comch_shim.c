@@ -12,7 +12,14 @@
 #include <doca_log.h>
 
 #include "comch_shim.h"
-#include "_cgo_export.h"  // Go exports (goOnMessageReceived)
+
+// Forward declarations for Go-exported callback functions.
+// These are implemented by CGO from //export directives in Go code.
+// We declare them here instead of including _cgo_export.h because this
+// file is #include'd inline by Go files before _cgo_export.h is generated.
+extern void goOnMessageReceived(uint8_t *data, uint32_t len);
+extern void goOnServerMessageReceived(uint64_t conn_id, uint8_t *data, uint32_t len);
+extern void goOnServerConnectionEvent(uint64_t conn_id, int event);
 
 DOCA_LOG_REGISTER(COMCH_SHIM);
 
@@ -393,9 +400,10 @@ static void server_state_changed_cb(const union doca_data user_data,
                                     struct doca_ctx *ctx,
                                     enum doca_ctx_states prev_state,
                                     enum doca_ctx_states next_state);
-static void server_connection_cb(struct doca_comch_event_connection_status_changed *event,
-                                 struct doca_comch_connection *conn,
-                                 enum doca_comch_connection_status_change change_event);
+static void server_connect_cb(struct doca_comch_event_connection_status_changed *event,
+                              struct doca_comch_connection *conn);
+static void server_disconnect_cb(struct doca_comch_event_connection_status_changed *event,
+                                 struct doca_comch_connection *conn);
 
 // Helper: find connection entry by DOCA connection pointer
 static server_conn_entry_t* find_conn_by_doca(struct doca_comch_connection *conn) {
@@ -564,42 +572,45 @@ static void server_state_changed_cb(const union doca_data user_data,
     }
 }
 
-// Callback: client connection status changed
-static void server_connection_cb(struct doca_comch_event_connection_status_changed *event,
-                                 struct doca_comch_connection *conn,
-                                 enum doca_comch_connection_status_change change_event) {
+// Callback: client connected (DOCA 3.2.x API uses separate connect/disconnect callbacks)
+static void server_connect_cb(struct doca_comch_event_connection_status_changed *event,
+                              struct doca_comch_connection *conn) {
     (void)event;
 
-    if (change_event == DOCA_COMCH_CONNECTION_STATUS_CONNECTED) {
-        DOCA_LOG_INFO("New client connected");
+    DOCA_LOG_INFO("New client connected");
 
-        // Add to connection tracking
-        shim_conn_id_t id = add_connection(conn);
-        if (id == 0) {
-            DOCA_LOG_ERR("Maximum connections reached, cannot accept new client");
-            return;
-        }
+    // Add to connection tracking
+    shim_conn_id_t id = add_connection(conn);
+    if (id == 0) {
+        DOCA_LOG_ERR("Maximum connections reached, cannot accept new client");
+        return;
+    }
 
-        // Queue for Accept()
-        if (queue_pending_conn(id) < 0) {
-            DOCA_LOG_ERR("Pending connection queue full");
-            remove_connection(conn);
-            return;
-        }
+    // Queue for Accept()
+    if (queue_pending_conn(id) < 0) {
+        DOCA_LOG_ERR("Pending connection queue full");
+        remove_connection(conn);
+        return;
+    }
 
-        // Notify Go of connection event
-        goOnServerConnectionEvent(id, SHIM_CONN_EVENT_CONNECTED);
-    } else if (change_event == DOCA_COMCH_CONNECTION_STATUS_DISCONNECTED) {
-        DOCA_LOG_INFO("Client disconnected");
+    // Notify Go of connection event
+    goOnServerConnectionEvent(id, SHIM_CONN_EVENT_CONNECTED);
+}
 
-        server_conn_entry_t *entry = find_conn_by_doca(conn);
-        if (entry != NULL) {
-            shim_conn_id_t id = entry->id;
-            remove_connection(conn);
+// Callback: client disconnected (DOCA 3.2.x API)
+static void server_disconnect_cb(struct doca_comch_event_connection_status_changed *event,
+                                 struct doca_comch_connection *conn) {
+    (void)event;
 
-            // Notify Go of disconnection
-            goOnServerConnectionEvent(id, SHIM_CONN_EVENT_DISCONNECTED);
-        }
+    DOCA_LOG_INFO("Client disconnected");
+
+    server_conn_entry_t *entry = find_conn_by_doca(conn);
+    if (entry != NULL) {
+        shim_conn_id_t id = entry->id;
+        remove_connection(conn);
+
+        // Notify Go of disconnection
+        goOnServerConnectionEvent(id, SHIM_CONN_EVENT_DISCONNECTED);
     }
 }
 
@@ -687,9 +698,9 @@ int shim_init_server(const char *pci_addr, const char *rep_pci_addr,
         goto err_connect;
     }
 
-    // Register connection status callback
+    // Register connection status callbacks (DOCA 3.2.x API: separate connect/disconnect)
     result = doca_comch_server_event_connection_status_changed_register(
-        g_server, server_connection_cb);
+        g_server, server_connect_cb, server_disconnect_cb);
     if (result != DOCA_SUCCESS) {
         DOCA_LOG_ERR("Failed to register connection callback: %s", doca_error_get_descr(result));
         goto err_connect;

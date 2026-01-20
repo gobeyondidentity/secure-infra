@@ -3,8 +3,9 @@
 package transport
 
 /*
+#cgo CFLAGS: -I${SRCDIR}/csrc
 #include <stdint.h>
-#include "cgo/comch_shim.h"
+#include "comch_shim.h"
 */
 import "C"
 import (

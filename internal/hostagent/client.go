@@ -15,6 +15,8 @@ import (
 // It provides high-level methods for enrollment, posture reporting, and credential handling.
 type Client struct {
 	transport     transport.Transport
+	authClient    *transport.AuthClient
+	keyPath       string
 	hostname      string
 	hostID        string
 	dpuName       string
@@ -26,18 +28,33 @@ type Client struct {
 }
 
 // NewClient creates a new Host Agent client using the provided transport.
-func NewClient(t transport.Transport, hostname string) *Client {
+func NewClient(t transport.Transport, hostname string, keyPath string) *Client {
+	authClient := transport.NewAuthClient(t, keyPath)
 	return &Client{
 		transport:     t,
+		authClient:    authClient,
+		keyPath:       keyPath,
 		hostname:      hostname,
 		credInstaller: NewCredentialInstaller(),
 		stopCh:        make(chan struct{}),
 	}
 }
 
-// Connect establishes the transport connection.
+// Connect establishes the transport connection and authenticates with the DPU.
 func (c *Client) Connect(ctx context.Context) error {
-	return c.transport.Connect(ctx)
+	if err := c.transport.Connect(ctx); err != nil {
+		return err
+	}
+
+	if err := c.authClient.LoadOrGenerateKey(); err != nil {
+		return fmt.Errorf("load auth key: %w", err)
+	}
+
+	if err := c.authClient.Authenticate(ctx); err != nil {
+		return fmt.Errorf("authentication failed: %w", err)
+	}
+
+	return nil
 }
 
 // Close closes the client and its underlying transport.

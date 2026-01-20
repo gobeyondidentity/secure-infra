@@ -170,3 +170,338 @@ func TestDOCAComchAvailable_Stub(t *testing.T) {
 	}
 	// If we get here, the stub is working correctly
 }
+
+func TestNewHostTransport_ForceComCh(t *testing.T) {
+	// ForceComCh when DOCA is not available should error
+	if DOCAComchAvailable() {
+		t.Skip("DOCA Comch is available; cannot test ForceComCh failure")
+	}
+
+	cfg := &Config{
+		ForceComCh: true,
+		DPUAddr:    "localhost:8443", // Should be ignored
+	}
+
+	_, err := NewHostTransport(cfg)
+	if err == nil {
+		t.Error("Expected error when ForceComCh set but DOCA not available")
+	}
+
+	expectedErr := "DOCA ComCh not available (required by ForceComCh)"
+	if err.Error() != expectedErr {
+		t.Errorf("Expected error %q, got %q", expectedErr, err.Error())
+	}
+}
+
+func TestConfig_NewFields(t *testing.T) {
+	// Verify new config fields can be set
+	cfg := &Config{
+		ForceComCh:     true,
+		DOCADeviceName: "mlx5_0",
+		DOCAServerName: "secure-infra",
+		KeyPath:        "/var/lib/secure-infra/host.key",
+	}
+
+	if !cfg.ForceComCh {
+		t.Error("ForceComCh should be true")
+	}
+	if cfg.DOCADeviceName != "mlx5_0" {
+		t.Errorf("DOCADeviceName = %q, want %q", cfg.DOCADeviceName, "mlx5_0")
+	}
+	if cfg.DOCAServerName != "secure-infra" {
+		t.Errorf("DOCAServerName = %q, want %q", cfg.DOCAServerName, "secure-infra")
+	}
+	if cfg.KeyPath != "/var/lib/secure-infra/host.key" {
+		t.Errorf("KeyPath = %q, want %q", cfg.KeyPath, "/var/lib/secure-infra/host.key")
+	}
+}
+
+// ============================================================================
+// NewDPUTransportListener Tests
+// ============================================================================
+
+// testListener is a minimal TransportListener implementation for testing.
+type testListener struct {
+	transportType TransportType
+	acceptErr     error
+	closed        bool
+}
+
+func (l *testListener) Accept() (Transport, error) {
+	if l.acceptErr != nil {
+		return nil, l.acceptErr
+	}
+	return &testTransport{transportType: l.transportType}, nil
+}
+
+func (l *testListener) Close() error {
+	l.closed = true
+	return nil
+}
+
+func (l *testListener) Type() TransportType {
+	return l.transportType
+}
+
+func TestNewDPUTransportListener_SelectionPriority(t *testing.T) {
+	// When DOCA is not available, should fall back to tmfifo, then to network
+	if DOCAComchAvailable() {
+		t.Skip("DOCA ComCh is available; cannot test fallback behavior")
+	}
+
+	// With no tmfifo device and no network config, should error
+	cfg := &Config{
+		TmfifoPath: "/nonexistent/tmfifo_device",
+	}
+
+	_, err := NewDPUTransportListener(cfg)
+	if err == nil {
+		t.Error("Expected error when no transport available")
+	}
+}
+
+func TestNewDPUTransportListener_NilConfig(t *testing.T) {
+	// Should handle nil config gracefully (use defaults)
+	_, err := NewDPUTransportListener(nil)
+	// With nil config and no hardware, should return error
+	if err == nil && !DOCAComchAvailable() {
+		// May succeed if tmfifo exists at default path, otherwise should fail
+		t.Log("NewDPUTransportListener(nil) succeeded, tmfifo may exist")
+	}
+}
+
+func TestNewDPUTransportListener_ForceComCh(t *testing.T) {
+	// ForceComCh when DOCA is not available should error
+	if DOCAComchAvailable() {
+		t.Skip("DOCA ComCh is available; cannot test ForceComCh failure")
+	}
+
+	cfg := &Config{
+		ForceComCh: true,
+	}
+
+	_, err := NewDPUTransportListener(cfg)
+	if err == nil {
+		t.Error("Expected error when ForceComCh set but DOCA not available")
+	}
+
+	expectedErr := "DOCA ComCh not available (required by ForceComCh)"
+	if err != nil && err.Error() != expectedErr {
+		t.Errorf("Expected error %q, got %q", expectedErr, err.Error())
+	}
+}
+
+func TestNewDPUTransportListener_ForceTmfifo(t *testing.T) {
+	// ForceTmfifo with nonexistent device should error
+	cfg := &Config{
+		ForceTmfifo: true,
+		TmfifoPath:  "/nonexistent/device",
+	}
+
+	_, err := NewDPUTransportListener(cfg)
+	if err == nil {
+		t.Error("Expected error when ForceTmfifo set but device doesn't exist")
+	}
+}
+
+func TestNewDPUTransportListener_NetworkFallback(t *testing.T) {
+	// When hardware not available but network config provided, should use network
+	if DOCAComchAvailable() {
+		t.Skip("DOCA ComCh is available; cannot test network fallback")
+	}
+
+	cfg := &Config{
+		TmfifoPath: "/nonexistent/device",
+		DPUAddr:    ":18052", // Listen address for network server
+	}
+
+	listener, err := NewDPUTransportListener(cfg)
+	if err != nil {
+		t.Fatalf("Expected network fallback to succeed: %v", err)
+	}
+	defer listener.Close()
+
+	if listener.Type() != TransportNetwork {
+		t.Errorf("Expected network listener, got %s", listener.Type())
+	}
+}
+
+func TestConfig_DPUListenerFields(t *testing.T) {
+	// DPU-specific config fields
+	cfg := &Config{
+		DOCAPCIAddr:    "03:00.0",
+		DOCARepPCIAddr: "01:00.0",
+		DOCAServerName: "secure-infra-dpu",
+	}
+
+	if cfg.DOCAPCIAddr != "03:00.0" {
+		t.Errorf("DOCAPCIAddr = %q, want %q", cfg.DOCAPCIAddr, "03:00.0")
+	}
+	if cfg.DOCARepPCIAddr != "01:00.0" {
+		t.Errorf("DOCARepPCIAddr = %q, want %q", cfg.DOCARepPCIAddr, "01:00.0")
+	}
+	if cfg.DOCAServerName != "secure-infra-dpu" {
+		t.Errorf("DOCAServerName = %q, want %q", cfg.DOCAServerName, "secure-infra-dpu")
+	}
+}
+
+// ============================================================================
+// Selection Priority Tests
+// ============================================================================
+
+func TestNewHostTransport_SelectionPriority_MockFirst(t *testing.T) {
+	// Mock should always be selected first, even with other options available
+	mock := &testTransport{transportType: TransportMock}
+	cfg := &Config{
+		MockTransport:  mock,
+		ForceComCh:     true, // Should be ignored
+		DOCADeviceName: "mlx5_0",
+		DPUAddr:        "localhost:8443",
+	}
+
+	transport, err := NewHostTransport(cfg)
+	if err != nil {
+		t.Fatalf("NewHostTransport failed: %v", err)
+	}
+
+	if transport != mock {
+		t.Error("Mock transport should be selected first regardless of other options")
+	}
+}
+
+func TestNewHostTransport_ForceComCh_OverridesFallback(t *testing.T) {
+	// ForceComCh should not fall back to tmfifo or network
+	if DOCAComchAvailable() {
+		t.Skip("DOCA ComCh is available; cannot test ForceComCh failure path")
+	}
+
+	cfg := &Config{
+		ForceComCh: true,
+		TmfifoPath: "/dev/tmfifo_net0", // Would normally be a fallback
+		DPUAddr:    "localhost:8443",   // Would normally be a fallback
+	}
+
+	_, err := NewHostTransport(cfg)
+	if err == nil {
+		t.Error("Expected error when ForceComCh set but DOCA not available")
+	}
+
+	// Should not fall back to tmfifo or network
+	expectedErr := "DOCA ComCh not available (required by ForceComCh)"
+	if err.Error() != expectedErr {
+		t.Errorf("Expected error %q, got %q", expectedErr, err.Error())
+	}
+}
+
+func TestNewDPUTransportListener_SelectionPriority_ComChFirst(t *testing.T) {
+	// On DOCA systems, ComCh should be selected before tmfifo
+	if !DOCAComchAvailable() {
+		t.Skip("DOCA ComCh not available; cannot test ComCh priority")
+	}
+
+	cfg := &Config{
+		TmfifoPath:     "/dev/tmfifo_net0", // Should not be used
+		DOCAPCIAddr:    "03:00.0",
+		DOCARepPCIAddr: "01:00.0",
+		DOCAServerName: "test-server",
+	}
+
+	listener, err := NewDPUTransportListener(cfg)
+	if err != nil {
+		t.Fatalf("NewDPUTransportListener failed: %v", err)
+	}
+	defer listener.Close()
+
+	if listener.Type() != TransportDOCAComch {
+		t.Errorf("Expected DOCA ComCh listener, got %s", listener.Type())
+	}
+}
+
+func TestNewDPUTransportListener_ForceComCh_NoFallback(t *testing.T) {
+	// ForceComCh should not fall back to tmfifo or network
+	if DOCAComchAvailable() {
+		t.Skip("DOCA ComCh is available; cannot test ForceComCh failure path")
+	}
+
+	cfg := &Config{
+		ForceComCh: true,
+		TmfifoPath: "/dev/tmfifo_net0", // Should not be used as fallback
+		DPUAddr:    ":18052",           // Should not be used as fallback
+	}
+
+	_, err := NewDPUTransportListener(cfg)
+	if err == nil {
+		t.Error("Expected error when ForceComCh set but DOCA not available")
+	}
+}
+
+func TestNewDPUTransportListener_FallbackToTmfifo(t *testing.T) {
+	// When DOCA is not available but tmfifo exists, should use tmfifo
+	if DOCAComchAvailable() {
+		t.Skip("DOCA ComCh is available; cannot test tmfifo fallback")
+	}
+
+	// This test would require a tmfifo device to exist
+	// Since we're in a test environment without tmfifo, verify the fallback logic
+	// by checking that it tries tmfifo before network
+
+	cfg := &Config{
+		TmfifoPath: "/nonexistent/tmfifo",
+		DPUAddr:    ":18052",
+	}
+
+	// Should fall back to network when tmfifo unavailable
+	listener, err := NewDPUTransportListener(cfg)
+	if err != nil {
+		t.Fatalf("Expected network fallback to succeed: %v", err)
+	}
+	defer listener.Close()
+
+	if listener.Type() != TransportNetwork {
+		t.Errorf("Expected network listener fallback, got %s", listener.Type())
+	}
+}
+
+func TestNewDPUTransportListener_ForceTmfifo_NoFallback(t *testing.T) {
+	// ForceTmfifo should not fall back to network
+	cfg := &Config{
+		ForceTmfifo: true,
+		TmfifoPath:  "/nonexistent/device",
+		DPUAddr:     ":18052", // Should not be used as fallback
+	}
+
+	_, err := NewDPUTransportListener(cfg)
+	if err == nil {
+		t.Error("Expected error when ForceTmfifo set but device doesn't exist")
+	}
+}
+
+func TestNewDPUTransportListener_ForceNetwork(t *testing.T) {
+	// ForceNetwork skips hardware detection
+	cfg := &Config{
+		ForceNetwork: true,
+		DPUAddr:      ":18052",
+	}
+
+	listener, err := NewDPUTransportListener(cfg)
+	if err != nil {
+		t.Fatalf("ForceNetwork should succeed with DPUAddr: %v", err)
+	}
+	defer listener.Close()
+
+	if listener.Type() != TransportNetwork {
+		t.Errorf("Expected network listener, got %s", listener.Type())
+	}
+}
+
+func TestNewDPUTransportListener_ForceNetworkRequiresDPUAddr(t *testing.T) {
+	// ForceNetwork without DPUAddr should error
+	cfg := &Config{
+		ForceNetwork: true,
+	}
+
+	_, err := NewDPUTransportListener(cfg)
+	if err == nil {
+		t.Error("Expected error when ForceNetwork set but DPUAddr missing")
+	}
+}

@@ -35,6 +35,7 @@ var (
 	localListen     = flag.String("local-listen", "localhost:9443", "Local API listen address")
 	controlPlane    = flag.String("control-plane", "", "Control Plane URL (required if local API enabled)")
 	dpuName         = flag.String("dpu-name", "", "DPU name for registration (required if local API enabled)")
+	keystorePath    = flag.String("keystore", "/var/lib/secureinfra/known_hosts.json", "Path to TOFU keystore for host authentication")
 )
 
 func main() {
@@ -107,9 +108,19 @@ func main() {
 			localServer.SetHostListener(hostListener)
 			agentServer.SetHostListener(hostListener)
 
-			// Start message handling loop
+			// Create keystore for TOFU authentication
+			keystore, err := transport.NewKeyStore(*keystorePath)
+			if err != nil {
+				log.Fatalf("Failed to create keystore: %v", err)
+			}
+			log.Printf("transport: keystore initialized at %s", *keystorePath)
+
+			// Create auth server for transport connections
+			authServer := transport.NewAuthServer(keystore, 1) // maxConns=1 for single host
+
+			// Start message handling loop with authentication
 			transportCtx, transportCancel = context.WithCancel(ctx)
-			go runTransportLoop(transportCtx, hostListener, localServer)
+			go runTransportLoop(transportCtx, hostListener, localServer, authServer)
 		}
 
 		// Wire up local API to agent server for credential distribution
@@ -185,21 +196,44 @@ func startLocalAPI(ctx context.Context, cfg *agent.Config, agentServer *agent.Se
 }
 
 // tryStartTransportListener attempts to create a transport listener for Host Agent communication.
-// Returns nil if no transport is available (e.g., not running on BlueField hardware).
+// Selection priority: ComCh (if DOCA available) -> Tmfifo -> Network
+// Returns nil if no transport is available.
 func tryStartTransportListener() transport.TransportListener {
-	// Try to create TmfifoNet listener if device is available
-	listener, err := transport.NewTmfifoNetListener("")
-	if err != nil {
-		log.Printf("transport: tmfifo device not available (%v), using HTTP API only", err)
-		return nil
+	// Build config from agent configuration
+	cfg := &transport.Config{
+		// TmfifoPath uses default if empty
+		// DOCAPCIAddr, DOCARepPCIAddr, DOCAServerName can be set via agent config if needed
 	}
 
-	log.Printf("transport: tmfifo listener created")
-	return listener
+	// Try ComCh first (priority 1)
+	if transport.DOCAComchAvailable() {
+		log.Printf("transport: DOCA ComCh available, creating ComCh listener")
+		listener, err := transport.NewDPUTransportListener(cfg)
+		if err != nil {
+			log.Printf("transport: ComCh listener creation failed (%v), falling back", err)
+		} else {
+			log.Printf("transport: ComCh listener created")
+			return listener
+		}
+	}
+
+	// Try Tmfifo second (priority 2)
+	tmfifoListener, err := transport.NewTmfifoNetListener("")
+	if err == nil {
+		log.Printf("transport: tmfifo listener created")
+		return tmfifoListener
+	}
+	log.Printf("transport: tmfifo device not available (%v)", err)
+
+	// Network fallback is not attempted here since the DPU agent
+	// already has a gRPC server for network communication.
+	// The transport listener is specifically for hardware channels.
+	log.Printf("transport: no hardware transport available, using HTTP API only")
+	return nil
 }
 
 // runTransportLoop accepts connections and handles messages from Host Agents.
-func runTransportLoop(ctx context.Context, listener transport.TransportListener, localServer *localapi.Server) {
+func runTransportLoop(ctx context.Context, listener transport.TransportListener, localServer *localapi.Server, authServer *transport.AuthServer) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -220,6 +254,17 @@ func runTransportLoop(ctx context.Context, listener transport.TransportListener,
 		}
 
 		log.Printf("transport: accepted %s connection", t.Type())
+
+		// Authenticate the connection before processing application messages
+		authCtx, authCancel := context.WithTimeout(ctx, 30*time.Second)
+		hostKey, err := authServer.Authenticate(authCtx, t)
+		authCancel()
+		if err != nil {
+			log.Printf("transport: authentication failed: %v", err)
+			t.Close()
+			continue
+		}
+		log.Printf("transport: authenticated host (key fingerprint: %s)", transport.Fingerprint(hostKey)[:16])
 
 		// Set the active transport on the local server for credential push
 		localServer.SetActiveTransport(t)

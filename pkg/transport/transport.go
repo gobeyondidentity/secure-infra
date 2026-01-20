@@ -94,6 +94,20 @@ const (
 
 	// MessageCertResponse is sent by DPU Agent with the requested certificate.
 	MessageCertResponse MessageType = "CERT_RESPONSE"
+
+	// Authentication message types (must exchange before any other messages)
+
+	// MessageAuthChallenge is sent by DPU immediately on connection.
+	MessageAuthChallenge MessageType = "AUTH_CHALLENGE"
+
+	// MessageAuthResponse is sent by Host to prove identity.
+	MessageAuthResponse MessageType = "AUTH_RESPONSE"
+
+	// MessageAuthOK indicates successful authentication.
+	MessageAuthOK MessageType = "AUTH_OK"
+
+	// MessageAuthFail indicates authentication failure.
+	MessageAuthFail MessageType = "AUTH_FAIL"
 )
 
 // ProtocolVersion is the current protocol version for message envelopes.

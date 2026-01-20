@@ -5,8 +5,8 @@
 package transport
 
 /*
-#cgo CFLAGS: -I/opt/mellanox/doca/include -I${SRCDIR}/cgo
-#cgo LDFLAGS: -L/opt/mellanox/doca/lib -ldoca_comch -ldoca_common -ldoca_argp
+#cgo CFLAGS: -I/opt/mellanox/doca/include -I${SRCDIR}/csrc
+#cgo LDFLAGS: -L/opt/mellanox/doca/lib/aarch64-linux-gnu -ldoca_comch -ldoca_common -ldoca_argp
 
 #include <stdlib.h>
 #include "discovery_shim.h"

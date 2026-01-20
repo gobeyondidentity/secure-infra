@@ -38,6 +38,7 @@ func main() {
 	showVersion := flag.Bool("version", false, "Show version and exit")
 	forceTmfifo := flag.Bool("force-tmfifo", false, "Fail if tmfifo is not available (no network fallback)")
 	forceNetwork := flag.Bool("force-network", false, "Use network enrollment even if tmfifo is available")
+	authKeyPath := flag.String("auth-key", "/etc/secureinfra/host-agent.key", "Path to host authentication key")
 	flag.Parse()
 
 	if *showVersion {
@@ -93,12 +94,12 @@ func main() {
 	stopCh := make(chan struct{})
 
 	// Run with the selected transport
-	runWithTransport(t, hostname, p, *interval, *oneshot, *dpuAgent, sigCh, stopCh)
+	runWithTransport(t, hostname, p, *interval, *oneshot, *dpuAgent, *authKeyPath, sigCh, stopCh)
 }
 
 // runWithTransport runs the Host Agent using the provided transport.
 // This unified function handles both tmfifo and network transports.
-func runWithTransport(t transport.Transport, hostname string, p *posture.Posture, interval time.Duration, oneshot bool, dpuAgentURL string, sigCh <-chan os.Signal, stopCh chan struct{}) {
+func runWithTransport(t transport.Transport, hostname string, p *posture.Posture, interval time.Duration, oneshot bool, dpuAgentURL string, authKeyPath string, sigCh <-chan os.Signal, stopCh chan struct{}) {
 	ctx := context.Background()
 
 	// For network transport, we use the legacy HTTP-based enrollment
@@ -109,7 +110,7 @@ func runWithTransport(t transport.Transport, hostname string, p *posture.Posture
 	}
 
 	// Create client using the transport
-	client := hostagent.NewClient(t, hostname)
+	client := hostagent.NewClient(t, hostname, authKeyPath)
 
 	// Connect the transport
 	if err := client.Connect(ctx); err != nil {

@@ -1,5 +1,3 @@
-//go:build doca
-
 // comch_shim.h - C shim layer for DOCA ComCh Go integration
 // This provides thin wrappers around DOCA ComCh client and server functions for CGO.
 // See ADR-007 for architecture details.

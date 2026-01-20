@@ -128,3 +128,100 @@ func (n *networkTransport) QueueResponse(msg *Message) error {
 		return fmt.Errorf("response queue full")
 	}
 }
+
+// ============================================================================
+// Network Listener
+// ============================================================================
+
+// NetworkListener implements TransportListener for TCP-based connections.
+// Used by DPU agents as a fallback when hardware transports are unavailable.
+type NetworkListener struct {
+	listener  interface{ Close() error }
+	addr      string
+	tlsConfig *tls.Config
+	closed    bool
+	mu        sync.Mutex
+
+	// acceptCh delivers accepted connections
+	acceptCh chan Transport
+	// doneCh signals shutdown
+	doneCh chan struct{}
+}
+
+// NewNetworkListener creates a listener for TCP connections on the specified address.
+// The address should be in "host:port" format (e.g., ":18052" or "0.0.0.0:18052").
+func NewNetworkListener(addr string, tlsConfig *tls.Config) (*NetworkListener, error) {
+	if addr == "" {
+		return nil, fmt.Errorf("network listener: address required")
+	}
+
+	l := &NetworkListener{
+		addr:      addr,
+		tlsConfig: tlsConfig,
+		acceptCh:  make(chan Transport, 10),
+		doneCh:    make(chan struct{}),
+	}
+
+	// Note: In a full implementation, this would call net.Listen() and start
+	// an accept loop. For now, we provide a stub that can be used for testing
+	// and will be filled in when the network transport is fully implemented.
+
+	return l, nil
+}
+
+// Accept blocks until a new client connection is received.
+// Returns a Transport for communicating with the connected client.
+func (l *NetworkListener) Accept() (Transport, error) {
+	l.mu.Lock()
+	if l.closed {
+		l.mu.Unlock()
+		return nil, fmt.Errorf("listener closed")
+	}
+	l.mu.Unlock()
+
+	select {
+	case t := <-l.acceptCh:
+		return t, nil
+	case <-l.doneCh:
+		return nil, fmt.Errorf("listener closed")
+	}
+}
+
+// Close stops the listener and releases resources.
+func (l *NetworkListener) Close() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if l.closed {
+		return nil
+	}
+
+	l.closed = true
+	close(l.doneCh)
+
+	if l.listener != nil {
+		return l.listener.Close()
+	}
+	return nil
+}
+
+// Type returns TransportNetwork.
+func (l *NetworkListener) Type() TransportType {
+	return TransportNetwork
+}
+
+// Addr returns the listen address.
+func (l *NetworkListener) Addr() string {
+	return l.addr
+}
+
+// QueueConnection allows tests to inject a transport as if it were accepted.
+// This is primarily for testing purposes.
+func (l *NetworkListener) QueueConnection(t Transport) error {
+	select {
+	case l.acceptCh <- t:
+		return nil
+	default:
+		return fmt.Errorf("accept queue full")
+	}
+}

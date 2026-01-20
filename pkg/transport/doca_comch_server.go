@@ -5,15 +5,15 @@
 package transport
 
 /*
-#cgo CFLAGS: -I/opt/mellanox/doca/include -I${SRCDIR}/cgo
-#cgo LDFLAGS: -L/opt/mellanox/doca/lib -ldoca_comch -ldoca_common -ldoca_argp
+#cgo CFLAGS: -I/opt/mellanox/doca/include -I${SRCDIR}/csrc
+#cgo LDFLAGS: -L/opt/mellanox/doca/lib/aarch64-linux-gnu -ldoca_comch -ldoca_common -ldoca_argp
 
 #include <stdlib.h>
 #include "comch_shim.h"
-#include "comch_shim.c"
 */
 import "C"
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -332,7 +332,7 @@ func (s *DOCAComchServer) onMessageReceived(connID uint64, data []byte) {
 // DOCAComchServerConn methods
 
 // Connect is a no-op for server connections (already connected).
-func (c *DOCAComchServerConn) Connect(ctx interface{}) error {
+func (c *DOCAComchServerConn) Connect(ctx context.Context) error {
 	// Server connections are already connected when returned from Accept()
 	return nil
 }
