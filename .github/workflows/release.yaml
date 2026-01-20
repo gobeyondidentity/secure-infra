@@ -48,10 +48,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
-  # Push Linux packages to Cloudsmith (after goreleaser builds them)
+  # Push Linux packages to Cloudsmith (parallel by component)
   cloudsmith-push:
     runs-on: ubuntu-latest
     needs: [goreleaser]
+    strategy:
+      matrix:
+        component: [bluectl, km, sentry, nexus]
     steps:
       - name: Get version from tag
         id: version
@@ -60,35 +63,26 @@ jobs:
       - name: Install Cloudsmith CLI
         run: pip install cloudsmith-cli
 
-      - name: Download release assets
+      - name: Download ${{ matrix.component }} packages
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Download all deb and rpm packages from the release
           gh release download "v${{ steps.version.outputs.VERSION }}" \
             --repo ${{ github.repository }} \
-            --pattern "*.deb" \
-            --pattern "*.rpm" \
+            --pattern "${{ matrix.component }}_*.deb" \
+            --pattern "${{ matrix.component }}_*.rpm" \
+            --pattern "${{ matrix.component }}-*.rpm" \
             --dir packages/
 
-      - name: Push packages to Cloudsmith
+      - name: Push ${{ matrix.component }} to Cloudsmith
         env:
           CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
         run: |
-          # Push all deb packages (--republish allows re-running failed releases)
           for pkg in packages/*.deb; do
-            if [ -f "$pkg" ]; then
-              echo "Pushing $pkg to Cloudsmith..."
-              cloudsmith push deb --republish ${{ env.CLOUDSMITH_ORG }}/${{ env.CLOUDSMITH_REPO }}/any-distro/any-version "$pkg"
-            fi
+            [ -f "$pkg" ] && cloudsmith push deb --republish ${{ env.CLOUDSMITH_ORG }}/${{ env.CLOUDSMITH_REPO }}/any-distro/any-version "$pkg"
           done
-
-          # Push all rpm packages
           for pkg in packages/*.rpm; do
-            if [ -f "$pkg" ]; then
-              echo "Pushing $pkg to Cloudsmith..."
-              cloudsmith push rpm --republish ${{ env.CLOUDSMITH_ORG }}/${{ env.CLOUDSMITH_REPO }}/any-distro/any-version "$pkg"
-            fi
+            [ -f "$pkg" ] && cloudsmith push rpm --republish ${{ env.CLOUDSMITH_ORG }}/${{ env.CLOUDSMITH_REPO }}/any-distro/any-version "$pkg"
           done
 
   # Build DPU agent on BlueField self-hosted runner
