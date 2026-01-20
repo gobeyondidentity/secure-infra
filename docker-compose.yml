@@ -1,0 +1,59 @@
+# Secure Infrastructure - Local Development
+#
+# Quick start:
+#   docker-compose up
+#
+# This starts the control-plane and host-agent for local development/demo.
+# TLS is disabled for simplicity. Do NOT use this configuration in production.
+
+services:
+  control-plane:
+    image: ghcr.io/gobeyondidentity/secureinfra-control-plane:latest
+    container_name: secureinfra-control-plane
+    ports:
+      - "8443:8443"  # gRPC API
+      - "8080:8080"  # HTTP health/readiness
+      - "9090:9090"  # Metrics
+    environment:
+      # Disable TLS for local development
+      - SECUREINFRA_TLS_ENABLED=false
+      # Logging
+      - SECUREINFRA_LOG_LEVEL=debug
+      - SECUREINFRA_LOG_FORMAT=text
+    volumes:
+      - control-plane-data:/var/lib/secureinfra
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - secureinfra
+
+  host-agent:
+    image: ghcr.io/gobeyondidentity/secureinfra-host-agent:latest
+    container_name: secureinfra-host-agent
+    depends_on:
+      control-plane:
+        condition: service_healthy
+    ports:
+      - "9091:9090"  # Metrics (different port to avoid conflict)
+    environment:
+      # Control plane connection
+      - SECUREINFRA_CONTROL_PLANE_ADDRESS=control-plane:8443
+      - SECUREINFRA_TLS_ENABLED=false
+      # Agent identification
+      - SECUREINFRA_AGENT_ID=local-dev-host
+      # Logging
+      - SECUREINFRA_LOG_LEVEL=debug
+      - SECUREINFRA_LOG_FORMAT=text
+    networks:
+      - secureinfra
+
+networks:
+  secureinfra:
+    driver: bridge
+
+volumes:
+  control-plane-data:
