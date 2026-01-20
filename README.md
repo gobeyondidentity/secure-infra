@@ -1,6 +1,6 @@
 # Secure Infrastructure
 
-**v0.5.1** | [Quickstart](docs/guides/quickstart-emulator.md) | [Hardware Setup](docs/guides/setup-hardware.md) | [Changelog](CHANGELOG.md)
+**v0.6.0** | [Quickstart](docs/guides/quickstart-emulator.md) | [Hardware Setup](docs/guides/setup-hardware.md) | [Changelog](CHANGELOG.md)
 
 Hardware-bound credential management for AI infrastructure using NVIDIA BlueField DPUs.
 
@@ -15,6 +15,7 @@ The system uses BlueField-3 DPUs as enforcement points, checking both hardware a
 ## Features
 
 - **Hardware-bound credentials**: Private keys in DPU hardware root of trust, not files on disk
+- **DOCA ComCh transport**: Native PCIe communication between host and DPU (no IP configuration)
 - **Posture-aware operations**: Credentials only created/used when hardware and OS attestation pass
 - **No secret sprawl**: Credentials die with the node; fresh ones created automatically on reimage
 - **Audit trail**: Every credential push tied to point-in-time attestation state
@@ -34,24 +35,61 @@ Choose your path:
 
 The core security property: credentials only flow to verified infrastructure. When attestation is stale or failed, credential distribution is blocked.
 
+## Installation
+
+### macOS (Homebrew)
+
+```bash
+brew tap nmelo/tap
+brew install bluectl km
+```
+
+### Linux (apt)
+
+```bash
+curl -fsSL https://packages.secureinfra.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/secureinfra.gpg
+echo "deb [signed-by=/usr/share/keyrings/secureinfra.gpg] https://packages.secureinfra.io/apt stable main" | sudo tee /etc/apt/sources.list.d/secureinfra.list
+sudo apt update && sudo apt install bluectl km
+```
+
+### Docker
+
+```bash
+docker pull ghcr.io/gobeyondidentity/secureinfra-control-plane:0.6.0
+```
+
+For local development with Docker Compose, see [Local Dev: Docker](docs/guides/local-dev-docker.md).
+
+### From Source
+
+```bash
+git clone git@github.com:gobeyondidentity/secure-infra.git
+cd secure-infra
+make
+```
+
+Check for updates anytime: `bluectl version --check`
+
 ## Documentation
 
 ### Guides
 
 | Guide | Description |
 |-------|-------------|
-| [Quickstart: Emulator](guides/quickstart-emulator.md) | Get started without hardware |
-| [Hardware Setup](guides/setup-hardware.md) | Deploy on BlueField-3 DPU |
-| [fTPM Key Storage](guides/ftpm-key-storage.md) | Store secrets in firmware TPM |
-| [Discovery](guides/discovery.md) | Scan infrastructure for SSH keys |
+| [Quickstart: Emulator](docs/guides/quickstart-emulator.md) | Get started without hardware |
+| [Local Dev: Docker](docs/guides/local-dev-docker.md) | Run locally with Docker Compose |
+| [Hardware Setup](docs/guides/setup-hardware.md) | Deploy on BlueField-3 DPU |
+| [fTPM Key Storage](docs/guides/ftpm-key-storage.md) | Store secrets in firmware TPM |
+| [Discovery](docs/guides/discovery.md) | Scan infrastructure for SSH keys |
 
 ### Reference
 
 | Reference | Description |
 |-----------|-------------|
-| [Attestation Architecture](reference/attestation-architecture.md) | DICE/SPDM via PSC and BMC |
-| [Discovery Schema](reference/discovery.md) | JSON output format and jq recipes |
-| [Encryption Keys](reference/encryption-keys.md) | Key management internals |
+| [Attestation Architecture](docs/reference/attestation-architecture.md) | DICE/SPDM via PSC and BMC |
+| [CLI Version](docs/reference/cli-version.md) | Version check and upgrade commands |
+| [Discovery Schema](docs/reference/discovery.md) | JSON output format and jq recipes |
+| [Encryption Keys](docs/reference/encryption-keys.md) | Key management internals |
 
 ## Components
 
@@ -60,7 +98,7 @@ The core security property: credentials only flow to verified infrastructure. Wh
 | `bluectl` | Admin CLI: DPU management, tenants, operators, attestation |
 | `km` | Operator CLI: SSH CA lifecycle, credential push |
 | `agent` | DPU agent running on BlueField ARM cores |
-| `host-agent` | Host agent for credential receipt via tmfifo and posture reporting |
+| `host-agent` | Host agent for credential receipt via ComCh/tmfifo and posture reporting |
 | `server` | Control plane server |
 | `dpuemu` | DPU emulator for local development |
 | `web/` | Next.js dashboard (in development) |
