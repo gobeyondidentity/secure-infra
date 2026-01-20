@@ -5,6 +5,17 @@ All notable changes to the Secure Infrastructure project will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- DOCA ComCh transport wrapper for BlueField DPU communication (si-w4z.1)
+  - `DOCAComchClient` for host-side connections with epoll-based event loop
+  - `DOCAComchServer` for DPU-side listener with multi-client support
+  - PCI device discovery and automatic device selection
+  - Retry with exponential backoff for transient DOCA errors
+  - Circuit breaker pattern (trips after 5 consecutive failures)
+  - C shim layer bridging DOCA SDK to Go via CGO
+
 ## [0.5.1] - 2026-01-09
 
 ### Fixed
