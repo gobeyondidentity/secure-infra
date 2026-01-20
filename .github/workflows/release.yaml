@@ -119,13 +119,13 @@ jobs:
         run: tar -czvf dpu-agent_linux_arm64.tar.gz dpu-agent
 
       - name: Upload to release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            dpu-agent_linux_arm64.tar.gz
-            dpu-agent_linux_arm64.sha256
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "v${{ steps.version.outputs.VERSION }}" \
+            dpu-agent_linux_arm64.tar.gz \
+            dpu-agent_linux_arm64.sha256 \
+            --clobber
 
       - name: Copy DOCA runtime libraries
         run: |
@@ -140,13 +140,13 @@ jobs:
           nfpm package -p rpm -f packaging/nfpm-dpu-agent.yaml
 
       - name: Upload packages to release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            aegis_*.deb
-            aegis-*.rpm
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "v${{ steps.version.outputs.VERSION }}" \
+            aegis_*.deb \
+            aegis-*.rpm \
+            --clobber
 
       - name: Push packages to Cloudsmith
         env:
