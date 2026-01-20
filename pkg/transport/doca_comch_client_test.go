@@ -255,3 +255,40 @@ func BenchmarkMessageUnmarshal(b *testing.B) {
 		}
 	}
 }
+
+// ============================================================================
+// Additional Stub Tests for Coverage
+// ============================================================================
+
+func TestNewDOCAComchTransport_Stub(t *testing.T) {
+	// Without DOCA SDK, NewDOCAComchTransport should return ErrDOCANotAvailable
+	transport, err := NewDOCAComchTransport()
+	if transport != nil {
+		t.Error("expected nil transport without DOCA SDK")
+	}
+	if err != ErrDOCANotAvailable {
+		t.Errorf("expected ErrDOCANotAvailable, got %v", err)
+	}
+}
+
+func TestCheckComchClientCapability_Stub(t *testing.T) {
+	// Without DOCA SDK, CheckComchClientCapability should return error
+	capable, err := CheckComchClientCapability("01:00.0")
+	if capable {
+		t.Error("expected false capability without DOCA SDK")
+	}
+	if err != ErrDOCANotAvailable {
+		t.Errorf("expected ErrDOCANotAvailable, got %v", err)
+	}
+}
+
+func TestCheckComchServerCapability_Stub(t *testing.T) {
+	// Without DOCA SDK, CheckComchServerCapability should return error
+	capable, err := CheckComchServerCapability("03:00.0")
+	if capable {
+		t.Error("expected false capability without DOCA SDK")
+	}
+	if err != ErrDOCANotAvailable {
+		t.Errorf("expected ErrDOCANotAvailable, got %v", err)
+	}
+}

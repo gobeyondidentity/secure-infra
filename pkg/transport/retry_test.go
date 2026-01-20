@@ -468,3 +468,146 @@ func TestCircuitBreakerConcurrency(t *testing.T) {
 		t.Errorf("State after concurrent failures = %v, want %v", cb.State(), CircuitOpen)
 	}
 }
+
+// ============================================================================
+// CircuitState.String() Tests
+// ============================================================================
+
+func TestCircuitStateString(t *testing.T) {
+	tests := []struct {
+		state    CircuitState
+		expected string
+	}{
+		{CircuitClosed, "closed"},
+		{CircuitOpen, "open"},
+		{CircuitHalfOpen, "half-open"},
+		{CircuitState(99), "unknown"}, // Unknown state
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.expected, func(t *testing.T) {
+			got := tt.state.String()
+			if got != tt.expected {
+				t.Errorf("CircuitState(%d).String() = %q, want %q", tt.state, got, tt.expected)
+			}
+		})
+	}
+}
+
+// ============================================================================
+// NewCircuitBreaker edge cases
+// ============================================================================
+
+func TestNewCircuitBreaker_ZeroConfig(t *testing.T) {
+	// Zero config should get defaults applied
+	cfg := CircuitBreakerConfig{
+		FailureThreshold: 0,
+		ResetTimeout:     0,
+	}
+	cb := NewCircuitBreaker(cfg)
+
+	// Verify defaults were applied
+	if cb.cfg.FailureThreshold != 5 {
+		t.Errorf("FailureThreshold = %d, want 5 (default)", cb.cfg.FailureThreshold)
+	}
+	if cb.cfg.ResetTimeout != 60*time.Second {
+		t.Errorf("ResetTimeout = %v, want 60s (default)", cb.cfg.ResetTimeout)
+	}
+}
+
+func TestNewCircuitBreaker_NegativeValues(t *testing.T) {
+	// Negative values should get defaults
+	cfg := CircuitBreakerConfig{
+		FailureThreshold: -5,
+		ResetTimeout:     -time.Second,
+	}
+	cb := NewCircuitBreaker(cfg)
+
+	if cb.cfg.FailureThreshold != 5 {
+		t.Errorf("FailureThreshold = %d, want 5 (default)", cb.cfg.FailureThreshold)
+	}
+	if cb.cfg.ResetTimeout != 60*time.Second {
+		t.Errorf("ResetTimeout = %v, want 60s (default)", cb.cfg.ResetTimeout)
+	}
+}
+
+// ============================================================================
+// Retry edge cases
+// ============================================================================
+
+func TestRetry_ZeroMaxAttempts(t *testing.T) {
+	cfg := RetryConfig{
+		MaxAttempts: 0, // Should be treated as 1
+	}
+
+	var attempts int32
+	Retry(context.Background(), cfg, func() error {
+		atomic.AddInt32(&attempts, 1)
+		return nil
+	})
+
+	if attempts != 1 {
+		t.Errorf("attempts = %d, want 1 (zero max attempts should be treated as 1)", attempts)
+	}
+}
+
+func TestRetry_NegativeMaxAttempts(t *testing.T) {
+	cfg := RetryConfig{
+		MaxAttempts: -5, // Should be treated as 1
+	}
+
+	var attempts int32
+	Retry(context.Background(), cfg, func() error {
+		atomic.AddInt32(&attempts, 1)
+		return nil
+	})
+
+	if attempts != 1 {
+		t.Errorf("attempts = %d, want 1 (negative max attempts should be treated as 1)", attempts)
+	}
+}
+
+func TestRetry_ContextCancelledBeforeFirstAttempt(t *testing.T) {
+	cfg := RetryConfig{
+		InitialDelay: time.Second,
+		MaxAttempts:  3,
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	var attempts int32
+	err := Retry(ctx, cfg, func() error {
+		atomic.AddInt32(&attempts, 1)
+		return nil
+	})
+
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("error = %v, want context.Canceled", err)
+	}
+	if attempts != 0 {
+		t.Errorf("attempts = %d, want 0 (context cancelled before first attempt)", attempts)
+	}
+}
+
+func TestRetry_WithJitter(t *testing.T) {
+	cfg := RetryConfig{
+		InitialDelay: 10 * time.Millisecond,
+		MaxDelay:     100 * time.Millisecond,
+		Multiplier:   2.0,
+		MaxAttempts:  3,
+		Jitter:       0.5, // 50% jitter
+	}
+
+	start := time.Now()
+	Retry(context.Background(), cfg, func() error {
+		return ErrDOCANotConnected
+	})
+	elapsed := time.Since(start)
+
+	// With jitter, delays should be: 10-15ms, 20-30ms
+	// Total: at least 30ms (no jitter), at most 45ms (max jitter)
+	if elapsed < 20*time.Millisecond {
+		t.Errorf("elapsed %v too short, jitter may not be working", elapsed)
+	}
+}

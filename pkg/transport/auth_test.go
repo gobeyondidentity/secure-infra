@@ -258,6 +258,16 @@ func TestNewAuthMessage(t *testing.T) {
 	})
 }
 
+func TestNewAuthMessage_MarshalError(t *testing.T) {
+	// Test that NewAuthMessage returns error when payload can't be marshaled
+	// channels cannot be marshaled to JSON
+	badPayload := make(chan int)
+	_, err := NewAuthMessage(MessageAuthChallenge, badPayload)
+	if err == nil {
+		t.Error("NewAuthMessage() expected error for un-marshalable payload")
+	}
+}
+
 func TestConnectionState(t *testing.T) {
 	t.Run("states have correct values", func(t *testing.T) {
 		if StateConnected != 0 {
