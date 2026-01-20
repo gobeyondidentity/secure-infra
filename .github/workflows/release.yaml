@@ -92,9 +92,10 @@ jobs:
           done
 
   # Build DPU agent on BlueField self-hosted runner
+  # Runs after goreleaser to avoid race conditions on GitHub release uploads
   dpu-agent:
     runs-on: [self-hosted, dpu-arm64]
-    needs: [test]
+    needs: [goreleaser]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
