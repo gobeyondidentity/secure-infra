@@ -52,6 +52,7 @@ builds:
     env:
       - CGO_ENABLED=0
     goos:
+      - darwin
       - linux
     goarch:
       - amd64
@@ -66,6 +67,22 @@ builds:
     env:
       - CGO_ENABLED=0
     goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/nmelo/secure-infra/internal/version.Version={{.Version}}
+
+  - id: dpuemu
+    main: ./dpuemu/cmd/dpuemu
+    binary: dpuemu
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
       - linux
     goarch:
       - amd64
@@ -119,6 +136,15 @@ archives:
     files:
       - none*
 
+  - id: dpuemu-archive
+    ids:
+      - dpuemu
+    formats:
+      - tar.gz
+    name_template: "dpuemu_{{ .Os }}_{{ .Arch }}"
+    files:
+      - none*
+
 checksum:
   name_template: "checksums.txt"
   algorithm: sha256
@@ -168,6 +194,54 @@ brews:
       bin.install "km"
     test: |
       system "#{bin}/km", "--help"
+
+  - name: sentry
+    ids:
+      - host-agent-archive
+    repository:
+      owner: nmelo
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/gobeyondidentity/secure-infra"
+    description: "Sentry host agent for Secure Infrastructure attestation"
+    license: "Apache-2.0"
+    install: |
+      bin.install "host-agent" => "sentry"
+    test: |
+      system "#{bin}/sentry", "--help"
+
+  - name: nexus
+    ids:
+      - control-plane-archive
+    repository:
+      owner: nmelo
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/gobeyondidentity/secure-infra"
+    description: "Nexus control plane for Secure Infrastructure"
+    license: "Apache-2.0"
+    install: |
+      bin.install "control-plane" => "nexus"
+    test: |
+      system "#{bin}/nexus", "--help"
+
+  - name: dpuemu
+    ids:
+      - dpuemu-archive
+    repository:
+      owner: nmelo
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/gobeyondidentity/secure-infra"
+    description: "DPU emulator for Secure Infrastructure local development"
+    license: "Apache-2.0"
+    install: |
+      bin.install "dpuemu"
+    test: |
+      system "#{bin}/dpuemu", "--help"
 
 nfpms:
   # CLI tools (no systemd, just binaries)
