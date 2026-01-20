@@ -4,15 +4,54 @@ Deploy Secure Infrastructure with real BlueField DPUs. This guide covers the ful
 
 ## Prerequisites
 
-- Go 1.22+
-- Make
+**Hardware:**
 - NVIDIA BlueField-3 DPU with network access
 - SSH access to the DPU (default: `ubuntu@<DPU_IP>`)
 - Linux host with the BlueField DPU installed
 - DOCA SDK 2.8+ on both host and DPU (for ComCh transport)
 - rshim driver on host (fallback for tmfifo transport)
 
+**Control plane tools:** Choose one installation method:
+
+### Option A: Install via Package Manager (Recommended)
+
+**macOS (Homebrew):**
+```bash
+brew tap nmelo/tap
+brew install bluectl km
+```
+
+**Linux (Debian/Ubuntu):**
+```bash
+curl -fsSL "https://packages.beyondidentity.com/public/secure-infra/gpg.key" | \
+  sudo gpg --dearmor -o /usr/share/keyrings/secureinfra.gpg
+echo "deb [signed-by=/usr/share/keyrings/secureinfra.gpg] https://packages.beyondidentity.com/public/secure-infra/deb/any-distro any-version main" | \
+  sudo tee /etc/apt/sources.list.d/secureinfra.list
+sudo apt update && sudo apt install bluectl km
+```
+
+**Linux (RHEL/Fedora):**
+```bash
+sudo tee /etc/yum.repos.d/secureinfra.repo << 'EOF'
+[secureinfra]
+name=Secure Infrastructure
+baseurl=https://packages.beyondidentity.com/public/secure-infra/rpm/any-distro/any-version/$basearch
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.beyondidentity.com/public/secure-infra/gpg.key
+EOF
+sudo yum install bluectl km
+```
+
+Skip to [Step 1: Start the Server](#step-1-start-the-server) after installing.
+
+### Option B: Build from Source
+
+Requires Go 1.22+ and Make. See [Clone and Build](#clone-and-build).
+
 ## Clone and Build
+
+*Skip this section if you installed via package manager.*
 
 ```bash
 git clone git@github.com:gobeyondidentity/secure-infra.git
@@ -46,23 +85,26 @@ make
 ```
 
 This builds:
-- `bin/agent-arm64` for the BlueField DPU
-- `bin/host-agent-amd64` for x86_64 hosts (or `host-agent-arm64` for ARM hosts)
-- Control plane tools (`bluectl`, `km`, `server`)
+- `bin/agent-arm64` for the BlueField DPU (package name: aegis)
+- `bin/host-agent-amd64` for x86_64 hosts (package name: sentry)
+- Control plane tools (`bluectl`, `km`, `server`/nexus)
+
+**Note:** When building from source, use `bin/` prefix for all commands (e.g., `bin/bluectl` instead of `bluectl`).
 
 ## Step 1: Start the Server
 
-The server tracks your DPU inventory, attestation state, and authorization policies. Run this on your control plane host.
+The server (nexus) tracks your DPU inventory, attestation state, and authorization policies. Run this on your control plane host.
 
 ```bash
-bin/server
+nexus              # if installed via package manager
+# or: bin/server   # if built from source
 ```
 
 The server listens on port 18080 by default. Verify it's running:
 
 ```bash
 curl http://localhost:18080/api/health
-# Expected: {"status":"ok","version":"0.4.1"}
+# Expected: {"status":"ok","version":"0.6.3"}
 ```
 
 ---
@@ -72,10 +114,10 @@ curl http://localhost:18080/api/health
 Tenants are organizational boundaries that group DPUs, operators, and policies. Use them to separate environments (dev/staging/prod) or teams.
 
 ```bash
-bin/bluectl tenant add gpu-prod --description "GPU Production Cluster"
+bluectl tenant add gpu-prod --description "GPU Production Cluster"
 # Expected: Created tenant 'gpu-prod'.
 
-bin/bluectl tenant list
+bluectl tenant list
 # Expected:
 # NAME      DESCRIPTION             CONTACT  DPUs  TAGS
 # gpu-prod  GPU Production Cluster  -        0     -
@@ -83,43 +125,105 @@ bin/bluectl tenant list
 
 ---
 
-## Step 3: Copy Agent to DPU
+## Step 3: Install DPU Agent (aegis)
 
-The DPU agent runs on the BlueField and serves as the hardware trust anchor. It exposes a gRPC interface that the control plane uses to query hardware identity, and a local HTTP API that the host agent uses to receive credentials.
+The DPU agent (aegis) runs on the BlueField and serves as the hardware trust anchor. It exposes a gRPC interface that the control plane uses to query hardware identity, and a local HTTP API that the host agent uses to receive credentials.
+
+SSH into the DPU:
 
 ```bash
-scp bin/agent-arm64 ubuntu@<DPU_IP>:~/agent
+ssh ubuntu@<DPU_IP>
+```
+
+### Option A: Install via apt (Recommended)
+
+```bash
+# Add repository
+curl -fsSL "https://packages.beyondidentity.com/public/secure-infra/gpg.key" | \
+  sudo gpg --dearmor -o /usr/share/keyrings/secureinfra.gpg
+echo "deb [signed-by=/usr/share/keyrings/secureinfra.gpg] https://packages.beyondidentity.com/public/secure-infra/deb/any-distro any-version main" | \
+  sudo tee /etc/apt/sources.list.d/secureinfra.list
+
+# Install aegis
+sudo apt update && sudo apt install aegis
+```
+
+### Option B: Manual Binary (Air-Gapped Environments)
+
+From your build machine:
+```bash
+scp bin/agent-arm64 ubuntu@<DPU_IP>:~/aegis
+```
+
+On the DPU:
+```bash
+chmod +x ~/aegis
+sudo mv ~/aegis /usr/local/bin/aegis
 ```
 
 ---
 
-## Step 4: Start DPU Agent
+## Step 4: Configure and Start DPU Agent
 
-SSH into the DPU and start the agent with local API enabled:
+### Configure aegis
 
 ```bash
-ssh ubuntu@<DPU_IP>
-chmod +x ~/agent
-~/agent -local-api -control-plane http://<CONTROL_PLANE_IP>:18080 -dpu-name bf3-prod-01
+sudo mkdir -p /etc/secureinfra
+
+sudo tee /etc/secureinfra/aegis.yaml << EOF
+control_plane: http://<CONTROL_PLANE_IP>:18080
+dpu_name: bf3-prod-01
+transport: comch
+local_api: true
+log_level: info
+EOF
 ```
 
-Replace `<CONTROL_PLANE_IP>` with the IP of the machine running the server. The `-dpu-name` should match what you'll use in Step 5.
+Replace `<CONTROL_PLANE_IP>` with the IP of the machine running nexus. The `dpu_name` should match what you'll use in Step 5.
 
+### Start the service
+
+**If installed via apt:**
+```bash
+sudo systemctl enable --now aegis
+sudo systemctl status aegis
 ```
+
+**If installed manually:**
+```bash
+# Create systemd unit
+sudo tee /etc/systemd/system/aegis.service << 'EOF'
+[Unit]
+Description=Aegis DPU Agent
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/aegis --config /etc/secureinfra/aegis.yaml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now aegis
+```
+
+### Verify it's running
+
+```bash
+journalctl -u aegis --no-pager | tail -20
 # Expected:
-# Fabric Console Agent v0.4.1 starting...
+# Aegis v0.6.3 starting...
 # gRPC server listening on :18051
-# Starting local API for Host Agent communication...
 # Local API listening on localhost:9443
-# Local API enabled: localhost:9443
 # Control Plane: http://<CONTROL_PLANE_IP>:18080
 # DPU Name: bf3-prod-01
-# tmfifo: device not available, using HTTP API only
 ```
 
-The "tmfifo: device not available" message is normal if you're not using the hardware FIFO channel. The agent will fall back to HTTP for host communication.
-
-Leave this terminal open. The agent must be running for registration and credential distribution.
+Leave the service running. The agent must be active for registration and credential distribution.
 
 ---
 
@@ -128,7 +232,7 @@ Leave this terminal open. The agent must be running for registration and credent
 Back on your control plane, register the DPU:
 
 ```bash
-bin/bluectl dpu add <DPU_IP> --name bf3-prod-01
+bluectl dpu add <DPU_IP> --name bf3-prod-01
 # Expected:
 # Checking connectivity to <DPU_IP>:18051...
 # Connected to DPU:
@@ -146,10 +250,10 @@ bin/bluectl dpu add <DPU_IP> --name bf3-prod-01
 ## Step 6: Assign DPU to Tenant
 
 ```bash
-bin/bluectl tenant assign gpu-prod bf3-prod-01
+bluectl tenant assign gpu-prod bf3-prod-01
 # Expected: Assigned DPU 'bf3-prod-01' to tenant 'gpu-prod'
 
-bin/bluectl dpu list
+bluectl dpu list
 # Expected:
 # NAME          HOST        PORT   STATUS*  LAST SEEN
 # bf3-prod-01   <DPU_IP>    18051  healthy  <timestamp>
@@ -164,7 +268,7 @@ bin/bluectl dpu list
 Admins manage infrastructure (bluectl). Operators push credentials (km). This separation creates an audit trail where credential distribution is always tied to an authenticated operator.
 
 ```bash
-bin/bluectl operator invite operator@example.com gpu-prod
+bluectl operator invite operator@example.com gpu-prod
 # Expected:
 # Invite created for operator@example.com
 # Code: <CODE>
@@ -182,9 +286,9 @@ Save the invite code.
 ## Step 8: Accept Operator Invitation
 
 ```bash
-bin/km init
+km init
 # Expected:
-# KeyMaker v0.4.1
+# KeyMaker v0.6.3
 # Platform: <platform> (<arch>)
 # Secure Element: <type>
 #
@@ -215,7 +319,7 @@ Enter the code when prompted:
 Verify your identity:
 
 ```bash
-bin/km whoami
+km whoami
 # Expected:
 # Operator: operator@example.com
 # Server:   http://localhost:18080
@@ -230,7 +334,7 @@ bin/km whoami
 An SSH CA signs short-lived certificates instead of distributing static keys across servers. Certificates expire automatically, so revocation is rarely needed.
 
 ```bash
-bin/km ssh-ca create prod-ca
+km ssh-ca create prod-ca
 # Expected: SSH CA 'prod-ca' created.
 ```
 
@@ -241,7 +345,7 @@ bin/km ssh-ca create prod-ca
 Link the operator, CA, and DPU together. This authorizes the operator to push this CA to this DPU:
 
 ```bash
-bin/bluectl operator grant operator@example.com gpu-prod prod-ca bf3-prod-01
+bluectl operator grant operator@example.com gpu-prod prod-ca bf3-prod-01
 # Expected:
 # Authorization granted:
 #   Operator: operator@example.com
@@ -257,7 +361,7 @@ bin/bluectl operator grant operator@example.com gpu-prod prod-ca bf3-prod-01
 Attestation is the core security mechanism. The DPU proves it's running trusted firmware by providing cryptographic evidence from its hardware root of trust (TPM/DICE).
 
 ```bash
-bin/bluectl attestation bf3-prod-01
+bluectl attestation bf3-prod-01
 ```
 
 **If attestation succeeds** (DOCA properly configured):
@@ -409,35 +513,117 @@ Before the host agent can enroll, the admin must authorize the host-DPU pairing.
 On the control plane:
 
 ```bash
-bin/bluectl host pair bf3-prod-01
+bluectl host pair bf3-prod-01
 # Expected:
 # Host pairing enabled for DPU 'bf3-prod-01'
-# The next host agent to connect via tmfifo will be registered.
+# The next host agent to connect via ComCh/tmfifo will be registered.
 ```
 
 ---
 
-## Step 14: Copy and Run Host Agent
+## Step 14: Install and Run Host Agent (sentry)
 
-Copy the host agent binary:
-
-```bash
-scp bin/host-agent-amd64 <user>@<HOST_IP>:~/host-agent
-```
-
-SSH to the host and start the agent:
+SSH to the host server (not the DPU):
 
 ```bash
 ssh <user>@<HOST_IP>
-chmod +x ~/host-agent
-~/host-agent
+```
+
+### Option A: Install via apt/yum (Recommended)
+
+**Debian/Ubuntu:**
+```bash
+# Add repository (if not already added)
+curl -fsSL "https://packages.beyondidentity.com/public/secure-infra/gpg.key" | \
+  sudo gpg --dearmor -o /usr/share/keyrings/secureinfra.gpg
+echo "deb [signed-by=/usr/share/keyrings/secureinfra.gpg] https://packages.beyondidentity.com/public/secure-infra/deb/any-distro any-version main" | \
+  sudo tee /etc/apt/sources.list.d/secureinfra.list
+
+# Install sentry
+sudo apt update && sudo apt install sentry
+```
+
+**RHEL/Fedora:**
+```bash
+# Add repository (if not already added)
+sudo tee /etc/yum.repos.d/secureinfra.repo << 'EOF'
+[secureinfra]
+name=Secure Infrastructure
+baseurl=https://packages.beyondidentity.com/public/secure-infra/rpm/any-distro/any-version/$basearch
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.beyondidentity.com/public/secure-infra/gpg.key
+EOF
+
+# Install sentry
+sudo yum install sentry
+```
+
+### Option B: Manual Binary (Air-Gapped Environments)
+
+From your build machine:
+```bash
+scp bin/host-agent-amd64 <user>@<HOST_IP>:~/sentry
+```
+
+On the host:
+```bash
+chmod +x ~/sentry
+sudo mv ~/sentry /usr/local/bin/sentry
+```
+
+### Configure sentry
+
+```bash
+sudo mkdir -p /etc/secureinfra
+
+sudo tee /etc/secureinfra/sentry.yaml << 'EOF'
+# Transport is auto-detected: ComCh → tmfifo → network
+log_level: info
+EOF
+```
+
+### Start the service
+
+**If installed via apt/yum:**
+```bash
+sudo systemctl enable --now sentry
+sudo systemctl status sentry
+```
+
+**If installed manually:**
+```bash
+# Create systemd unit
+sudo tee /etc/systemd/system/sentry.service << 'EOF'
+[Unit]
+Description=Sentry Host Agent
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/sentry --config /etc/secureinfra/sentry.yaml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now sentry
+```
+
+### Verify it's running
+
+```bash
+journalctl -u sentry --no-pager | tail -20
 ```
 
 The agent automatically selects the best available transport:
 
 ```
 # Expected (ComCh path - preferred):
-# Host Agent v0.6.0 starting...
+# Sentry v0.6.3 starting...
 # Initial posture collected: hash=<hash>
 # DOCA ComCh available: mlx5_0 at 01:00.0
 # Enrolling via ComCh...
@@ -448,7 +634,7 @@ The agent automatically selects the best available transport:
 
 ```
 # Expected (tmfifo path - fallback):
-# Host Agent v0.6.0 starting...
+# Sentry v0.6.3 starting...
 # Initial posture collected: hash=<hash>
 # DOCA ComCh unavailable, falling back to tmfifo
 # tmfifo detected: /dev/rshim0/misc
@@ -458,21 +644,10 @@ The agent automatically selects the best available transport:
 # Registered as host <host_id>
 ```
 
-**Network fallback:** If neither PCIe transport is available, use the network path:
-
-```bash
-~/host-agent --dpu-agent http://localhost:9443
-# Expected:
-# Host Agent v0.6.0 starting...
-# No PCIe transport available. Using network enrollment.
-# DPU Agent: http://localhost:9443
-# ...
-```
-
 Verify registration on the control plane:
 
 ```bash
-bin/bluectl host list
+bluectl host list
 # Expected:
 # NAME          DPU           STATUS   LAST SEEN    CHANNEL
 # <hostname>    bf3-prod-01   online   <timestamp>  comch
@@ -480,10 +655,23 @@ bin/bluectl host list
 
 The CHANNEL column shows which transport is in use: `comch`, `tmfifo`, or `network`.
 
-Options:
-- `--oneshot`: Register once and exit (useful for testing)
-- `--dpu-agent <url>`: Force network enrollment to specified URL
-- `--force-tmfifo`: Use tmfifo even if ComCh is available
+### Troubleshooting sentry
+
+**Service fails to start:**
+```bash
+journalctl -u sentry --no-pager | tail -50
+cat /etc/secureinfra/sentry.yaml
+```
+
+**Network fallback (no PCIe transport):**
+```bash
+# Edit config to specify DPU agent URL
+sudo tee /etc/secureinfra/sentry.yaml << 'EOF'
+dpu_agent: http://localhost:9443
+log_level: info
+EOF
+sudo systemctl restart sentry
+```
 
 ---
 
@@ -492,7 +680,7 @@ Options:
 With the host agent running and registered, push the SSH CA through the DPU to the host:
 
 ```bash
-bin/km push ssh-ca prod-ca bf3-prod-01
+km push ssh-ca prod-ca bf3-prod-01
 ```
 
 **If attestation succeeded** in Step 11:
@@ -506,7 +694,7 @@ bin/km push ssh-ca prod-ca bf3-prod-01
 **If attestation was unavailable**, force distribution (logs a warning):
 
 ```bash
-bin/km push ssh-ca prod-ca bf3-prod-01 --force
+km push ssh-ca prod-ca bf3-prod-01 --force
 # Expected:
 # Pushing CA 'prod-ca' to bf3-prod-01...
 #   Attestation refresh attempted but unavailable.
@@ -527,7 +715,7 @@ This is the payoff. Your host now trusts the CA. Sign a certificate and SSH in.
 Sign your SSH key (or generate a new one):
 
 ```bash
-bin/km ssh-ca sign prod-ca --principal ubuntu --pubkey ~/.ssh/id_ed25519.pub > ~/.ssh/id_ed25519-cert.pub
+km ssh-ca sign prod-ca --principal ubuntu --pubkey ~/.ssh/id_ed25519.pub > ~/.ssh/id_ed25519-cert.pub
 ```
 
 The certificate is valid for 8 hours by default. Use `--validity 24h` or `--validity 7d` for longer durations.
@@ -567,7 +755,7 @@ You need two hosts, each with:
 Check your registered hosts:
 
 ```bash
-bin/bluectl host list
+bluectl host list
 # Expected:
 # DPU           HOSTNAME      LAST SEEN  SECURE BOOT  DISK ENC
 # bf3-prod-01   compute-01    2m ago     enabled      LUKS
@@ -580,31 +768,31 @@ Repeat Steps 3-6 and 11-15 for the second host/DPU pair:
 
 ```bash
 # Register second DPU
-bin/bluectl dpu add <DPU2_IP> --name bf3-prod-02
-bin/bluectl tenant assign gpu-prod bf3-prod-02
+bluectl dpu add <DPU2_IP> --name bf3-prod-02
+bluectl tenant assign gpu-prod bf3-prod-02
 
 # Grant operator access
-bin/bluectl operator grant operator@example.com gpu-prod prod-ca bf3-prod-02
+bluectl operator grant operator@example.com gpu-prod prod-ca bf3-prod-02
 
 # Submit attestation
-bin/bluectl attestation bf3-prod-02
+bluectl attestation bf3-prod-02
 ```
 
-Deploy and run host-agent on the second host (Steps 12-14).
+Deploy and run sentry on the second host (Steps 12-14).
 
 ### Create trust relationship
 
 Trust is directional: the source host accepts connections from the target host. The target initiates connections and receives a CA-signed certificate.
 
 ```bash
-bin/bluectl trust create compute-01 compute-02
+bluectl trust create compute-01 compute-02
 # Expected: Trust relationship created: compute-01 <- compute-02
 ```
 
 For bidirectional trust (both hosts can initiate connections to each other):
 
 ```bash
-bin/bluectl trust create compute-01 compute-02 --bidirectional
+bluectl trust create compute-01 compute-02 --bidirectional
 # Expected:
 # Trust relationship created: compute-01 <- compute-02
 # Trust relationship created: compute-02 <- compute-01
@@ -619,7 +807,7 @@ Options:
 ### Verify trust relationships
 
 ```bash
-bin/bluectl trust list
+bluectl trust list
 # Expected:
 # SOURCE       TARGET       TYPE      CREATED
 # compute-01   compute-02   ssh_host  <timestamp>
@@ -632,13 +820,13 @@ bin/bluectl trust list
 
 ```bash
 # Zsh
-echo 'source <(bin/bluectl completion zsh)' >> ~/.zshrc
-echo 'source <(bin/km completion zsh)' >> ~/.zshrc
+echo 'source <(bluectl completion zsh)' >> ~/.zshrc
+echo 'source <(km completion zsh)' >> ~/.zshrc
 source ~/.zshrc
 
 # Bash
-echo 'source <(bin/bluectl completion bash)' >> ~/.bashrc
-echo 'source <(bin/km completion bash)' >> ~/.bashrc
+echo 'source <(bluectl completion bash)' >> ~/.bashrc
+echo 'source <(km completion bash)' >> ~/.bashrc
 source ~/.bashrc
 ```
 
@@ -759,7 +947,7 @@ Two DPUs for high availability:
 
 ```bash
 # Host discovers both
-bin/bluectl host list
+bluectl host list
 # NAME        DPU           STATUS   CHANNEL
 # compute-01  bf3-prod-01   online   comch
 # compute-01  bf3-prod-02   online   comch
@@ -812,7 +1000,7 @@ Check discovered DPUs:
 Check connections:
 
 ```bash
-bin/bluectl host show compute-01
+bluectl host show compute-01
 # Output:
 # Host: compute-01
 # DPU Connections:

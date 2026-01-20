@@ -10,8 +10,30 @@ Starting over? See [Clean Slate](#appendix-a-clean-slate) to reset your environm
 
 ## Prerequisites
 
-- Go 1.22+
-- Make
+Choose your installation method:
+
+### Option A: Install via Package Manager (Recommended)
+
+**macOS (Homebrew):**
+```bash
+brew tap nmelo/tap
+brew install bluectl km nexus dpuemu sentry
+```
+
+**Linux (Debian/Ubuntu):**
+```bash
+curl -fsSL "https://packages.beyondidentity.com/public/secure-infra/gpg.key" | \
+  sudo gpg --dearmor -o /usr/share/keyrings/secureinfra.gpg
+echo "deb [signed-by=/usr/share/keyrings/secureinfra.gpg] https://packages.beyondidentity.com/public/secure-infra/deb/any-distro any-version main" | \
+  sudo tee /etc/apt/sources.list.d/secureinfra.list
+sudo apt update && sudo apt install bluectl km nexus dpuemu sentry
+```
+
+Skip to [Terminal Setup](#terminal-setup) after installing.
+
+### Option B: Build from Source
+
+Requires Go 1.22+ and Make. See [Clone and Build](#clone-and-build).
 
 ## Terminal Setup
 
@@ -19,13 +41,15 @@ This guide uses three terminal windows. The server and emulator are long-running
 
 | Terminal | Purpose | Runs |
 |----------|---------|------|
-| Terminal 1 | Server | `bin/server` (Step 1) |
-| Terminal 2 | Emulator | `bin/dpuemu` (Step 3) |
+| Terminal 1 | Server | `nexus` or `bin/server` (Step 1) |
+| Terminal 2 | Emulator | `dpuemu` or `bin/dpuemu` (Step 3) |
 | Terminal 3 | Commands | All other commands |
 
-Open all three now. Run clone/build in Terminal 3, then follow along.
+Open all three now. If you installed via package manager, skip to Step 1. If building from source, run clone/build in Terminal 3 first.
 
 ## Clone and Build
+
+*Skip this section if you installed via package manager.*
 
 ```bash
 git clone https://github.com/gobeyondidentity/secure-infra.git
@@ -42,23 +66,28 @@ make
 # Done.
 ```
 
+**Note:** When building from source, use `bin/` prefix for all commands (e.g., `bin/bluectl` instead of `bluectl`).
+
 ## Step 1: Start the Server
 
-The server is your control plane. It tracks which DPUs exist, whether they've passed attestation, and who is authorized to push credentials to them. Without it, nothing else works.
+The server (nexus) is your control plane. It tracks which DPUs exist, whether they've passed attestation, and who is authorized to push credentials to them. Without it, nothing else works.
 
 In Terminal 1:
 
 ```bash
-bin/server
-# Expected: Fabric Console API v0.4.1 starting...
-# Expected: HTTP server listening on :18080
+nexus              # if installed via package manager
+# or: bin/server   # if built from source
+
+# Expected:
+# Secure Infrastructure Control Plane v0.6.3 starting...
+# HTTP server listening on :18080
 ```
 
 In Terminal 3, verify it's running:
 
 ```bash
 curl http://localhost:18080/api/health
-# Expected: {"status":"ok","version":"0.4.1"}
+# Expected: {"status":"ok","version":"0.6.3"}
 ```
 
 ---
@@ -70,7 +99,9 @@ Tenants are organizational boundaries, like teams or environments. Every DPU and
 In Terminal 3:
 
 ```bash
-bin/bluectl tenant add gpu-prod --description "GPU Production Cluster"
+bluectl tenant add gpu-prod --description "GPU Production Cluster"
+# or: bin/bluectl tenant add gpu-prod --description "GPU Production Cluster"
+
 # Expected: Created tenant 'gpu-prod'.
 ```
 
@@ -85,9 +116,11 @@ The fixture file defines the emulated DPU's identity: serial number, model, and 
 In Terminal 2:
 
 ```bash
-bin/dpuemu serve --fixture dpuemu/fixtures/bf3-static.json
+dpuemu serve              # if installed via package manager (uses built-in fixture)
+# or: bin/dpuemu serve --fixture dpuemu/fixtures/bf3-static.json   # if built from source
+
 # Expected:
-# Loading fixture from dpuemu/fixtures/bf3-static.json
+# Loading fixture...
 # dpuemu gRPC server listening on :18051
 # emulating: bluefield3 (serial: MT2542600N23)
 # dpuemu local API listening on :9443
@@ -102,7 +135,7 @@ Leave this running.
 The server needs to know about each DPU before it can track attestation status or authorize credential distribution. Registration connects the running emulator to the control plane.
 
 ```bash
-bin/bluectl dpu add localhost --name bf3
+bluectl dpu add localhost --name bf3
 # Expected:
 # Checking connectivity to localhost:18051...
 # Connected to DPU:
@@ -122,7 +155,7 @@ The CLI verifies connectivity and retrieves DPU details from the emulator.
 Link the DPU to the tenant you created in Step 2. This controls which operators can access the device.
 
 ```bash
-bin/bluectl tenant assign gpu-prod bf3
+bluectl tenant assign gpu-prod bf3
 # Expected: Assigned DPU 'bf3' to tenant 'gpu-prod'
 ```
 
@@ -135,7 +168,7 @@ Admins manage infrastructure (DPUs, tenants, access grants). Operators push cred
 In production, an admin and operator would be different people. Here you're playing both roles.
 
 ```bash
-bin/bluectl operator invite operator@example.com gpu-prod
+bluectl operator invite operator@example.com gpu-prod
 # Expected:
 # Invite created for operator@example.com
 # Code: GPU-XXXX-XXXX
@@ -153,7 +186,7 @@ Save the invite code for the next step.
 ## Step 7: Accept Operator Invitation
 
 ```bash
-bin/km init
+km init
 # Enter the invite code when prompted
 # Expected:
 # Generating keypair...
@@ -167,7 +200,7 @@ bin/km init
 # Next steps:
 #   Run 'km whoami' to verify your identity.
 
-bin/km whoami
+km whoami
 # Expected:
 # Operator: operator@example.com
 # Server:   http://localhost:18080
@@ -184,7 +217,7 @@ bin/km whoami
 An SSH CA signs short-lived certificates instead of scattering static keys across servers. The CA's private key lives on the DPU and can only sign certificates when attestation passes.
 
 ```bash
-bin/km ssh-ca create test-ca
+km ssh-ca create test-ca
 # Expected: SSH CA 'test-ca' created.
 ```
 
@@ -195,7 +228,7 @@ bin/km ssh-ca create test-ca
 Link the operator to specific CAs and devices. Without this grant, the operator can create CAs but can't push them anywhere.
 
 ```bash
-bin/bluectl operator grant operator@example.com gpu-prod test-ca bf3
+bluectl operator grant operator@example.com gpu-prod test-ca bf3
 # Expected:
 # Authorization granted:
 #   Operator: operator@example.com
@@ -211,7 +244,7 @@ bin/bluectl operator grant operator@example.com gpu-prod test-ca bf3
 The DPU must prove it's running trusted firmware before receiving credentials. The emulator provides mock attestation.
 
 ```bash
-bin/bluectl attestation bf3
+bluectl attestation bf3
 # Expected:
 # Attestation Status: ATTESTATION_STATUS_VALID
 #
@@ -234,7 +267,7 @@ bin/bluectl attestation bf3
 This is the core security moment. The system checks that attestation is valid before allowing the push. If the DPU had failed attestation, this command would be rejected.
 
 ```bash
-bin/km push ssh-ca test-ca bf3
+km push ssh-ca test-ca bf3
 # Expected:
 # Pushing CA 'test-ca' to bf3...
 #   Attestation: verified (<time> ago)
@@ -249,16 +282,18 @@ With the emulator, credentials are stored locally. On real hardware, they'd be p
 
 ## Step 12: Test Host Agent (Optional)
 
-In production, the host agent runs on each server and receives credentials from the DPU over a secure channel (tmfifo). It also reports the host's security posture.
+In production, the host agent (sentry) runs on each server and receives credentials from the DPU over a secure channel (ComCh or tmfifo). It also reports the host's security posture.
 
-With the emulator, the host agent connects via HTTP instead of tmfifo.
+With the emulator, sentry connects via HTTP instead of hardware channels.
 
 ```bash
-bin/host-agent --dpu-agent http://localhost:9443 --oneshot
+sentry --dpu-agent http://localhost:9443 --oneshot
+# or: bin/host-agent --dpu-agent http://localhost:9443 --oneshot   # if built from source
+
 # Expected:
-# Host Agent v0.4.1 starting...
+# Sentry v0.6.3 starting...
 # Initial posture collected: hash=<hash>
-# No tmfifo detected. Using network enrollment.
+# No ComCh/tmfifo detected. Using network enrollment.
 # DPU Agent: http://localhost:9443
 # Hostname: <your-hostname>
 # Paired with DPU: bluefield3
@@ -285,7 +320,7 @@ ssh-keygen -t ed25519 -f /tmp/demo_key -N "" -C "demo@example.com"
 Sign the public key with your CA:
 
 ```bash
-bin/km ssh-ca sign test-ca --principal ubuntu --pubkey /tmp/demo_key.pub > /tmp/demo_key-cert.pub
+km ssh-ca sign test-ca --principal ubuntu --pubkey /tmp/demo_key.pub > /tmp/demo_key-cert.pub
 ```
 
 The certificate grants the `ubuntu` principal SSH access for 8 hours (default). Any server trusting this CA will accept this certificate.
@@ -367,12 +402,14 @@ To reset and start fresh:
 
 2. **Verify they're stopped:**
 ```bash
-ps aux | grep -E "bin/server|bin/dpuemu" | grep -v grep
+ps aux | grep -E "nexus|dpuemu|bin/server" | grep -v grep
 # Expected: no output
 ```
 
 If processes are still running, kill them:
 ```bash
+pkill -f "nexus" && pkill -f "dpuemu"
+# or if built from source:
 pkill -f "bin/server" && pkill -f "bin/dpuemu"
 ```
 
@@ -393,12 +430,12 @@ The server caches data in memory, so you must stop it before deleting the databa
 
 ```bash
 # Zsh
-echo 'source <(bin/bluectl completion zsh)' >> ~/.zshrc
-echo 'source <(bin/km completion zsh)' >> ~/.zshrc
+echo 'source <(bluectl completion zsh)' >> ~/.zshrc
+echo 'source <(km completion zsh)' >> ~/.zshrc
 source ~/.zshrc
 
 # Bash
-echo 'source <(bin/bluectl completion bash)' >> ~/.bashrc
-echo 'source <(bin/km completion bash)' >> ~/.bashrc
+echo 'source <(bluectl completion bash)' >> ~/.bashrc
+echo 'source <(km completion bash)' >> ~/.bashrc
 source ~/.bashrc
 ```
