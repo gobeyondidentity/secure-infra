@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nmelo/secure-infra/internal/version"
 	"github.com/nmelo/secure-infra/pkg/clierror"
 	"github.com/nmelo/secure-infra/pkg/store"
 	"github.com/spf13/cobra"
@@ -30,7 +29,6 @@ var rootCmd = &cobra.Command{
 
 It provides commands to register DPUs, query system information,
 view OVS flows, and check attestation status.`,
-	Version:      version.Version,
 	SilenceUsage: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Skip store initialization for completion commands

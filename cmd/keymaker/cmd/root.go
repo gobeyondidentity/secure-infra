@@ -46,7 +46,7 @@ Getting started:
 	SilenceUsage: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Skip store initialization for commands that don't need it
-		if cmd.Name() == "completion" || cmd.Name() == "help" || cmd.Name() == "init" || cmd.Name() == "whoami" {
+		if cmd.Name() == "completion" || cmd.Name() == "help" || cmd.Name() == "init" || cmd.Name() == "whoami" || cmd.Name() == "version" {
 			return nil
 		}
 
