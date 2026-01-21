@@ -48,7 +48,7 @@ brew install nmelo/tap/sentry nmelo/tap/nexus nmelo/tap/dpuemu # Agents and emul
 
 ```bash
 # Add repository (auto-detects your distro)
-curl -fsSL https://packages.beyondidentity.com/setup.sh | sudo bash
+curl -1sLf 'https://dl.cloudsmith.io/public/beyond-identity/secure-infra/cfg/setup/bash.deb.sh' | sudo bash
 sudo apt update && sudo apt install bluectl km
 ```
 
@@ -56,7 +56,7 @@ sudo apt update && sudo apt install bluectl km
 
 ```bash
 # Add repository (auto-detects your distro)
-curl -fsSL https://packages.beyondidentity.com/setup.sh | sudo bash
+curl -1sLf 'https://dl.cloudsmith.io/public/beyond-identity/secure-infra/cfg/setup/bash.rpm.sh' | sudo bash
 sudo yum install bluectl km
 ```
 
