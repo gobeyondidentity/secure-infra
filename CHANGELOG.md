@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **SSH Host Key Verification** (CWE-295): Replaced `ssh.InsecureIgnoreHostKey()` with proper `knownhosts` verification in keymaker CLI. Implements TOFU (Trust On First Use) pattern with `--accept-host-key` flag for new hosts.
 - **SSRF Protection** (CWE-918): Added endpoint validation for DTS and Redfish clients. Blocks requests to loopback (127.0.0.0/8), link-local (169.254.0.0/16 including AWS metadata), and private ranges (10/8, 172.16/12, 192.168/16) where appropriate.
 - **Path Traversal Protection** (CWE-22): Added validation for `--ssh-key` flag to prevent reading arbitrary files. Restricts paths to `~/.ssh/`, current directory, or common SSH key filenames.
+- **Test Secret Annotation**: Added `endorctl:allow` annotation for SSH public key test fixtures to suppress false positive in security scans.
 
 ### Fixed
 - **version.go**: Changed version constant to variable to allow ldflags override during build
