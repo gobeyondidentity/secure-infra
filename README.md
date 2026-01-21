@@ -41,31 +41,23 @@ The core security property: credentials only flow to verified infrastructure. Wh
 
 ```bash
 brew tap nmelo/tap
-brew install bluectl km              # CLI tools
-brew install sentry nexus dpuemu     # Agents and emulator
+brew install nmelo/tap/bluectl nmelo/tap/km                    # CLI tools
+brew install nmelo/tap/sentry nmelo/tap/nexus nmelo/tap/dpuemu # Agents and emulator
 ```
 
 ### Linux (Debian/Ubuntu)
 
 ```bash
-# Add repository
-curl -fsSL "https://packages.beyondidentity.com/public/secure-infra/gpg.key" | sudo gpg --dearmor -o /usr/share/keyrings/secureinfra.gpg
-echo "deb [signed-by=/usr/share/keyrings/secureinfra.gpg] https://packages.beyondidentity.com/public/secure-infra/deb/any-distro any-version main" | sudo tee /etc/apt/sources.list.d/secureinfra.list
+# Add repository (auto-detects your distro)
+curl -1sLf 'https://dl.cloudsmith.io/public/beyond-identity/secure-infra/cfg/setup/bash.deb.sh' | sudo bash
 sudo apt update && sudo apt install bluectl km
 ```
 
 ### Linux (RHEL/Fedora)
 
 ```bash
-# Add repository
-sudo tee /etc/yum.repos.d/secureinfra.repo << 'EOF'
-[secureinfra]
-name=Secure Infrastructure
-baseurl=https://packages.beyondidentity.com/public/secure-infra/rpm/any-distro/any-version/$basearch
-enabled=1
-gpgcheck=1
-gpgkey=https://packages.beyondidentity.com/public/secure-infra/gpg.key
-EOF
+# Add repository (auto-detects your distro)
+curl -1sLf 'https://dl.cloudsmith.io/public/beyond-identity/secure-infra/cfg/setup/bash.rpm.sh' | sudo bash
 sudo yum install bluectl km
 ```
 

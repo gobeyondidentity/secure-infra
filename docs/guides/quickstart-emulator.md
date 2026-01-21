@@ -17,15 +17,13 @@ Choose your installation method:
 **macOS (Homebrew):**
 ```bash
 brew tap nmelo/tap
-brew install bluectl km nexus dpuemu sentry
+brew install nmelo/tap/bluectl nmelo/tap/km nmelo/tap/nexus nmelo/tap/dpuemu nmelo/tap/sentry
 ```
 
 **Linux (Debian/Ubuntu):**
 ```bash
-curl -fsSL "https://packages.beyondidentity.com/public/secure-infra/gpg.key" | \
-  sudo gpg --dearmor -o /usr/share/keyrings/secureinfra.gpg
-echo "deb [signed-by=/usr/share/keyrings/secureinfra.gpg] https://packages.beyondidentity.com/public/secure-infra/deb/any-distro any-version main" | \
-  sudo tee /etc/apt/sources.list.d/secureinfra.list
+# Add repository (auto-detects your distro)
+curl -1sLf 'https://dl.cloudsmith.io/public/beyond-identity/secure-infra/cfg/setup/bash.deb.sh' | sudo bash
 sudo apt update && sudo apt install bluectl km nexus dpuemu sentry
 ```
 

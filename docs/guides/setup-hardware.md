@@ -23,23 +23,15 @@ brew install bluectl km
 
 **Linux (Debian/Ubuntu):**
 ```bash
-curl -fsSL "https://packages.beyondidentity.com/public/secure-infra/gpg.key" | \
-  sudo gpg --dearmor -o /usr/share/keyrings/secureinfra.gpg
-echo "deb [signed-by=/usr/share/keyrings/secureinfra.gpg] https://packages.beyondidentity.com/public/secure-infra/deb/any-distro any-version main" | \
-  sudo tee /etc/apt/sources.list.d/secureinfra.list
+# Add repository (auto-detects your distro)
+curl -1sLf 'https://dl.cloudsmith.io/public/beyond-identity/secure-infra/cfg/setup/bash.deb.sh' | sudo bash
 sudo apt update && sudo apt install bluectl km
 ```
 
 **Linux (RHEL/Fedora):**
 ```bash
-sudo tee /etc/yum.repos.d/secureinfra.repo << 'EOF'
-[secureinfra]
-name=Secure Infrastructure
-baseurl=https://packages.beyondidentity.com/public/secure-infra/rpm/any-distro/any-version/$basearch
-enabled=1
-gpgcheck=1
-gpgkey=https://packages.beyondidentity.com/public/secure-infra/gpg.key
-EOF
+# Add repository (auto-detects your distro)
+curl -1sLf 'https://dl.cloudsmith.io/public/beyond-identity/secure-infra/cfg/setup/bash.rpm.sh' | sudo bash
 sudo yum install bluectl km
 ```
 
@@ -138,11 +130,8 @@ ssh ubuntu@<DPU_IP>
 ### Option A: Install via apt (Recommended)
 
 ```bash
-# Add repository
-curl -fsSL "https://packages.beyondidentity.com/public/secure-infra/gpg.key" | \
-  sudo gpg --dearmor -o /usr/share/keyrings/secureinfra.gpg
-echo "deb [signed-by=/usr/share/keyrings/secureinfra.gpg] https://packages.beyondidentity.com/public/secure-infra/deb/any-distro any-version main" | \
-  sudo tee /etc/apt/sources.list.d/secureinfra.list
+# Add repository (auto-detects your distro)
+curl -1sLf 'https://dl.cloudsmith.io/public/beyond-identity/secure-infra/cfg/setup/bash.deb.sh' | sudo bash
 
 # Install aegis
 sudo apt update && sudo apt install aegis
@@ -533,11 +522,8 @@ ssh <user>@<HOST_IP>
 
 **Debian/Ubuntu:**
 ```bash
-# Add repository (if not already added)
-curl -fsSL "https://packages.beyondidentity.com/public/secure-infra/gpg.key" | \
-  sudo gpg --dearmor -o /usr/share/keyrings/secureinfra.gpg
-echo "deb [signed-by=/usr/share/keyrings/secureinfra.gpg] https://packages.beyondidentity.com/public/secure-infra/deb/any-distro any-version main" | \
-  sudo tee /etc/apt/sources.list.d/secureinfra.list
+# Add repository (auto-detects your distro, skip if already added)
+curl -1sLf 'https://dl.cloudsmith.io/public/beyond-identity/secure-infra/cfg/setup/bash.deb.sh' | sudo bash
 
 # Install sentry
 sudo apt update && sudo apt install sentry
@@ -545,15 +531,8 @@ sudo apt update && sudo apt install sentry
 
 **RHEL/Fedora:**
 ```bash
-# Add repository (if not already added)
-sudo tee /etc/yum.repos.d/secureinfra.repo << 'EOF'
-[secureinfra]
-name=Secure Infrastructure
-baseurl=https://packages.beyondidentity.com/public/secure-infra/rpm/any-distro/any-version/$basearch
-enabled=1
-gpgcheck=1
-gpgkey=https://packages.beyondidentity.com/public/secure-infra/gpg.key
-EOF
+# Add repository (auto-detects your distro, skip if already added)
+curl -1sLf 'https://dl.cloudsmith.io/public/beyond-identity/secure-infra/cfg/setup/bash.rpm.sh' | sudo bash
 
 # Install sentry
 sudo yum install sentry
