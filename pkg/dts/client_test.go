@@ -80,21 +80,67 @@ func TestClientPing(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL)
-	err := client.Ping(context.Background())
+	// Use withSkipValidation since httptest servers use 127.0.0.1
+	client, err := NewClient(server.URL, withSkipValidation())
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
+	err = client.Ping(context.Background())
 	if err != nil {
 		t.Errorf("Ping failed: %v", err)
 	}
 }
 
 func TestClientPingFailure(t *testing.T) {
-	client := NewClient("http://localhost:59999") // unlikely to be running
+	// Create a test server that returns 500 to test connection failure handling
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Close connection immediately to simulate unavailable service
+		hj, ok := w.(http.Hijacker)
+		if ok {
+			conn, _, _ := hj.Hijack()
+			conn.Close()
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	// Use withSkipValidation since httptest servers use 127.0.0.1
+	client, err := NewClient(server.URL, withSkipValidation())
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
-	err := client.Ping(ctx)
+	err = client.Ping(ctx)
 	if err != ErrNotAvailable {
 		t.Errorf("expected ErrNotAvailable, got %v", err)
+	}
+}
+
+func TestNewClient_BlocksLoopback(t *testing.T) {
+	// NewClient with strict validation should block loopback addresses
+	_, err := NewClient("http://localhost:9100")
+	if err == nil {
+		t.Error("expected error for localhost, got nil")
+	}
+	_, err = NewClient("127.0.0.1:9100")
+	if err == nil {
+		t.Error("expected error for 127.0.0.1, got nil")
+	}
+}
+
+func TestNewClient_BlocksPrivateRanges(t *testing.T) {
+	// NewClient with strict validation should block private ranges
+	_, err := NewClient("192.168.1.1:9100")
+	if err == nil {
+		t.Error("expected error for 192.168.1.1, got nil")
+	}
+	_, err = NewClient("10.0.0.1:9100")
+	if err == nil {
+		t.Error("expected error for 10.0.0.1, got nil")
 	}
 }
 
@@ -123,7 +169,11 @@ dts_ovs_misses{bridge="ovs-br0"} 1000
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL)
+	// Use withSkipValidation since httptest servers use 127.0.0.1
+	client, err := NewClient(server.URL, withSkipValidation())
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
 	metrics, err := client.GetMetrics(context.Background())
 	if err != nil {
 		t.Fatalf("GetMetrics failed: %v", err)
@@ -183,7 +233,17 @@ dts_ovs_misses{bridge="ovs-br0"} 1000
 }
 
 func TestWithTimeout(t *testing.T) {
-	client := NewClient("localhost:9100", WithTimeout(5*time.Second))
+	// Create a test server just to get a valid URL
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	// Use withSkipValidation since httptest servers use 127.0.0.1
+	client, err := NewClient(server.URL, WithTimeout(5*time.Second), withSkipValidation())
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
 	if client.httpClient.Timeout != 5*time.Second {
 		t.Errorf("timeout not set correctly")
 	}

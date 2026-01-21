@@ -46,10 +46,14 @@ type Server struct {
 }
 
 // NewServer creates a new agent server.
-func NewServer(cfg *Config) *Server {
+func NewServer(cfg *Config) (*Server, error) {
 	var redfishCli *attestation.RedfishClient
 	if cfg.BMCAddr != "" {
-		redfishCli = attestation.NewRedfishClient(cfg.BMCAddr, cfg.BMCUser, cfg.BMCPassword)
+		var err error
+		redfishCli, err = attestation.NewRedfishClient(cfg.BMCAddr, cfg.BMCUser, cfg.BMCPassword)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Redfish client: %w", err)
+		}
 	}
 
 	return &Server{
@@ -60,7 +64,7 @@ func NewServer(cfg *Config) *Server {
 		redfishCli: redfishCli,
 		startTime:  currentUnixTime(),
 		version:    version.Version,
-	}
+	}, nil
 }
 
 // SetLocalAPI sets the local API server for Host Agent communication.

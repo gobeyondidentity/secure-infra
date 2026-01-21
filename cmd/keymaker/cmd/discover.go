@@ -36,6 +36,7 @@ func init() {
 	discoverScanCmd.Flags().Bool("ssh-fallback", false, "Use SSH fallback for hosts without agent")
 	discoverScanCmd.Flags().String("ssh-user", "", "SSH username (default: current user)")
 	discoverScanCmd.Flags().String("ssh-key", "", "SSH private key path")
+	discoverScanCmd.Flags().Bool("accept-host-key", false, "Trust unknown SSH host keys (TOFU)")
 	discoverScanCmd.Flags().Int("parallel", 10, "Max concurrent scans")
 	discoverScanCmd.Flags().Int("timeout", 30, "Per-host timeout in seconds")
 	discoverScanCmd.Flags().Bool("no-color", false, "Disable colored output")
@@ -165,6 +166,7 @@ func runScanSingleHost(cmd *cobra.Command, config *KMConfig, hostArg string, ssh
 	timeout, _ := cmd.Flags().GetInt("timeout")
 	sshUser, _ := cmd.Flags().GetString("ssh-user")
 	sshKeyPath, _ := cmd.Flags().GetString("ssh-key")
+	acceptHostKey, _ := cmd.Flags().GetBool("accept-host-key")
 
 	// Use current user as default SSH user
 	if sshUser == "" {
@@ -178,7 +180,7 @@ func runScanSingleHost(cmd *cobra.Command, config *KMConfig, hostArg string, ssh
 		// SSH bootstrap mode: print warning and scan directly via SSH
 		fmt.Fprintln(os.Stderr, "Warning: Bootstrap mode. Install host-agent for production use.")
 
-		result, err = scanHostSSH(hostArg, sshUser, sshKeyPath, time.Duration(timeout)*time.Second)
+		result, err = scanHostSSH(hostArg, sshUser, sshKeyPath, acceptHostKey, time.Duration(timeout)*time.Second)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %s: %v\n", hostArg, err)
 			os.Exit(ExitDiscoverAllFailed)
@@ -220,6 +222,7 @@ func runScanAllHosts(cmd *cobra.Command, config *KMConfig, sshFallback bool) err
 	noColor, _ := cmd.Flags().GetBool("no-color")
 	sshUser, _ := cmd.Flags().GetString("ssh-user")
 	sshKeyPath, _ := cmd.Flags().GetString("ssh-key")
+	acceptHostKey, _ := cmd.Flags().GetBool("accept-host-key")
 
 	// Use current user as default SSH user
 	if sshUser == "" {
@@ -274,7 +277,7 @@ func runScanAllHosts(cmd *cobra.Command, config *KMConfig, sshFallback bool) err
 					sshHostname = host.Name
 				}
 
-				result, err = scanHostSSH(sshHostname, sshUser, sshKeyPath, time.Duration(timeout)*time.Second)
+				result, err = scanHostSSH(sshHostname, sshUser, sshKeyPath, acceptHostKey, time.Duration(timeout)*time.Second)
 				if err != nil {
 					failures = append(failures, ScanFailure{
 						Host:  host.Name,

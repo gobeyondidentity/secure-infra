@@ -18,7 +18,10 @@ func TestRealBMCIntegration(t *testing.T) {
 		t.Skip("Skipping real BMC test: BMC_ADDR, BMC_USER, BMC_PASS not set")
 	}
 
-	client := NewRedfishClient(addr, user, pass)
+	client, err := NewRedfishClient(addr, user, pass)
+	if err != nil {
+		t.Fatalf("NewRedfishClient failed: %v", err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

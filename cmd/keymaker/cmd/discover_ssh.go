@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -14,8 +15,9 @@ import (
 
 // scanHostSSH scans a host via SSH and returns SSH keys found.
 // It uses ssh-agent for authentication by default, or an explicit key if provided.
-func scanHostSSH(hostname, sshUser, sshKeyPath string, timeout time.Duration) (*ScanResult, error) {
-	client, err := connectSSH(hostname, sshUser, sshKeyPath, timeout)
+// If acceptHostKey is true, unknown hosts will be added to known_hosts (TOFU).
+func scanHostSSH(hostname, sshUser, sshKeyPath string, acceptHostKey bool, timeout time.Duration) (*ScanResult, error) {
+	client, err := connectSSH(hostname, sshUser, sshKeyPath, acceptHostKey, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -41,11 +43,17 @@ func scanHostSSH(hostname, sshUser, sshKeyPath string, timeout time.Duration) (*
 	}, nil
 }
 
-// connectSSH establishes an SSH connection to the host.
-func connectSSH(hostname, user, keyPath string, timeout time.Duration) (*ssh.Client, error) {
+// connectSSH establishes an SSH connection to the host with proper host key verification.
+// If acceptHostKey is true, unknown hosts will be added to known_hosts (TOFU pattern).
+func connectSSH(hostname, user, keyPath string, acceptHostKey bool, timeout time.Duration) (*ssh.Client, error) {
 	var authMethods []ssh.AuthMethod
 
 	if keyPath != "" {
+		// Validate path before reading (defense in depth against path traversal)
+		if err := validateSSHKeyPath(keyPath); err != nil {
+			return nil, err
+		}
+
 		// Use explicit private key
 		key, err := os.ReadFile(keyPath)
 		if err != nil {
@@ -70,10 +78,17 @@ func connectSSH(hostname, user, keyPath string, timeout time.Duration) (*ssh.Cli
 		authMethods = append(authMethods, ssh.PublicKeysCallback(agentClient.Signers))
 	}
 
+	// Set up host key verification using known_hosts
+	knownHostsPath := getKnownHostsPath()
+	hostKeyCallback, err := createHostKeyCallback(knownHostsPath, acceptHostKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set up host key verification: %w", err)
+	}
+
 	config := &ssh.ClientConfig{
 		User:            user,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // TODO: Implement proper host key verification
+		HostKeyCallback: hostKeyCallback,
 		Timeout:         timeout,
 	}
 
@@ -231,4 +246,63 @@ func keysFromScanResultKeys(resultKeys []ScanResultKey) []sshscan.SSHKey {
 		}
 	}
 	return keys
+}
+
+// validateSSHKeyPath checks that the key path is safe to read.
+// Allowed paths: ~/.ssh/*, current directory/*, or paths ending with common key names.
+// This is defense in depth; the CLI operator is trusted but we validate anyway.
+func validateSSHKeyPath(keyPath string) error {
+	// Get absolute path to resolve any ../ traversal
+	absPath, err := filepath.Abs(keyPath)
+	if err != nil {
+		return fmt.Errorf("invalid SSH key path: %w", err)
+	}
+
+	// Get home directory for ~/.ssh check
+	home, err := os.UserHomeDir()
+	if err != nil {
+		// If we can't get home dir, skip that check but continue with others
+		home = ""
+	}
+
+	// Get current working directory
+	cwd, err := os.Getwd()
+	if err != nil {
+		// If we can't get cwd, skip that check but continue with others
+		cwd = ""
+	}
+
+	// Check if path is within ~/.ssh/
+	if home != "" {
+		sshDir := filepath.Join(home, ".ssh")
+		if strings.HasPrefix(absPath, sshDir+string(filepath.Separator)) || absPath == sshDir {
+			return nil
+		}
+	}
+
+	// Check if path is within current working directory
+	if cwd != "" {
+		if strings.HasPrefix(absPath, cwd+string(filepath.Separator)) || absPath == cwd {
+			return nil
+		}
+	}
+
+	// Allow common key file patterns anywhere (for flexibility with non-standard locations)
+	base := filepath.Base(absPath)
+	if isCommonKeyFileName(base) {
+		return nil
+	}
+
+	return fmt.Errorf("invalid SSH key path: path must be within ~/.ssh/ or current directory (got %s)", absPath)
+}
+
+// isCommonKeyFileName checks if the filename matches common SSH key naming patterns.
+func isCommonKeyFileName(name string) bool {
+	commonNames := []string{"id_rsa", "id_ed25519", "id_ecdsa", "id_dsa", "identity"}
+	for _, n := range commonNames {
+		if name == n || strings.HasPrefix(name, n+".") {
+			return true
+		}
+	}
+	return false
 }

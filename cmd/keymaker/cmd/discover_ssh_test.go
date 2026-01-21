@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -210,5 +212,120 @@ func TestParseSSHOutputMethod(t *testing.T) {
 
 	if keys[0].Method != "ssh" {
 		t.Errorf("method = %q, want %q", keys[0].Method, "ssh")
+	}
+}
+
+func TestValidateSSHKeyPath(t *testing.T) {
+	// Get home and cwd for constructing test paths
+	home, _ := os.UserHomeDir()
+	cwd, _ := os.Getwd()
+
+	tests := []struct {
+		name      string
+		path      string
+		wantError bool
+	}{
+		{
+			name:      "path in ~/.ssh directory",
+			path:      filepath.Join(home, ".ssh", "id_rsa"),
+			wantError: false,
+		},
+		{
+			name:      "path in ~/.ssh with subdirectory",
+			path:      filepath.Join(home, ".ssh", "keys", "mykey"),
+			wantError: false,
+		},
+		{
+			name:      "path in current directory",
+			path:      filepath.Join(cwd, "my_key"),
+			wantError: false,
+		},
+		{
+			name:      "relative path in current directory",
+			path:      "./my_key",
+			wantError: false,
+		},
+		{
+			name:      "common key name id_rsa anywhere",
+			path:      "/some/other/path/id_rsa",
+			wantError: false,
+		},
+		{
+			name:      "common key name id_ed25519 anywhere",
+			path:      "/opt/keys/id_ed25519",
+			wantError: false,
+		},
+		{
+			name:      "common key name with extension",
+			path:      "/some/path/id_rsa.pub",
+			wantError: false,
+		},
+		{
+			name:      "path traversal to /etc/passwd",
+			path:      "/etc/passwd",
+			wantError: true,
+		},
+		{
+			name:      "path traversal with ../",
+			path:      "../../../etc/shadow",
+			wantError: true,
+		},
+		{
+			name:      "arbitrary system file",
+			path:      "/var/log/syslog",
+			wantError: true,
+		},
+		{
+			name:      "path outside allowed directories",
+			path:      "/tmp/random_file",
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateSSHKeyPath(tt.path)
+			if tt.wantError && err == nil {
+				t.Errorf("validateSSHKeyPath(%q) = nil, want error", tt.path)
+			}
+			if !tt.wantError && err != nil {
+				t.Errorf("validateSSHKeyPath(%q) = %v, want nil", tt.path, err)
+			}
+			// If we expect an error, verify it contains the expected message
+			if tt.wantError && err != nil {
+				if !strings.Contains(err.Error(), "invalid SSH key path") {
+					t.Errorf("error message = %q, want to contain %q", err.Error(), "invalid SSH key path")
+				}
+			}
+		})
+	}
+}
+
+func TestIsCommonKeyFileName(t *testing.T) {
+	tests := []struct {
+		name string
+		want bool
+	}{
+		{"id_rsa", true},
+		{"id_ed25519", true},
+		{"id_ecdsa", true},
+		{"id_dsa", true},
+		{"identity", true},
+		{"id_rsa.pub", true},
+		{"id_ed25519.bak", true},
+		{"my_custom_key", false},
+		{"passwd", false},
+		{"shadow", false},
+		{"config", false},
+		{"rsa_id", false}, // wrong order
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isCommonKeyFileName(tt.name)
+			if got != tt.want {
+				t.Errorf("isCommonKeyFileName(%q) = %v, want %v", tt.name, got, tt.want)
+			}
+		})
 	}
 }

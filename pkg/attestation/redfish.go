@@ -15,6 +15,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/nmelo/secure-infra/pkg/netutil"
 )
 
 // RedfishClient provides access to BMC Redfish API for attestation
@@ -25,8 +27,17 @@ type RedfishClient struct {
 	client   *http.Client
 }
 
-// NewRedfishClient creates a new Redfish client
-func NewRedfishClient(bmcAddr, username, password string) *RedfishClient {
+// NewRedfishClient creates a new Redfish client with SSRF protection.
+// bmcAddr should be the BMC IP address or hostname (e.g., "192.168.1.203").
+// Returns an error if the address resolves to loopback or link-local ranges.
+// Private IP ranges (10/8, 172.16/12, 192.168/16) are allowed since BMCs
+// are typically on private networks.
+func NewRedfishClient(bmcAddr, username, password string) (*RedfishClient, error) {
+	// Validate endpoint for SSRF protection (allows private ranges for BMC)
+	if err := netutil.ValidateEndpoint(bmcAddr); err != nil {
+		return nil, fmt.Errorf("redfish: invalid BMC address: %w", err)
+	}
+
 	return &RedfishClient{
 		baseURL:  fmt.Sprintf("https://%s", bmcAddr),
 		username: username,
@@ -36,7 +47,7 @@ func NewRedfishClient(bmcAddr, username, password string) *RedfishClient {
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // BMC uses self-signed cert
 			},
 		},
-	}
+	}, nil
 }
 
 // redfishCertChainResponse represents the Redfish Certificate Chain response

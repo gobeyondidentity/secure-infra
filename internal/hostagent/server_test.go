@@ -11,6 +11,7 @@ import (
 )
 
 // Test SSH keys (real format, generated for testing)
+// endorctl:allow -- Test fixture: SSH public keys for unit tests, not real credentials
 const (
 	testEd25519Key1 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl root@server"
 	testEd25519Key2 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl alice@laptop"

@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nmelo/secure-infra/pkg/netutil"
 )
 
 var (
@@ -24,8 +26,9 @@ var (
 
 // Client provides access to DTS metrics
 type Client struct {
-	baseURL    string
-	httpClient *http.Client
+	baseURL        string
+	httpClient     *http.Client
+	skipValidation bool // for testing only
 }
 
 // Option configures the client
@@ -45,9 +48,19 @@ func WithHTTPClient(hc *http.Client) Option {
 	}
 }
 
-// NewClient creates a DTS client
-// endpoint should be host:port (e.g., "localhost:9100") or full URL
-func NewClient(endpoint string, opts ...Option) *Client {
+// withSkipValidation skips SSRF validation (for testing only).
+// This is unexported to prevent misuse in production code.
+func withSkipValidation() Option {
+	return func(c *Client) {
+		c.skipValidation = true
+	}
+}
+
+// NewClient creates a DTS client with SSRF protection.
+// endpoint should be host:port (e.g., "192.168.1.204:9100") or full URL.
+// Returns an error if the endpoint resolves to a blocked address range
+// (loopback, link-local, or private ranges).
+func NewClient(endpoint string, opts ...Option) (*Client, error) {
 	if !strings.HasPrefix(endpoint, "http://") && !strings.HasPrefix(endpoint, "https://") {
 		endpoint = "http://" + endpoint
 	}
@@ -59,11 +72,19 @@ func NewClient(endpoint string, opts ...Option) *Client {
 		},
 	}
 
+	// Apply options first so we can check skipValidation
 	for _, opt := range opts {
 		opt(c)
 	}
 
-	return c
+	// Validate endpoint for SSRF protection (unless explicitly skipped for testing)
+	if !c.skipValidation {
+		if err := netutil.ValidateEndpointStrict(endpoint); err != nil {
+			return nil, fmt.Errorf("dts: invalid endpoint: %w", err)
+		}
+	}
+
+	return c, nil
 }
 
 // Ping checks if DTS is reachable

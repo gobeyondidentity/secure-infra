@@ -65,7 +65,10 @@ func main() {
 
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
-	agentServer := agent.NewServer(cfg)
+	agentServer, err := agent.NewServer(cfg)
+	if err != nil {
+		log.Fatalf("Failed to create agent server: %v", err)
+	}
 	agentv1.RegisterDPUAgentServiceServer(grpcServer, agentServer)
 
 	// Register standard gRPC health service for grpc-health-probe and Kubernetes health checks
