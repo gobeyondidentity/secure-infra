@@ -1,8 +1,8 @@
 # Quickstart: DPU Emulator
 
-Run Secure Infrastructure locally using an emulated DPU instead of real hardware. By the end, you'll register a DPU, create an operator, and push SSH CA credentials through the attestation flow.
+Run Secure Infrastructure locally using an emulated DPU instead of real hardware. By the end, you'll automate SSH CA distribution without manual key copying or authorized_keys management.
 
-**What's a DPU?** A Data Processing Unit is a SmartNIC that serves as a hardware trust anchor. In production, it provides cryptographic attestation that credentials only reach verified hosts.
+**What's a DPU?** A Data Processing Unit is a SmartNIC that handles credential distribution automatically. In production, it verifies host health before delivering credentials, eliminating manual rotation and key sprawl.
 
 Good for: learning the system, CI/CD pipelines, product evaluation.
 
@@ -68,7 +68,7 @@ make
 
 ## Step 1: Start the Server
 
-The server (nexus) is your control plane. It tracks which DPUs exist, whether they've passed attestation, and who is authorized to push credentials to them. Without it, nothing else works.
+The server (nexus) is your control plane. It tracks which DPUs exist, whether they've passed health checks, and who is authorized to push credentials to them. Without it, nothing else works.
 
 In Terminal 1:
 
@@ -107,7 +107,7 @@ bluectl tenant add gpu-prod --description "GPU Production Cluster"
 
 ## Step 3: Start the DPU Emulator
 
-The emulator simulates a BlueField DPU with mock attestation data. Attestation is cryptographic proof that hardware is genuine and running trusted firmware. You'll see this in action in Step 7.
+The emulator simulates a BlueField DPU with mock health check data. The DPU automatically verifies that hardware is healthy and running expected firmware. You'll see this in action in Step 7.
 
 The fixture file defines the emulated DPU's identity: serial number, model, and certificate chain.
 
@@ -130,7 +130,7 @@ Leave this running.
 
 ## Step 4: Register the Emulated DPU
 
-The server needs to know about each DPU before it can track attestation status or authorize credential distribution. Registration connects the running emulator to the control plane.
+The server needs to know about each DPU before it can track health status or authorize credential distribution. Registration connects the running emulator to the control plane.
 
 ```bash
 bluectl dpu add localhost --name bf3
@@ -212,7 +212,7 @@ km whoami
 
 ## Step 8: Create SSH CA
 
-An SSH CA signs short-lived certificates instead of scattering static keys across servers. The CA's private key lives on the DPU and can only sign certificates when attestation passes.
+An SSH CA signs short-lived certificates instead of scattering static keys across servers. No more authorized_keys file management; certificates expire automatically and don't need to be revoked.
 
 ```bash
 km ssh-ca create test-ca
@@ -239,7 +239,7 @@ bluectl operator grant operator@example.com gpu-prod test-ca bf3
 
 ## Step 10: Submit Attestation
 
-The DPU must prove it's running trusted firmware before receiving credentials. The emulator provides mock attestation.
+The DPU confirms it's running expected firmware before credentials can be distributed. The emulator provides mock health data for this step.
 
 ```bash
 bluectl attestation bf3
@@ -262,7 +262,7 @@ bluectl attestation bf3
 
 ## Step 11: Distribute Credentials
 
-This is the core security moment. The system checks that attestation is valid before allowing the push. If the DPU had failed attestation, this command would be rejected.
+This is the payoff for automation. The system verifies the host is healthy before pushing credentials. If the DPU fails health checks, distribution pauses automatically until the issue is resolved.
 
 ```bash
 km push ssh-ca test-ca bf3
@@ -303,7 +303,7 @@ sentry --dpu-agent http://localhost:9443 --oneshot
 
 ## Step 13: Sign a User Certificate
 
-This is the payoff. Everything you've built leads to this: signing short-lived certificates that grant SSH access without distributing public keys.
+Everything you've built leads to this: signing short-lived certificates that grant SSH access without managing authorized_keys files across your fleet.
 
 Generate a test SSH key (or use your existing one):
 
@@ -360,15 +360,15 @@ rm /tmp/demo_key /tmp/demo_key.pub /tmp/demo_key-cert.pub
 
 ## What's Next?
 
-You've completed the full credential lifecycle:
+You've automated the full credential lifecycle:
 
 1. **Infrastructure** - Server, tenant, and DPU registration
 2. **Identity** - Operator authentication and authorization grants
-3. **Attestation** - Hardware verification before credential distribution
-4. **Distribution** - CA pushed through the attested DPU to the host
-5. **Usage** - Signed short-lived certificates for SSH access
+3. **Verification** - Automatic health checks before credential distribution
+4. **Distribution** - CA pushed to the host without manual file copying
+5. **Usage** - Short-lived certificates that expire automatically
 
-The emulator demonstrates the workflow but can't show hardware-specific features: real DICE attestation chains, tmfifo credential delivery, or host posture from actual TPMs.
+The emulator demonstrates the workflow but doesn't show hardware-specific features: real attestation chains, PCIe credential delivery, or host posture from actual TPMs.
 
 **Next steps:**
 

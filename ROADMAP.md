@@ -7,9 +7,9 @@
 ## Shipped (v0.1–v0.6)
 
 ### v0.1–v0.5
-- Connect to BlueField DPUs, collect hardware attestation
+- Connect to BlueField DPUs, collect hardware health data
 - Create SSH CAs, sign certificates, push to hosts
-- Attestation gate blocks credential distribution to unverified hardware
+- Automatic health checks gate credential distribution to unhealthy hosts
 - Discover existing SSH keys across hosts before migration
 
 ### v0.6 "Astro"
@@ -25,6 +25,14 @@
 | Version | Codename | Focus | Key Deliverable |
 |---------|----------|-------|-----------------|
 | v0.7 | Bender | Migration | Batch rollout from SSH keys to CA certs with rollback |
+| v0.8 | Calculon | Credential Types | Template-based credential type framework with full lifecycle |
+
+### v0.8 "Calculon" Direction
+
+- Template-based credential types with full lifecycle (create, rotate, revoke)
+- CLI + config file authoring for custom types
+- SSH remains built-in; mTLS client certs as first custom type
+- Proves extensibility pattern for future credential types
 
 ---
 
@@ -35,3 +43,4 @@
 | Web Dashboard | Next.js admin UI for tenant/DPU management |
 | MUNGE Token Discovery | Extend discovery to MUNGE credentials (HPC workloads) |
 | Multi-Tenant Isolation | Namespace isolation for shared infrastructure |
+| NIXL Mesh Credentials | Automated credentials for NIXL participation (Dynamo KV cache transfers) |

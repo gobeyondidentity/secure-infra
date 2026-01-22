@@ -2,25 +2,23 @@
 
 **v0.6.4** | [Quickstart](docs/guides/quickstart-emulator.md) | [Hardware Setup](docs/guides/setup-hardware.md) | [Changelog](CHANGELOG.md)
 
-Hardware-bound credential management for AI infrastructure using NVIDIA BlueField DPUs.
+Automated credential lifecycle for AI infrastructure. No manual rotation. No secret sprawl. Credentials refresh automatically when you reimage nodes.
 
 ## Overview
 
-Secure Infrastructure binds credentials to hardware so they can't be extracted, even by root. Private keys live in the DPU's hardware root of trust. They can sign operations, but they can't be read out or copied to another machine.
+Secure Infrastructure eliminates credential management overhead in GPU clusters. Push credentials once; the system handles distribution, rotation, and cleanup automatically. When you reimage a node, fresh credentials appear without tickets or manual intervention.
 
-When a node is compromised, your IR doesn't include a credential rotation fire drill. The credentials couldn't move.
-
-The system uses BlueField-3 DPUs as enforcement points, checking both hardware attestation (DICE) and host posture before any credential is created or used.
+This works because credentials are tied to specific hardware via NVIDIA BlueField DPUs. They can't accidentally spread to other machines, so reimaging a node doesn't require hunting down credentials elsewhere. The DPU verifies host health before any credential operation, giving you automated distribution at scale.
 
 ## Features
 
-- **Hardware-bound credentials**: Private keys in DPU hardware root of trust, not files on disk
-- **DOCA ComCh transport**: Native PCIe communication between host and DPU (no IP configuration)
-- **Posture-aware operations**: Credentials only created/used when hardware and OS attestation pass
-- **No secret sprawl**: Credentials die with the node; fresh ones created automatically on reimage
-- **Audit trail**: Every credential push tied to point-in-time attestation state
-- **SSH CA management**: Create, sign, push certificate authorities to attested infrastructure
-- **Automation-ready**: Structured output (`-o json`), idempotent commands, exit codes
+- **Automation-ready**: Structured output (`-o json`), idempotent commands, meaningful exit codes for CI/CD
+- **Zero secret sprawl**: Credentials die with the node; fresh ones created automatically on reimage
+- **No network configuration**: DOCA ComCh transport uses native PCIe between host and DPU
+- **SSH CA management**: Create, sign, push certificate authorities across your fleet
+- **Full audit trail**: Every credential push logged with timestamp and operator identity
+- **No credential drift**: Keys tied to specific hardware, can't accidentally spread to other machines
+- **Health-gated operations**: Distribution proceeds only when hosts pass automatic health checks
 
 ## Quick Start
 
@@ -31,9 +29,9 @@ Choose your path:
 | [Emulator Quickstart](docs/guides/quickstart-emulator.md) | 10 min | Go 1.22+, Make |
 | [Hardware Setup](docs/guides/setup-hardware.md) | 30 min | BlueField-3 DPU |
 
-**Try the emulator first** to learn the system without hardware. The quickstart walks you through the full flow: create a tenant, register a DPU, set up operators, and push credentials to attested infrastructure.
+**Try the emulator first** to learn the system without hardware. The quickstart walks you through the full flow: create a tenant, register a DPU, set up operators, and push credentials automatically.
 
-The core security property: credentials only flow to verified infrastructure. When attestation is stale or failed, credential distribution is blocked.
+Credentials flow to verified infrastructure without manual intervention. If a node fails health checks, distribution pauses until it's healthy again.
 
 ## Installation
 
@@ -106,7 +104,7 @@ Check for updates anytime: `bluectl version --check`
 
 | Component | Package | Description |
 |-----------|---------|-------------|
-| `bluectl` | bluectl | Admin CLI: DPU management, tenants, operators, attestation |
+| `bluectl` | bluectl | Admin CLI: DPU management, tenants, operators, health checks |
 | `km` | km | Operator CLI: SSH CA lifecycle, credential push |
 | `agent` | aegis | DPU agent running on BlueField ARM cores |
 | `host-agent` | sentry | Host agent for credential receipt via ComCh/tmfifo and posture reporting |

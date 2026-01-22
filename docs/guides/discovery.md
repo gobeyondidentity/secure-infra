@@ -42,7 +42,7 @@ Options:
 
 ## Agent Mode (Production)
 
-Once host-agents are deployed, scan through the secure agent channel instead of SSH.
+Once host-agents are deployed, scan through the agent channel instead of SSH. This is faster and doesn't require SSH credentials.
 
 ### Scan a single host
 

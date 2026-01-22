@@ -85,7 +85,7 @@ This builds:
 
 ## Step 1: Start the Server
 
-The server (nexus) tracks your DPU inventory, attestation state, and authorization policies. Run this on your control plane host.
+The server (nexus) tracks your DPU inventory, health state, and authorization policies. Run this on your control plane host.
 
 ```bash
 nexus              # if installed via package manager
@@ -119,7 +119,7 @@ bluectl tenant list
 
 ## Step 3: Install DPU Agent (aegis)
 
-The DPU agent (aegis) runs on the BlueField and serves as the hardware trust anchor. It exposes a gRPC interface that the control plane uses to query hardware identity, and a local HTTP API that the host agent uses to receive credentials.
+The DPU agent (aegis) runs on the BlueField and handles automatic credential distribution. It exposes a gRPC interface for the control plane and a local HTTP API that the host agent uses to receive credentials without manual file copying.
 
 SSH into the DPU:
 
@@ -347,7 +347,7 @@ bluectl operator grant operator@example.com gpu-prod prod-ca bf3-prod-01
 
 ## Step 11: Submit Attestation
 
-Attestation is the core security mechanism. The DPU proves it's running trusted firmware by providing cryptographic evidence from its hardware root of trust (TPM/DICE).
+Attestation is automatic health verification. The DPU confirms it's running expected firmware, enabling credential distribution to proceed without manual approval for each operation.
 
 ```bash
 bluectl attestation bf3-prod-01
@@ -376,7 +376,7 @@ bluectl attestation bf3-prod-01
 # Attestation saved: status=unavailable, last_validated=<timestamp>
 ```
 
-Attestation may be unavailable if DOCA is not configured or the BlueField firmware doesn't support DICE attestation. You can still proceed with `--force` in Step 15, but this bypasses the security guarantee.
+Attestation may be unavailable if DOCA is not configured or the BlueField firmware doesn't support DICE attestation. You can still proceed with `--force` in Step 15, but automatic health checks won't gate credential distribution.
 
 ---
 
@@ -390,7 +390,7 @@ The host agent communicates with the DPU agent over PCIe. The transport is autom
 | 2 | tmfifo | rshim driver | ~10 MB/s |
 | 3 | Network | HTTP connectivity | Varies |
 
-**Why PCIe transports matter:** Network-based enrollment works but is less secure. A compromised host could spoof network traffic. With ComCh or tmfifo, the DPU knows with hardware certainty which physical host is communicating.
+**Why PCIe transports matter:** Network-based enrollment requires additional configuration. With ComCh or tmfifo, the DPU automatically identifies the physical host, simplifying setup and eliminating IP address management.
 
 SSH to the host server (not the DPU) and verify transport availability:
 
@@ -497,7 +497,7 @@ If `lspci | grep -i mellanox` returns nothing:
 
 ## Step 13: Pair Host with DPU
 
-Before the host agent can enroll, the admin must authorize the host-DPU pairing. This prevents rogue hosts from enrolling.
+Before the host agent can enroll, the admin must authorize the host-DPU pairing. This ensures only intended hosts receive credentials automatically.
 
 On the control plane:
 
@@ -711,7 +711,7 @@ The host verifies:
 2. The certificate hasn't expired
 3. The principal (ubuntu) matches an allowed user
 
-No authorized_keys. No public key distribution. The credential chain is hardware-attested end to end.
+No authorized_keys files to manage. No public key distribution across your fleet. Credentials flow automatically to verified hosts.
 
 Inspect your certificate anytime:
 
@@ -723,13 +723,13 @@ ssh-keygen -L -f ~/.ssh/id_ed25519-cert.pub
 
 ## Appendix A: Trust Relationships (Optional)
 
-Trust relationships let hosts authenticate each other for SSH or mTLS connections. This is useful for distributed training clusters or data pipelines where servers need to communicate securely.
+Trust relationships let hosts authenticate each other for SSH or mTLS connections. This is useful for distributed training clusters or data pipelines where servers need to communicate without manual key exchange.
 
 ### Prerequisites
 
 You need two hosts, each with:
 - A running host-agent (Steps 12-14)
-- A paired DPU with attestation (Step 11)
+- A paired DPU with health verification complete (Step 11)
 
 Check your registered hosts:
 
@@ -931,7 +931,7 @@ bluectl host list
 # compute-01  bf3-prod-01   online   comch
 # compute-01  bf3-prod-02   online   comch
 
-# Workloads can use either DPU for attestation
+# Workloads can use either DPU for credential distribution
 # If bf3-prod-01 fails, bf3-prod-02 continues serving
 ```
 
