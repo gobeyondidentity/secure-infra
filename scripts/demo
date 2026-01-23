@@ -272,7 +272,7 @@ step_1_infrastructure() {
     print_narrative "Starting the control plane (nexus) and DPU emulator..."
 
     # Start nexus in background
-    echo -e "${DIM}Starting nexus (control plane)...${RESET}"
+    print_command "nexus &"
     nexus > /dev/null 2>&1 &
     NEXUS_PID=$!
 
@@ -283,9 +283,10 @@ step_1_infrastructure() {
         print_error "  Failed to start nexus"
         exit 1
     fi
+    echo ""
 
     # Start dpuemu in background
-    echo -e "${DIM}Starting dpuemu (DPU emulator)...${RESET}"
+    print_command "dpuemu serve &"
     dpuemu serve > /dev/null 2>&1 &
     DPUEMU_PID=$!
     sleep 2
@@ -386,6 +387,8 @@ step_5_operator() {
     echo ""
 
     # Accept invitation (pipe the invite code)
+    print_command "km init"
+    echo ""
     echo "$INVITE_CODE" | km init 2>&1 || true
     echo ""
 
@@ -456,14 +459,16 @@ step_8_sign_cert() {
     local demo_key="/tmp/demo_ssh_key"
     rm -f "$demo_key" "$demo_key.pub" "${demo_key}-cert.pub" 2>/dev/null || true
 
-    echo -e "${DIM}Generating demo SSH key...${RESET}"
+    print_command "ssh-keygen -t ed25519 -f /tmp/demo_ssh_key -N '' -C 'alice@demo.local'"
     ssh-keygen -t ed25519 -f "$demo_key" -N "" -C "alice@demo.local" -q
+    print_success "  Key generated"
     echo ""
 
     run_command "km ssh-ca sign $SSH_CA_NAME --principal ubuntu --pubkey ${demo_key}.pub"
 
     echo ""
-    echo -e "${DIM}Certificate details:${RESET}"
+    print_command "ssh-keygen -L -f /tmp/demo_ssh_key-cert.pub"
+    echo ""
     ssh-keygen -L -f "${demo_key}-cert.pub" 2>/dev/null | head -15 || true
 
     print_why \
