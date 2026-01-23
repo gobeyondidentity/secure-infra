@@ -154,7 +154,7 @@ step_tap() {
 
     print_narrative "A tap is a third-party package source. This adds our formulas to Homebrew..."
 
-    run_command "brew tap beyondidentity/tap"
+    run_command "brew tap nmelo/tap"
 
     print_why \
         "Taps let you install software not in the main Homebrew repo" \
@@ -169,7 +169,7 @@ step_bluectl() {
 
     print_narrative "bluectl is the admin tool for managing tenants, DPUs, and operators..."
 
-    run_command "brew install beyondidentity/tap/bluectl"
+    run_command "brew install nmelo/tap/bluectl"
 
     echo ""
     print_command "bluectl version"
@@ -189,7 +189,7 @@ step_km() {
 
     print_narrative "km is the operator tool for managing credentials and certificates..."
 
-    run_command "brew install beyondidentity/tap/km"
+    run_command "brew install nmelo/tap/km"
 
     echo ""
     print_command "km version"
@@ -209,7 +209,7 @@ step_nexus() {
 
     print_narrative "nexus is the server that coordinates everything..."
 
-    run_command "brew install beyondidentity/tap/nexus"
+    run_command "brew install nmelo/tap/nexus"
 
     echo ""
     print_command "nexus --help | head -5"
@@ -229,7 +229,7 @@ step_dpuemu() {
 
     print_narrative "dpuemu simulates a BlueField DPU for development and testing..."
 
-    run_command "brew install beyondidentity/tap/dpuemu"
+    run_command "brew install nmelo/tap/dpuemu"
 
     echo ""
     print_command "dpuemu --help | head -5"
