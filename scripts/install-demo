@@ -1,0 +1,343 @@
+#!/usr/bin/env bash
+#
+# Installation Demo Script
+# Shows how to install Secure Infrastructure components via Homebrew
+#
+# Same visual style as the main demo - designed for walkthroughs and presentations.
+#
+
+set -e
+
+# ============================================================================
+# Colors and Styling
+# ============================================================================
+
+CYAN='\033[0;36m'
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+DIM='\033[2m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+BG_GREEN='\033[42;30m'
+BG_BLUE='\033[44;37m'
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+print_banner() {
+    clear
+    echo ""
+    echo -e "${BOLD}${CYAN}"
+    echo "  ╔════════════════════════════════════════════════════════════════╗"
+    echo "  ║                                                                ║"
+    echo "  ║      Secure Infrastructure Installation                        ║"
+    echo "  ║      From zero to running in under 5 minutes.                  ║"
+    echo "  ║                                                                ║"
+    echo "  ╚════════════════════════════════════════════════════════════════╝"
+    echo -e "${RESET}"
+    echo ""
+}
+
+print_step() {
+    local emoji="$1"
+    local title="$2"
+    echo ""
+    echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${BOLD}${emoji} ${title}${RESET}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo ""
+}
+
+print_narrative() {
+    echo -e "${DIM}$1${RESET}"
+    echo ""
+}
+
+print_why() {
+    echo ""
+    echo -e "${YELLOW}WHY THIS MATTERS:${RESET}"
+    shift
+    for point in "$@"; do
+        echo -e "  ${DIM}•${RESET} $point"
+    done
+    echo ""
+}
+
+print_command() {
+    echo -e "${DIM}\$ ${RESET}${BOLD}$1${RESET}"
+}
+
+print_success() {
+    echo -e "${GREEN}$1${RESET}"
+}
+
+print_error() {
+    echo -e "${RED}$1${RESET}"
+}
+
+print_highlight() {
+    echo -e "${BG_BLUE} $1 ${RESET}"
+}
+
+print_success_highlight() {
+    echo -e "${BG_GREEN} $1 ${RESET}"
+}
+
+run_command() {
+    local cmd="$1"
+    print_command "$cmd"
+    echo ""
+    eval "$cmd" 2>&1 || true
+    echo ""
+}
+
+wait_for_key() {
+    echo ""
+    echo -e "${DIM}Press ENTER to continue (Ctrl+C to exit)...${RESET}"
+    read -r || true
+}
+
+# ============================================================================
+# Installation Steps
+# ============================================================================
+
+step_intro() {
+    print_banner
+
+    echo -e "This walkthrough installs ${BOLD}Secure Infrastructure${RESET} via Homebrew."
+    echo ""
+    echo "You'll install:"
+    echo -e "  📦 Homebrew tap (package source)"
+    echo -e "  🖥️  bluectl - Admin CLI for fleet management"
+    echo -e "  🔑 km (KeyMaker) - Operator CLI for credentials"
+    echo -e "  🚀 nexus - Control plane server"
+    echo -e "  🎮 dpuemu - DPU emulator for testing"
+    echo ""
+    echo -e "${DIM}Total install time: ~2 minutes${RESET}"
+    echo ""
+
+    wait_for_key
+}
+
+step_prereqs() {
+    print_step "✅" "Checking Prerequisites"
+
+    print_narrative "Verifying Homebrew is installed..."
+
+    if command -v brew >/dev/null 2>&1; then
+        print_command "brew --version"
+        brew --version | head -1
+        echo ""
+        print_success "  Homebrew is installed"
+    else
+        print_error "  Homebrew not found"
+        echo ""
+        echo "Install Homebrew first:"
+        print_command '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+        echo ""
+        exit 1
+    fi
+
+    print_why \
+        "Homebrew handles dependencies automatically" \
+        "One-command updates when new versions release" \
+        "Works on macOS and Linux"
+
+    wait_for_key
+}
+
+step_tap() {
+    print_step "📦" "Adding the Homebrew Tap"
+
+    print_narrative "A tap is a third-party package source. This adds our formulas to Homebrew..."
+
+    run_command "brew tap beyondidentity/tap"
+
+    print_why \
+        "Taps let you install software not in the main Homebrew repo" \
+        "Once added, updates come through normal 'brew upgrade'" \
+        "You only need to do this once per machine"
+
+    wait_for_key
+}
+
+step_bluectl() {
+    print_step "🖥️" "Installing bluectl (Admin CLI)"
+
+    print_narrative "bluectl is the admin tool for managing tenants, DPUs, and operators..."
+
+    run_command "brew install beyondidentity/tap/bluectl"
+
+    echo ""
+    print_command "bluectl version"
+    bluectl version 2>/dev/null || echo "  (will show version after install)"
+    echo ""
+
+    print_why \
+        "Admins use bluectl to set up the infrastructure" \
+        "Register DPUs, create tenants, invite operators" \
+        "One CLI for all fleet management tasks"
+
+    wait_for_key
+}
+
+step_km() {
+    print_step "🔑" "Installing km (KeyMaker CLI)"
+
+    print_narrative "km is the operator tool for managing credentials and certificates..."
+
+    run_command "brew install beyondidentity/tap/km"
+
+    echo ""
+    print_command "km version"
+    km version 2>/dev/null || echo "  (will show version after install)"
+    echo ""
+
+    print_why \
+        "Operators use km to distribute credentials" \
+        "Create SSH CAs, sign certificates, push to fleet" \
+        "Separation of duties: admins configure, operators distribute"
+
+    wait_for_key
+}
+
+step_nexus() {
+    print_step "🚀" "Installing nexus (Control Plane)"
+
+    print_narrative "nexus is the server that coordinates everything..."
+
+    run_command "brew install beyondidentity/tap/nexus"
+
+    echo ""
+    print_command "nexus --help | head -5"
+    nexus --help 2>/dev/null | head -5 || echo "  (will show help after install)"
+    echo ""
+
+    print_why \
+        "Central control plane for policy and coordination" \
+        "Runs on your infrastructure, not ours" \
+        "Stateless design - easy to run multiple instances"
+
+    wait_for_key
+}
+
+step_dpuemu() {
+    print_step "🎮" "Installing dpuemu (DPU Emulator)"
+
+    print_narrative "dpuemu simulates a BlueField DPU for development and testing..."
+
+    run_command "brew install beyondidentity/tap/dpuemu"
+
+    echo ""
+    print_command "dpuemu --help | head -5"
+    dpuemu --help 2>/dev/null | head -5 || echo "  (will show help after install)"
+    echo ""
+
+    print_why \
+        "Test the full workflow without hardware" \
+        "Reproducible demos that work anywhere" \
+        "Same APIs as real BlueField DPUs"
+
+    wait_for_key
+}
+
+step_verify() {
+    print_step "🔍" "Verifying Installation"
+
+    print_narrative "Checking all components are installed and accessible..."
+
+    local all_good=true
+
+    echo -e "  Checking bluectl... \c"
+    if command -v bluectl >/dev/null 2>&1; then
+        print_success "OK"
+    else
+        print_error "NOT FOUND"
+        all_good=false
+    fi
+
+    echo -e "  Checking km... \c"
+    if command -v km >/dev/null 2>&1; then
+        print_success "OK"
+    else
+        print_error "NOT FOUND"
+        all_good=false
+    fi
+
+    echo -e "  Checking nexus... \c"
+    if command -v nexus >/dev/null 2>&1; then
+        print_success "OK"
+    else
+        print_error "NOT FOUND"
+        all_good=false
+    fi
+
+    echo -e "  Checking dpuemu... \c"
+    if command -v dpuemu >/dev/null 2>&1; then
+        print_success "OK"
+    else
+        print_error "NOT FOUND"
+        all_good=false
+    fi
+
+    echo ""
+
+    if [[ "$all_good" == "true" ]]; then
+        print_success_highlight " ALL COMPONENTS INSTALLED SUCCESSFULLY "
+    else
+        print_error "Some components failed to install. Check brew output above."
+    fi
+
+    wait_for_key
+}
+
+step_summary() {
+    print_step "🎯" "Installation Complete"
+
+    echo -e "${GREEN}  ✅ Homebrew tap added${RESET}"
+    echo -e "${GREEN}  ✅ bluectl installed (admin CLI)${RESET}"
+    echo -e "${GREEN}  ✅ km installed (operator CLI)${RESET}"
+    echo -e "${GREEN}  ✅ nexus installed (control plane)${RESET}"
+    echo -e "${GREEN}  ✅ dpuemu installed (DPU emulator)${RESET}"
+    echo ""
+
+    echo -e "${BOLD}Next steps:${RESET}"
+    echo ""
+    echo -e "  ${CYAN}1.${RESET} Run the demo:        ${BOLD}./scripts/demo${RESET}"
+    echo -e "  ${CYAN}2.${RESET} Read the quickstart: ${BOLD}docs/guides/quickstart-emulator.md${RESET}"
+    echo -e "  ${CYAN}3.${RESET} Deploy to hardware:  ${BOLD}docs/guides/setup-hardware.md${RESET}"
+    echo ""
+
+    echo -e "${BOLD}${CYAN}"
+    echo "  ╔════════════════════════════════════════════════════════════════╗"
+    echo "  ║                                                                ║"
+    echo "  ║     Ready to manage credentials at scale.                      ║"
+    echo "  ║                                                                ║"
+    echo "  ╚════════════════════════════════════════════════════════════════╝"
+    echo -e "${RESET}"
+    echo ""
+
+    echo -e "${DIM}Press ENTER to exit.${RESET}"
+    read -r
+}
+
+# ============================================================================
+# Main
+# ============================================================================
+
+main() {
+    step_intro
+    step_prereqs
+    step_tap
+    step_bluectl
+    step_km
+    step_nexus
+    step_dpuemu
+    step_verify
+    step_summary
+}
+
+main "$@"
