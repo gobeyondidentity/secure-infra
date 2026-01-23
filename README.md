@@ -1,6 +1,6 @@
 # Secure Infrastructure
 
-**v0.6.4** | [Demo](scripts/demo) | [Quickstart](docs/guides/quickstart-emulator.md) | [Hardware Setup](docs/guides/setup-hardware.md) | [Changelog](CHANGELOG.md)
+**v0.6.6** | [Demo](scripts/demo) | [Quickstart](docs/guides/quickstart-emulator.md) | [Hardware Setup](docs/guides/setup-hardware.md) | [Changelog](CHANGELOG.md)
 
 Automated credential lifecycle for AI infrastructure. No manual rotation. No secret sprawl. Credentials refresh automatically when you reimage nodes.
 
@@ -63,9 +63,9 @@ sudo yum install bluectl km
 ### Docker
 
 ```bash
-docker pull ghcr.io/gobeyondidentity/nexus:0.6.4   # Control plane
-docker pull ghcr.io/gobeyondidentity/sentry:0.6.4  # Host agent
-docker pull ghcr.io/gobeyondidentity/aegis:0.6.4   # DPU agent
+docker pull ghcr.io/gobeyondidentity/nexus:0.6.6   # Control plane
+docker pull ghcr.io/gobeyondidentity/sentry:0.6.6  # Host agent
+docker pull ghcr.io/gobeyondidentity/aegis:0.6.6   # DPU agent
 ```
 
 For local development with Docker Compose, see [Local Dev: Docker](docs/guides/local-dev-docker.md).
