@@ -175,7 +175,7 @@ jobs:
 
       - name: Build and push container image
         run: |
-          docker build -f Dockerfile.dpu-agent -t ${{ env.IMAGE_REGISTRY }}/aegis:${{ steps.version.outputs.VERSION }} .
+          docker build -f Dockerfile.aegis -t ${{ env.IMAGE_REGISTRY }}/aegis:${{ steps.version.outputs.VERSION }} .
           docker push ${{ env.IMAGE_REGISTRY }}/aegis:${{ steps.version.outputs.VERSION }}
           docker tag ${{ env.IMAGE_REGISTRY }}/aegis:${{ steps.version.outputs.VERSION }} ${{ env.IMAGE_REGISTRY }}/aegis:latest
           docker push ${{ env.IMAGE_REGISTRY }}/aegis:latest
@@ -188,9 +188,9 @@ jobs:
       matrix:
         include:
           - image: sentry
-            dockerfile: Dockerfile.host-agent
+            dockerfile: Dockerfile.sentry
           - image: nexus
-            dockerfile: Dockerfile.control-plane
+            dockerfile: Dockerfile.nexus
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -215,9 +215,9 @@ jobs:
       matrix:
         include:
           - image: sentry
-            dockerfile: Dockerfile.host-agent
+            dockerfile: Dockerfile.sentry
           - image: nexus
-            dockerfile: Dockerfile.control-plane
+            dockerfile: Dockerfile.nexus
     steps:
       - name: Checkout
         uses: actions/checkout@v4
