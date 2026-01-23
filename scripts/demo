@@ -126,7 +126,7 @@ run_command() {
     print_comment "$comment"
     print_command "$cmd"
     echo ""
-    echo -e "${WHITE}"
+    echo -en "${GREEN}"
     eval "$cmd" 2>&1 || true
     echo -e "${RESET}"
     echo ""
@@ -139,8 +139,9 @@ run_command_capture() {
     echo ""
     local output
     output=$(eval "$cmd" 2>&1) || true
+    echo -en "${GREEN}"
     echo "$output"
-    echo ""
+    echo -e "${RESET}"
     if [[ -n "$var_name" ]]; then
         eval "$var_name=\"\$output\""
     fi
@@ -373,7 +374,7 @@ step_4_attestation() {
     wait_for_key
 }
 
-step_5_operator() {
+step_5_invite() {
     print_step "👤" "Inviting a Credential Operator"
 
     print_narrative "Operators manage credentials. Admins control who can operate..."
@@ -385,8 +386,9 @@ step_5_operator() {
     echo ""
     local invite_output
     invite_output=$(bluectl operator invite "$OPERATOR_EMAIL" "$TENANT" 2>&1) || true
+    echo -en "${GREEN}"
     echo "$invite_output"
-    echo ""
+    echo -e "${RESET}"
 
     # Extract invite code from output (format: Code: XXX-XXXX-XXXX)
     INVITE_CODE=$(echo "$invite_output" | grep -oE '[A-Z]{3}-[A-Z0-9]{4}-[A-Z0-9]{4}' | head -1)
@@ -397,11 +399,21 @@ step_5_operator() {
         exit 1
     fi
 
-    echo ""
-    echo -e "Invite code: ${BOLD}$INVITE_CODE${RESET}"
-    echo ""
+    print_why \
+        "Delegate credential ops without giving away the keys to the kingdom" \
+        "Self-service onboarding: no tickets, no waiting" \
+        "Invite codes expire automatically"
 
-    print_narrative "Now accepting the invitation with km init..."
+    wait_for_key
+}
+
+step_6_accept() {
+    print_step "✅" "Accepting the Invitation"
+
+    print_narrative "The operator uses km to accept the invite and bind to the server..."
+
+    echo ""
+    echo -e "Using invite code: ${BOLD}$INVITE_CODE${RESET}"
     echo ""
 
     # Accept invitation (pipe the invite code)
@@ -409,18 +421,19 @@ step_5_operator() {
     print_comment "Accept the invitation..."
     print_command "km init"
     echo ""
+    echo -en "${GREEN}"
     echo "$INVITE_CODE" | km init 2>&1 || true
-    echo ""
+    echo -e "${RESET}"
 
     print_why \
-        "Delegate credential ops without giving away the keys to the kingdom" \
         "New team member productive in minutes, not days" \
+        "Cryptographic binding to the control plane" \
         "Clear audit trail means faster incident resolution"
 
     wait_for_key
 }
 
-step_6_ssh_ca() {
+step_7_ssh_ca() {
     print_step "🔑" "Creating Certificate Authority"
 
     print_narrative "The operator creates an SSH CA for signing certificates..."
@@ -440,7 +453,7 @@ step_6_ssh_ca() {
     wait_for_key
 }
 
-step_7_push_credentials() {
+step_8_push_credentials() {
     print_step "📦" "Distributing Credentials to Attested Infrastructure"
 
     print_highlight " THE KEY MOMENT "
@@ -470,7 +483,7 @@ step_7_push_credentials() {
     wait_for_key
 }
 
-step_8_sign_cert() {
+step_9_sign_cert() {
     print_step "✍️" "Signing a User Certificate"
 
     print_narrative "Issuing a short-lived certificate for SSH access..."
@@ -505,7 +518,7 @@ step_8_sign_cert() {
     wait_for_key
 }
 
-step_9_attestation_failure() {
+step_10_attestation_failure() {
     print_step "❌" "What Happens When a Node Fails Health Check?"
 
     print_failure_highlight " SIMULATING UNHEALTHY NODE "
@@ -575,11 +588,12 @@ main() {
     step_2_tenant
     step_3_dpu
     step_4_attestation
-    step_5_operator
-    step_6_ssh_ca
-    step_7_push_credentials
-    step_8_sign_cert
-    step_9_attestation_failure
+    step_5_invite
+    step_6_accept
+    step_7_ssh_ca
+    step_8_push_credentials
+    step_9_sign_cert
+    step_10_attestation_failure
     step_summary
 }
 

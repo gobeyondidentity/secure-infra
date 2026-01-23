@@ -100,7 +100,7 @@ run_command() {
     print_comment "$comment"
     print_command "$cmd"
     echo ""
-    echo -e "${WHITE}"
+    echo -en "${GREEN}"
     eval "$cmd" 2>&1 || true
     echo -e "${RESET}"
     echo ""
