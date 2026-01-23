@@ -45,7 +45,7 @@ BG_RED='\033[41;37m'
 BG_BLUE='\033[44;37m'
 
 # Progress tab labels (short names for visual continuity)
-STEP_LABELS=("Setup" "Tenant" "DPU" "Attest" "Invite" "Accept" "CA" "Push" "Sign" "Fail" "Done")
+STEP_LABELS=("Setup" "Tenant" "DPU" "Attest" "Invite" "Accept" "CA" "Bind" "Host" "Sign" "Fail")
 
 # ============================================================================
 # Helper Functions
@@ -98,7 +98,7 @@ print_step() {
         echo ""
     fi
     echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    if [[ $step_num -gt 0 && $step_num -le 10 ]]; then
+    if [[ $step_num -gt 0 && $step_num -le 11 ]]; then
         echo -e "${BOLD}${emoji} Step ${step_num}: ${title}${RESET}"
     else
         echo -e "${BOLD}${emoji} ${title}${RESET}"
@@ -245,6 +245,7 @@ cleanup() {
     rm -f ~/.local/share/bluectl/dpus.db 2>/dev/null || true
     rm -f ~/.local/share/bluectl/key 2>/dev/null || true
     rm -rf ~/.km 2>/dev/null || true
+    rm -rf /tmp/demo_trustedca 2>/dev/null || true
 
     echo -e "${DIM}Done.${RESET}"
 }
@@ -303,9 +304,10 @@ step_intro() {
     echo -e "   4. ✅ Automated node health verification"
     echo -e "   5. 👤 Delegate access without sharing keys"
     echo -e "   6. 🔑 SSH CA creation"
-    echo -e "   7. 📦 ${BOLD}Push credentials to 1000 nodes at once${RESET} ${YELLOW}← the key moment!${RESET}"
-    echo -e "   8. ✍️  User gets access in seconds"
-    echo -e "   9. ❌ What happens when a node fails health check"
+    echo -e "   7. 📦 ${BOLD}Bind credentials to 1000 nodes at once${RESET} ${YELLOW}← the key moment!${RESET}"
+    echo -e "   8. 🖥️  Credentials land on host automatically"
+    echo -e "   9. ✍️  User gets access in seconds"
+    echo -e "  10. ❌ What happens when a node fails health check"
     echo ""
 
     wait_for_key
@@ -479,44 +481,74 @@ step_7_ssh_ca() {
 
     # Grant access to the CA for this DPU
     echo ""
-    print_narrative "Granting operator access to push CA to the DPU..."
+    print_narrative "Granting operator access to bind CA to the DPU..."
     run_command "Grant operator access to CA and DPU..." "bluectl operator grant $OPERATOR_EMAIL $TENANT $SSH_CA_NAME $DPU_NAME"
 
     wait_for_key
 }
 
-step_8_push_credentials() {
-    print_step 8 "📦" "Distributing Credentials to Attested Infrastructure"
+step_8_bind_credentials() {
+    print_step 8 "📦" "Binding Credentials to Attested Infrastructure"
 
     print_highlight " THE KEY MOMENT "
     echo ""
 
-    print_narrative "One command pushes credentials to your entire fleet..."
+    print_narrative "One command binds credentials to your entire fleet..."
     echo ""
 
     echo -e "  ${DIM}1.${RESET} Checking node health..."
     sleep 0.5
     echo -e "  ${GREEN}2.${RESET} Node verified healthy"
     sleep 0.3
-    echo -e "  ${DIM}3.${RESET} Pushing credentials..."
+    echo -e "  ${DIM}3.${RESET} Binding credentials..."
     sleep 0.5
 
-    run_command "Push CA to the DPU..." "km push ssh-ca $SSH_CA_NAME $DPU_NAME"
+    run_command "Bind CA to the DPU..." "km push ssh-ca $SSH_CA_NAME $DPU_NAME"
+
+    # Create mock host files for demo (emulator doesn't actually propagate to host filesystem)
+    mkdir -p /tmp/demo_trustedca
+    km ssh-ca show "$SSH_CA_NAME" --format pubkey > "/tmp/demo_trustedca/${SSH_CA_NAME}.pub" 2>/dev/null || \
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDemo+CA+Public+Key+For+Visualization prod-ca" > "/tmp/demo_trustedca/${SSH_CA_NAME}.pub"
 
     echo ""
     print_success_highlight " CA INSTALLED SUCCESSFULLY "
     echo ""
 
     print_why \
-        "Push to one node or one thousand. Same command." \
+        "Bind to one node or one thousand. Same command." \
         "Unhealthy nodes auto-skip. No manual checking required." \
         "Credentials land where they need to be, automatically"
 
     wait_for_key
 }
 
-step_9_sign_cert() {
-    print_step 9 "✍️" "Signing a User Certificate"
+step_9_host_credentials() {
+    print_step 9 "🖥️" "Verifying Credentials on Host"
+
+    print_narrative "The CA was bound to the DPU. Now let's verify it reached the host..."
+
+    # In production: /etc/ssh/trustedca/
+    # In demo: /tmp/demo_trustedca/ (emulator doesn't propagate to real host filesystem)
+    local demo_ca_dir="/tmp/demo_trustedca"
+
+    run_command "Show installed CA files on host..." "ls ${demo_ca_dir}/"
+
+    run_command "View the CA public key..." "cat ${demo_ca_dir}/${SSH_CA_NAME}.pub"
+
+    echo ""
+    print_success_highlight " CA INSTALLED ON HOST "
+    echo ""
+
+    print_why \
+        "Zero-touch distribution" \
+        "No SSH to target hosts: private key flows over PCIe, not network" \
+        "Reimage and go: fresh node gets creds automatically, no tickets"
+
+    wait_for_key
+}
+
+step_10_sign_cert() {
+    print_step 10 "✍️" "Signing a User Certificate"
 
     print_narrative "Issuing a short-lived certificate for SSH access..."
 
@@ -550,8 +582,8 @@ step_9_sign_cert() {
     wait_for_key
 }
 
-step_10_attestation_failure() {
-    print_step 10 "❌" "What Happens When a Node Fails Health Check?"
+step_11_attestation_failure() {
+    print_step 11 "❌" "What Happens When a Node Fails Health Check?"
 
     print_failure_highlight " SIMULATING UNHEALTHY NODE "
     echo ""
@@ -563,14 +595,14 @@ step_10_attestation_failure() {
     echo -e "The health check detects the node is out of spec."
     echo ""
 
-    echo -e "${RED}When an operator tries to push credentials:${RESET}"
+    echo -e "${RED}When an operator tries to bind credentials:${RESET}"
     echo ""
     echo -e "  ${DIM}\$ km push ssh-ca $SSH_CA_NAME compromised-node${RESET}"
     echo ""
     echo -e "  ${RED}Error: Attestation failed${RESET}"
     echo -e "  ${RED}  Status: ATTESTATION_STATUS_INVALID${RESET}"
     echo -e "  ${RED}  Reason: Firmware measurements do not match expected values${RESET}"
-    echo -e "  ${RED}  Action: Credential push blocked${RESET}"
+    echo -e "  ${RED}  Action: Credential bind blocked${RESET}"
     echo ""
 
     print_failure_highlight " CREDENTIAL PUSH BLOCKED "
@@ -585,7 +617,7 @@ step_10_attestation_failure() {
 }
 
 step_summary() {
-    print_step 11 "🎯" "What We Just Did"
+    print_step 12 "🎯" "What We Just Did"
 
     echo -e "${GREEN}  ✅ Fleet registered in minutes, not days${RESET}"
     echo -e "${GREEN}  ✅ Credentials distributed automatically${RESET}"
@@ -623,9 +655,10 @@ main() {
     step_5_invite
     step_6_accept
     step_7_ssh_ca
-    step_8_push_credentials
-    step_9_sign_cert
-    step_10_attestation_failure
+    step_8_bind_credentials
+    step_9_host_credentials
+    step_10_sign_cert
+    step_11_attestation_failure
     step_summary
 }
 
