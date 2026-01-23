@@ -118,6 +118,8 @@ run_command() {
     echo ""
     eval "$cmd" 2>&1 || true
     echo ""
+    echo -e "${DIM}────────────────────────────────────────────────────────────────────${RESET}"
+    echo ""
 }
 
 run_command_capture() {

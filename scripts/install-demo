@@ -92,6 +92,8 @@ run_command() {
     echo ""
     eval "$cmd" 2>&1 || true
     echo ""
+    echo -e "${DIM}────────────────────────────────────────────────────────────────────${RESET}"
+    echo ""
 }
 
 wait_for_key() {
