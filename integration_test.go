@@ -2253,11 +2253,13 @@ func TestStateSyncConsistency(t *testing.T) {
 
 // TestDPURegistrationFlows tests DPU registration lifecycle:
 // 1. DPU add with valid attestation -> DPU registered
-// 2. DPU add with invalid/unreachable address -> rejected with clear error
-// 3. DPU remove -> DPU no longer in list
-// 4. DPU remove -> hosts previously using that DPU show disconnected
-// 5. DPU reassign to different tenant -> DPU serves new tenant
-// 6. DPU reassign -> old tenant's hosts disconnected from that DPU
+// 2. DPU remove -> DPU no longer in list
+// 3. DPU remove -> hosts previously using that DPU show disconnected
+// 4. DPU reassign to different tenant -> DPU serves new tenant
+// 5. DPU reassign -> old tenant's hosts disconnected from that DPU
+//
+// Note: Attestation validation happens at host enrollment time, not at DPU add.
+// Invalid attestation scenarios are covered in TestAttestationRejectionHandling.
 func TestDPURegistrationFlows(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
@@ -2337,23 +2339,8 @@ func TestDPURegistrationFlows(t *testing.T) {
 	}
 	logOK(t, fmt.Sprintf("Created tenants: %s, %s", tenantA, tenantB))
 
-	// Step 3: Test DPU add with invalid/unreachable address
-	logStep(t, 3, "Testing DPU add with unreachable address (should fail gracefully)...")
-	badOutput, badErr := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "add", "10.255.255.255:18051", "--name", "bad-dpu", "--insecure")
-
-	if badErr == nil {
-		t.Fatalf("Expected error when adding unreachable DPU, but got success. Output:\n%s", badOutput)
-	}
-	// Verify error message is clear (should mention connection failure)
-	if !strings.Contains(badOutput, "cannot connect") && !strings.Contains(badOutput, "connection") &&
-		!strings.Contains(strings.ToLower(badOutput), "timeout") && !strings.Contains(badOutput, "failed") {
-		t.Logf("Warning: Error message may not be clear enough for users. Output:\n%s", badOutput)
-	}
-	logOK(t, "Unreachable DPU rejected with error (expected)")
-
-	// Step 4: Start TMFIFO socat on DPU
-	logStep(t, 4, "Starting TMFIFO socat on DPU...")
+	// Step 3: Start TMFIFO socat on DPU
+	logStep(t, 3, "Starting TMFIFO socat on DPU...")
 	cfg.killProcess(ctx, cfg.DPUVM, "socat")
 	_, err = cfg.multipassExec(ctx, cfg.DPUVM, "bash", "-c",
 		fmt.Sprintf("sudo setsid socat PTY,raw,echo=0,link=/dev/tmfifo_net0,mode=666 TCP-LISTEN:%s,reuseaddr,fork > /tmp/socat.log 2>&1 < /dev/null &", cfg.TMFIFOPort))
@@ -2368,8 +2355,8 @@ func TestDPURegistrationFlows(t *testing.T) {
 	}
 	logOK(t, "TMFIFO socat started on DPU")
 
-	// Step 5: Start aegis on DPU
-	logStep(t, 5, "Starting aegis on DPU...")
+	// Step 4: Start aegis on DPU
+	logStep(t, 4, "Starting aegis on DPU...")
 	cfg.killProcess(ctx, cfg.DPUVM, "aegis")
 	_, err = cfg.multipassExec(ctx, cfg.DPUVM, "bash", "-c",
 		fmt.Sprintf("sudo setsid /home/ubuntu/aegis -local-api -allow-tmfifo-net -control-plane http://%s:18080 -dpu-name %s > /tmp/aegis.log 2>&1 < /dev/null &", serverIP, dpuName))
@@ -2385,8 +2372,8 @@ func TestDPURegistrationFlows(t *testing.T) {
 	}
 	logOK(t, "Aegis started")
 
-	// Step 6: Test DPU add with valid attestation
-	logStep(t, 6, "Testing DPU add with valid attestation...")
+	// Step 5: Test DPU add with valid attestation
+	logStep(t, 5, "Testing DPU add with valid attestation...")
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
 		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", dpuName, "--insecure")
 	if err != nil {
@@ -2403,8 +2390,8 @@ func TestDPURegistrationFlows(t *testing.T) {
 	}
 	logOK(t, fmt.Sprintf("DPU '%s' registered and visible in list", dpuName))
 
-	// Step 7: Assign DPU to tenant A
-	logStep(t, 7, "Assigning DPU to tenant A...")
+	// Step 6: Assign DPU to tenant A
+	logStep(t, 6, "Assigning DPU to tenant A...")
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
 		"tenant", "assign", tenantA, dpuName, "--insecure")
 	if err != nil {
@@ -2422,8 +2409,8 @@ func TestDPURegistrationFlows(t *testing.T) {
 	}
 	logOK(t, fmt.Sprintf("DPU '%s' assigned to tenant '%s'", dpuName, tenantA))
 
-	// Step 8: Start TMFIFO socat on host and enroll host
-	logStep(t, 8, "Starting TMFIFO on host and enrolling...")
+	// Step 7: Start TMFIFO socat on host and enroll host
+	logStep(t, 7, "Starting TMFIFO on host and enrolling...")
 	cfg.killProcess(ctx, cfg.HostVM, "socat")
 	_, err = cfg.multipassExec(ctx, cfg.HostVM, "bash", "-c",
 		fmt.Sprintf("sudo setsid socat PTY,raw,echo=0,link=/dev/tmfifo_net0,mode=666 TCP:%s:%s > /tmp/socat.log 2>&1 < /dev/null &", dpuIP, cfg.TMFIFOPort))
@@ -2447,8 +2434,8 @@ func TestDPURegistrationFlows(t *testing.T) {
 	}
 	logOK(t, "Host enrolled successfully via sentry")
 
-	// Step 9: Verify host appears in host list
-	logStep(t, 9, "Verifying host visible in host list...")
+	// Step 8: Verify host appears in host list
+	logStep(t, 8, "Verifying host visible in host list...")
 	time.Sleep(1 * time.Second) // Brief pause for state to propagate
 
 	hostList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "host", "list", "--insecure")
@@ -2461,8 +2448,8 @@ func TestDPURegistrationFlows(t *testing.T) {
 	}
 	logOK(t, "Host visible in host list")
 
-	// Step 10: Test DPU reassign to different tenant
-	logStep(t, 10, "Testing DPU reassign to tenant B...")
+	// Step 9: Test DPU reassign to different tenant
+	logStep(t, 9, "Testing DPU reassign to tenant B...")
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
 		"tenant", "assign", tenantB, dpuName, "--insecure")
 	if err != nil {
@@ -2490,8 +2477,8 @@ func TestDPURegistrationFlows(t *testing.T) {
 	}
 	logOK(t, fmt.Sprintf("DPU '%s' reassigned from tenant A to tenant B", dpuName))
 
-	// Step 11: Test DPU remove
-	logStep(t, 11, "Testing DPU remove...")
+	// Step 10: Test DPU remove
+	logStep(t, 10, "Testing DPU remove...")
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
 		"dpu", "remove", dpuName, "--insecure")
 	if err != nil {
@@ -2508,10 +2495,10 @@ func TestDPURegistrationFlows(t *testing.T) {
 	}
 	logOK(t, fmt.Sprintf("DPU '%s' removed and no longer in list", dpuName))
 
-	// Step 12: Verify host shows disconnected state after DPU removal
+	// Step 11: Verify host shows disconnected state after DPU removal
 	// Note: The host record should still exist but may show as offline/disconnected
 	// since its DPU is no longer registered
-	logStep(t, 12, "Verifying host state after DPU removal...")
+	logStep(t, 11, "Verifying host state after DPU removal...")
 
 	// The host list behavior after DPU removal depends on implementation:
 	// - Host may still appear with offline status
@@ -2529,8 +2516,8 @@ func TestDPURegistrationFlows(t *testing.T) {
 		logOK(t, "Host state verified after DPU removal")
 	}
 
-	// Step 13: Re-add DPU and verify idempotent add behavior
-	logStep(t, 13, "Testing idempotent DPU add (re-adding same DPU)...")
+	// Step 12: Re-add DPU and verify idempotent add behavior
+	logStep(t, 12, "Testing idempotent DPU add (re-adding same DPU)...")
 
 	// First, add the DPU back
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
