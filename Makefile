@@ -718,29 +718,27 @@ qa-doca-build:
 	@echo "Checking BlueField connectivity..."
 	@$(BLUEFIELD_SSH) "echo 'Connected to BlueField'" || (echo "ERROR: Cannot reach BlueField at $(BLUEFIELD_IP)" && exit 1)
 	@echo ""
-	@echo "Syncing source to BlueField..."
-	@rsync -az --delete --exclude='.git' --exclude='bin/' --exclude='qa-workspace/' \
-		-e "ssh -o StrictHostKeyChecking=no" \
-		. $(BLUEFIELD_USER)@$(BLUEFIELD_IP):$(BLUEFIELD_REMOTE_DIR)/
+	@echo "Fetching latest main on BlueField..."
+	@$(BLUEFIELD_SSH) "cd $(BLUEFIELD_REMOTE_DIR) && git fetch origin && git checkout origin/main"
 	@echo ""
 	@echo "Building with -tags doca..."
-	@$(BLUEFIELD_SSH) "cd $(BLUEFIELD_REMOTE_DIR) && go build -tags doca -o bin/aegis-doca ./cmd/aegis" 2>&1 || \
+	@$(BLUEFIELD_SSH) "cd $(BLUEFIELD_REMOTE_DIR)/eng && go build -tags doca -o bin/aegis-doca ./cmd/aegis" 2>&1 || \
 		(echo ""; echo "NOTE: Build may fail if DOCA SDK not installed or implementation incomplete"; exit 1)
-	@$(BLUEFIELD_SSH) "cd $(BLUEFIELD_REMOTE_DIR) && go build -tags doca -o bin/sentry-doca ./cmd/sentry" 2>&1 || true
+	@$(BLUEFIELD_SSH) "cd $(BLUEFIELD_REMOTE_DIR)/eng && go build -tags doca -o bin/sentry-doca ./cmd/sentry" 2>&1 || true
 	@echo ""
 	@echo "=== DOCA build complete ==="
-	@$(BLUEFIELD_SSH) "ls -la $(BLUEFIELD_REMOTE_DIR)/bin/*-doca 2>/dev/null" || echo "No DOCA binaries built"
+	@$(BLUEFIELD_SSH) "ls -la $(BLUEFIELD_REMOTE_DIR)/eng/bin/*-doca 2>/dev/null" || echo "No DOCA binaries built"
 
 # Deploy DOCA-enabled binaries (after qa-doca-build)
 qa-doca-deploy:
 	@echo "=== Deploying DOCA binaries on BlueField ==="
-	@$(BLUEFIELD_SSH) "test -f $(BLUEFIELD_REMOTE_DIR)/bin/aegis-doca" || \
+	@$(BLUEFIELD_SSH) "test -f $(BLUEFIELD_REMOTE_DIR)/eng/bin/aegis-doca" || \
 		(echo "ERROR: No DOCA binaries found. Run 'make qa-doca-build' first." && exit 1)
-	@$(BLUEFIELD_SSH) "sudo cp $(BLUEFIELD_REMOTE_DIR)/bin/aegis-doca /usr/local/bin/aegis-doca && \
+	@$(BLUEFIELD_SSH) "sudo cp $(BLUEFIELD_REMOTE_DIR)/eng/bin/aegis-doca /usr/local/bin/aegis-doca && \
 		sudo chmod +x /usr/local/bin/aegis-doca"
 	@echo "✓ Deployed aegis-doca to /usr/local/bin/"
-	@$(BLUEFIELD_SSH) "test -f $(BLUEFIELD_REMOTE_DIR)/bin/sentry-doca" && \
-		$(BLUEFIELD_SSH) "sudo cp $(BLUEFIELD_REMOTE_DIR)/bin/sentry-doca /usr/local/bin/sentry-doca && \
+	@$(BLUEFIELD_SSH) "test -f $(BLUEFIELD_REMOTE_DIR)/eng/bin/sentry-doca" && \
+		$(BLUEFIELD_SSH) "sudo cp $(BLUEFIELD_REMOTE_DIR)/eng/bin/sentry-doca /usr/local/bin/sentry-doca && \
 			sudo chmod +x /usr/local/bin/sentry-doca" && \
 		echo "✓ Deployed sentry-doca to /usr/local/bin/" || true
 
@@ -762,10 +760,10 @@ qa-test-transport-doca:
 		echo "⚠ DOCA Comch headers not found at /opt/mellanox/doca/include/"
 	@echo ""
 	@echo "Step 3: Run transport unit tests with DOCA tag..."
-	@$(BLUEFIELD_SSH) "cd $(BLUEFIELD_REMOTE_DIR) && go test -tags doca -v ./pkg/transport/... -run 'DOCA|Comch' 2>&1" | tee /tmp/qa-doca-test.log || true
+	@$(BLUEFIELD_SSH) "cd $(BLUEFIELD_REMOTE_DIR)/eng && go test -tags doca -v ./pkg/transport/... -run 'DOCA|Comch' 2>&1" | tee /tmp/qa-doca-test.log || true
 	@echo ""
 	@echo "Step 4: Test DOCAComchTransport initialization..."
-	@$(BLUEFIELD_SSH) "cd $(BLUEFIELD_REMOTE_DIR) && go test -tags doca -v ./pkg/transport/... -run 'TestDOCA' 2>&1" | tee -a /tmp/qa-doca-test.log || true
+	@$(BLUEFIELD_SSH) "cd $(BLUEFIELD_REMOTE_DIR)/eng && go test -tags doca -v ./pkg/transport/... -run 'TestDOCA' 2>&1" | tee -a /tmp/qa-doca-test.log || true
 	@echo ""
 	@if grep -q "not yet implemented" /tmp/qa-doca-test.log; then \
 		echo "=== DOCA transport builds but implementation incomplete ==="; \
@@ -954,9 +952,8 @@ qa-remote-vm-status:
 
 # Sync code and build on workbench (native Linux build, no cross-compile)
 qa-remote-build:
-	@echo "=== Syncing code to workbench ==="
-	rsync -az --delete --exclude='.git' --exclude='bin/' --exclude='qa-workspace/' \
-		-e ssh .. $(WORKBENCH_USER)@$(WORKBENCH_IP):~/secure-infra/
+	@echo "=== Fetching latest main on workbench ==="
+	$(WORKBENCH_SSH) "cd ~/secure-infra && git fetch origin && git checkout origin/main"
 	@echo "=== Building natively on workbench ==="
 	$(WORKBENCH_SSH) "export PATH=/snap/bin:\$$PATH && cd $(WORKBENCH_DIR) && make all"
 	@echo "=== Pushing binaries to VMs ==="
