@@ -895,7 +895,7 @@ func TestNexusRestartPersistence(t *testing.T) {
 	// by making a request to the health endpoint first
 	healthOutput, err := cfg.multipassExec(bindTestCtx, cfg.ServerVM, "curl", "-s",
 		fmt.Sprintf("http://127.0.0.1:18080/health"))
-	if err != nil || !strings.Contains(healthOutput, "healthy") {
+	if err != nil || !strings.Contains(healthOutput, "ok") {
 		t.Errorf("%s Nexus health check failed after restart: %v, output: %s", errFmt("x"), err, healthOutput)
 	} else {
 		logOK(t, "Nexus health check passed after restart")
