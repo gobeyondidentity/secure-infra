@@ -92,7 +92,6 @@ Check for updates anytime: `bluectl version --check`
 | [Local Dev: Docker](docs/guides/local-dev-docker.md) | Run locally with Docker Compose |
 | [Hardware Setup](docs/guides/setup-hardware.md) | Deploy on BlueField-3 DPU |
 | [Testing ComCh in VMs](docs/guides/testing-comch-vm.md) | Test DOCA integration without hardware |
-| [fTPM Key Storage](docs/guides/ftpm-key-storage.md) | Store secrets in firmware TPM |
 | [Discovery](docs/guides/discovery.md) | Scan infrastructure for SSH keys |
 
 ### Reference
