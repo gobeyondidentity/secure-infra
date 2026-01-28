@@ -265,3 +265,220 @@ func TestTenantEmptyTags(t *testing.T) {
 		t.Errorf("expected empty tags, got %v", tenant.Tags)
 	}
 }
+
+// TestDPUPersistenceAcrossRestart tests that DPU state persists after store close and reopen.
+// This simulates a Nexus server restart scenario.
+func TestDPUPersistenceAcrossRestart(t *testing.T) {
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "persistence_test.db")
+
+	// Phase 1: Create store, add DPU and tenant, assign DPU to tenant
+	t.Run("Phase1_Setup", func(t *testing.T) {
+		s, err := Open(dbPath)
+		if err != nil {
+			t.Fatalf("failed to open store: %v", err)
+		}
+
+		// Add DPU
+		err = s.Add("dpu1", "bf3-test", "192.168.1.100", 50051)
+		if err != nil {
+			t.Fatalf("failed to add DPU: %v", err)
+		}
+
+		// Update status
+		err = s.UpdateStatus("dpu1", "healthy")
+		if err != nil {
+			t.Fatalf("failed to update status: %v", err)
+		}
+
+		// Add tenant
+		err = s.AddTenant("t1", "Test Tenant", "Description", "contact@example.com", []string{"production"})
+		if err != nil {
+			t.Fatalf("failed to add tenant: %v", err)
+		}
+
+		// Assign DPU to tenant
+		err = s.AssignDPUToTenant("dpu1", "t1")
+		if err != nil {
+			t.Fatalf("failed to assign DPU to tenant: %v", err)
+		}
+
+		// Verify state before close
+		dpu, err := s.Get("dpu1")
+		if err != nil {
+			t.Fatalf("failed to get DPU: %v", err)
+		}
+		if dpu.Status != "healthy" {
+			t.Errorf("expected status 'healthy', got '%s'", dpu.Status)
+		}
+		if dpu.TenantID == nil || *dpu.TenantID != "t1" {
+			t.Errorf("expected tenant 't1', got %v", dpu.TenantID)
+		}
+
+		// Close store (simulate shutdown)
+		s.Close()
+	})
+
+	// Phase 2: Reopen store and verify all state persisted
+	t.Run("Phase2_VerifyPersistence", func(t *testing.T) {
+		s, err := Open(dbPath)
+		if err != nil {
+			t.Fatalf("failed to reopen store: %v", err)
+		}
+		defer s.Close()
+
+		// Verify DPU exists and has correct state
+		dpu, err := s.Get("dpu1")
+		if err != nil {
+			t.Fatalf("DPU not found after restart: %v", err)
+		}
+		if dpu.Name != "bf3-test" {
+			t.Errorf("expected name 'bf3-test', got '%s'", dpu.Name)
+		}
+		if dpu.Host != "192.168.1.100" {
+			t.Errorf("expected host '192.168.1.100', got '%s'", dpu.Host)
+		}
+		if dpu.Port != 50051 {
+			t.Errorf("expected port 50051, got %d", dpu.Port)
+		}
+		if dpu.Status != "healthy" {
+			t.Errorf("expected status 'healthy', got '%s'", dpu.Status)
+		}
+		if dpu.TenantID == nil {
+			t.Fatalf("DPU tenant assignment lost after restart")
+		}
+		if *dpu.TenantID != "t1" {
+			t.Errorf("expected tenant 't1', got '%s'", *dpu.TenantID)
+		}
+
+		// Verify tenant exists
+		tenant, err := s.GetTenant("t1")
+		if err != nil {
+			t.Fatalf("tenant not found after restart: %v", err)
+		}
+		if tenant.Name != "Test Tenant" {
+			t.Errorf("expected tenant name 'Test Tenant', got '%s'", tenant.Name)
+		}
+
+		// Verify DPU count for tenant
+		count, err := s.GetTenantDPUCount("t1")
+		if err != nil {
+			t.Fatalf("failed to get tenant DPU count: %v", err)
+		}
+		if count != 1 {
+			t.Errorf("expected DPU count 1, got %d", count)
+		}
+
+		// Verify list operations work
+		dpus, err := s.List()
+		if err != nil {
+			t.Fatalf("failed to list DPUs: %v", err)
+		}
+		if len(dpus) != 1 {
+			t.Errorf("expected 1 DPU in list, got %d", len(dpus))
+		}
+	})
+}
+
+// TestAgentHostPersistenceAcrossRestart tests that agent host state persists after store close and reopen.
+func TestAgentHostPersistenceAcrossRestart(t *testing.T) {
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "agenthost_persistence_test.db")
+
+	// Phase 1: Create store, add DPU and register agent host with posture
+	t.Run("Phase1_Setup", func(t *testing.T) {
+		s, err := Open(dbPath)
+		if err != nil {
+			t.Fatalf("failed to open store: %v", err)
+		}
+
+		// Add DPU first (agent hosts require DPU reference)
+		err = s.Add("dpu1", "bf3-test", "192.168.1.100", 50051)
+		if err != nil {
+			t.Fatalf("failed to add DPU: %v", err)
+		}
+
+		// Add tenant and assign DPU
+		err = s.AddTenant("t1", "Test Tenant", "", "", nil)
+		if err != nil {
+			t.Fatalf("failed to add tenant: %v", err)
+		}
+		s.AssignDPUToTenant("dpu1", "t1")
+
+		// Register agent host
+		host := &AgentHost{
+			DPUName:  "bf3-test",
+			DPUID:    "dpu1",
+			Hostname: "gpu-node-01",
+			TenantID: "t1",
+		}
+		err = s.RegisterAgentHost(host)
+		if err != nil {
+			t.Fatalf("failed to register agent host: %v", err)
+		}
+
+		// Update posture
+		secureBoot := true
+		tpmPresent := true
+		posture := &AgentHostPosture{
+			HostID:         host.ID,
+			SecureBoot:     &secureBoot,
+			DiskEncryption: "luks",
+			OSVersion:      "Ubuntu 22.04",
+			KernelVersion:  "5.15.0",
+			TPMPresent:     &tpmPresent,
+			PostureHash:    "abc123",
+		}
+		err = s.UpdateAgentHostPosture(posture)
+		if err != nil {
+			t.Fatalf("failed to update posture: %v", err)
+		}
+
+		s.Close()
+	})
+
+	// Phase 2: Reopen store and verify agent host state persisted
+	t.Run("Phase2_VerifyPersistence", func(t *testing.T) {
+		s, err := Open(dbPath)
+		if err != nil {
+			t.Fatalf("failed to reopen store: %v", err)
+		}
+		defer s.Close()
+
+		// Verify agent host exists
+		host, err := s.GetAgentHostByHostname("gpu-node-01")
+		if err != nil {
+			t.Fatalf("agent host not found after restart: %v", err)
+		}
+		if host.DPUName != "bf3-test" {
+			t.Errorf("expected DPU name 'bf3-test', got '%s'", host.DPUName)
+		}
+		if host.TenantID != "t1" {
+			t.Errorf("expected tenant 't1', got '%s'", host.TenantID)
+		}
+
+		// Verify posture persisted
+		posture, err := s.GetAgentHostPosture(host.ID)
+		if err != nil {
+			t.Fatalf("posture not found after restart: %v", err)
+		}
+		if posture.SecureBoot == nil || !*posture.SecureBoot {
+			t.Error("secure boot should be true")
+		}
+		if posture.DiskEncryption != "luks" {
+			t.Errorf("expected disk encryption 'luks', got '%s'", posture.DiskEncryption)
+		}
+		if posture.OSVersion != "Ubuntu 22.04" {
+			t.Errorf("expected OS version 'Ubuntu 22.04', got '%s'", posture.OSVersion)
+		}
+
+		// Verify list by tenant works
+		hosts, err := s.ListAgentHosts("t1")
+		if err != nil {
+			t.Fatalf("failed to list agent hosts: %v", err)
+		}
+		if len(hosts) != 1 {
+			t.Errorf("expected 1 agent host, got %d", len(hosts))
+		}
+	})
+}
