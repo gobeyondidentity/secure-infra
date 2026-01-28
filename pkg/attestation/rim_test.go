@@ -69,3 +69,34 @@ func TestVerifyRIMIntegrity(t *testing.T) {
 		t.Error("Expected invalid for empty entry")
 	}
 }
+
+func TestDigestAlgorithmName(t *testing.T) {
+	tests := []struct {
+		algID    uint64
+		expected string
+	}{
+		{1, "SHA-256"},
+		{2, "SHA-384"},
+		{3, "SHA-512"},
+		{7, "SHA3-256"},
+		{8, "SHA3-384"},
+		{9, "SHA3-512"},
+		{0, "ALG-0"},
+		{4, "ALG-4"},
+		{5, "ALG-5"},
+		{6, "ALG-6"},
+		{10, "ALG-10"},
+		{100, "ALG-100"},
+		{255, "ALG-255"},
+		{1000, "ALG-1000"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.expected, func(t *testing.T) {
+			result := digestAlgorithmName(tt.algID)
+			if result != tt.expected {
+				t.Errorf("digestAlgorithmName(%d) = %q, want %q", tt.algID, result, tt.expected)
+			}
+		})
+	}
+}

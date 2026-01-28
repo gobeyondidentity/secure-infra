@@ -130,3 +130,109 @@ func TestNormalizeTarget(t *testing.T) {
 		})
 	}
 }
+
+func TestNormalizeTarget_EdgeCases(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected AttestationTarget
+	}{
+		// Case variations for IRoT
+		{"IrOt", TargetIRoT},
+		{"BLUEFIELD_DPU_IROT", TargetIRoT},
+		{"bluefield_dpu_irot", TargetIRoT},
+
+		// Case variations for ERoT
+		{"ErOt", TargetERoT},
+		{"BLUEFIELD_EROT", TargetERoT},
+		{"bluefield_erot", TargetERoT},
+
+		// Pass-through unknown values
+		{"", AttestationTarget("")},
+		{"custom_target", AttestationTarget("custom_target")},
+		{"Bluefield_DPU_Custom", AttestationTarget("Bluefield_DPU_Custom")},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			result := NormalizeTarget(tt.input)
+			if result != tt.expected {
+				t.Errorf("NormalizeTarget(%q) = %q, want %q", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestNormalizeFirmwareName(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		// BMC variations
+		{"BMC_Firmware", "bmc"},
+		{"bmc_image", "bmc"},
+		{"BMC", "bmc"},
+		{"bmc-firmware-v1", "bmc"},
+
+		// UEFI variations
+		{"UEFI_Firmware", "uefi"},
+		{"uefi_image", "uefi"},
+		{"UEFI", "uefi"},
+
+		// CPLD variations
+		{"CPLD_Image", "cpld"},
+		{"cpld_firmware", "cpld"},
+		{"System_CPLD", "cpld"},
+
+		// BIOS variations
+		{"BIOS_Image", "bios"},
+		{"bios_firmware", "bios"},
+		{"System_BIOS", "bios"},
+
+		// PSC variations
+		{"PSC_Firmware", "psc"},
+		{"psc_image", "psc"},
+		{"PSC", "psc"},
+
+		// ARM variations
+		{"ARM_Firmware", "arm"},
+		{"arm_image", "arm"},
+		{"ARM", "arm"},
+
+		// Unknown names (lowercased)
+		{"Unknown_Firmware", "unknown_firmware"},
+		{"CustomDevice", "customdevice"},
+		{"NIC_FW_v32", "nic_fw_v32"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			result := normalizeFirmwareName(tt.input)
+			if result != tt.expected {
+				t.Errorf("normalizeFirmwareName(%q) = %q, want %q", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestNormalizeFirmwareName_Priority(t *testing.T) {
+	// Test that the function correctly identifies the primary component
+	// when a name might contain multiple keywords
+	tests := []struct {
+		input    string
+		expected string
+		desc     string
+	}{
+		{"BMC_UEFI_Bridge", "bmc", "bmc takes priority over uefi"},
+		{"UEFI_CPLD_Interface", "uefi", "uefi takes priority over cpld"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			result := normalizeFirmwareName(tt.input)
+			if result != tt.expected {
+				t.Errorf("normalizeFirmwareName(%q) = %q, want %q", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
