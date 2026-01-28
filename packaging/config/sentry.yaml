@@ -8,11 +8,11 @@ control_plane:
   # TLS configuration
   tls:
     enabled: true
-    # Path to CA certificate for verifying control plane
-    ca_cert: "/etc/secureinfra/ca.crt"
+    # Path to CA certificate for verifying control plane (optional for self-signed)
+    ca_cert: ""
     # Path to client certificate for mutual TLS
-    client_cert: "/etc/secureinfra/host-agent.crt"
-    client_key: "/etc/secureinfra/host-agent.key"
+    client_cert: "/etc/secureinfra/server.crt"
+    client_key: "/etc/secureinfra/server.key"
 
 # Agent identification
 agent:

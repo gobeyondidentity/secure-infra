@@ -10,10 +10,10 @@ server:
   # TLS configuration
   tls:
     enabled: true
-    cert: "/etc/secureinfra/control-plane.crt"
-    key: "/etc/secureinfra/control-plane.key"
-    # Path to CA certificate for verifying client certificates
-    client_ca: "/etc/secureinfra/ca.crt"
+    cert: "/etc/secureinfra/server.crt"
+    key: "/etc/secureinfra/server.key"
+    # Path to CA certificate for verifying client certificates (optional for self-signed)
+    client_ca: ""
 
 # Database configuration
 database:
