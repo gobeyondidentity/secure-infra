@@ -340,13 +340,16 @@ func (s *Server) GetActiveTransport() transport.Transport {
 // PushCredential sends a credential to the paired Host Agent.
 // Uses the active transport if available, otherwise queues for Host Agent retrieval on next poll.
 func (s *Server) PushCredential(ctx context.Context, credType, credName string, data []byte) (*CredentialPushResult, error) {
+	log.Printf("[CRED-DELIVERY] localapi: pushing credential type=%s name=%s", credType, credName)
+
 	// Check if host is paired
 	s.pairedMu.RLock()
 	hostname := s.pairedHost
 	s.pairedMu.RUnlock()
 
 	if hostname == "" {
-		return nil, fmt.Errorf("no host paired with this DPU")
+		log.Printf("[CRED-DELIVERY] localapi: no host paired with this DPU")
+		return nil, fmt.Errorf("localapi: no host paired with this DPU")
 	}
 
 	// If we have an active transport connection, use it for direct push
@@ -355,15 +358,17 @@ func (s *Server) PushCredential(ctx context.Context, credType, credName string, 
 	s.transportMu.RUnlock()
 
 	if activeTransport != nil {
+		log.Printf("[CRED-DELIVERY] localapi: using active transport (%s) for push", activeTransport.Type())
 		err := s.pushCredentialViaTransport(activeTransport, credType, credName, data)
 		if err == nil {
+			log.Printf("[CRED-DELIVERY] localapi: credential sent via transport successfully")
 			return &CredentialPushResult{
 				Success: true,
 				Message: fmt.Sprintf("Credential '%s' sent to host via %s transport. Awaiting installation ack.", credName, activeTransport.Type()),
 			}, nil
 		}
 		// Transport push failed, fall through to queue
-		log.Printf("transport push failed, queueing for retrieval: %v", err)
+		log.Printf("[CRED-DELIVERY] localapi: transport push failed, queueing for retrieval: %v", err)
 	}
 
 	// Queue the credential for Host Agent retrieval on next poll
@@ -372,22 +377,28 @@ func (s *Server) PushCredential(ctx context.Context, credType, credName string, 
 
 // pushCredentialViaTransport sends a credential push message over the transport.
 func (s *Server) pushCredentialViaTransport(t transport.Transport, credType, credName string, data []byte) error {
+	log.Printf("[CRED-DELIVERY] localapi: sending CREDENTIAL_PUSH message via %s transport", t.Type())
+
 	payload, err := json.Marshal(map[string]interface{}{
 		"credential_type": credType,
 		"credential_name": credName,
 		"data":            data,
 	})
 	if err != nil {
-		return fmt.Errorf("marshal credential payload: %w", err)
+		return fmt.Errorf("localapi: marshal credential payload: %w", err)
 	}
 
 	msg := &transport.Message{
 		Type:    transport.MessageCredentialPush,
 		Payload: payload,
-		ID:   generateNonce(),
+		ID:      generateNonce(),
 	}
 
-	return t.Send(msg)
+	if err := t.Send(msg); err != nil {
+		return fmt.Errorf("localapi: transport send failed: %w", err)
+	}
+
+	return nil
 }
 
 // generateNonce creates a random nonce for message replay protection.

@@ -4,6 +4,7 @@ package sentry
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -46,41 +47,46 @@ type InstallSSHCAResult struct {
 // It creates the trusted CA directory if needed, writes the public key,
 // updates sshd_config if necessary, and reloads sshd.
 func (c *CredentialInstaller) InstallSSHCA(caName string, publicKey []byte) (*InstallSSHCAResult, error) {
+	log.Printf("[CRED-DELIVERY] sentry: starting SSH CA installation for '%s'", caName)
+
 	if caName == "" {
-		return nil, fmt.Errorf("CA name is required")
+		return nil, fmt.Errorf("sentry: CA name is required")
 	}
 	if len(publicKey) == 0 {
-		return nil, fmt.Errorf("public key is required")
+		return nil, fmt.Errorf("sentry: public key is required")
 	}
 
 	result := &InstallSSHCAResult{}
 
 	// Step 1: Create trusted CA directory if it doesn't exist
 	if err := c.ensureTrustedCADir(); err != nil {
-		return nil, fmt.Errorf("create trusted CA directory: %w", err)
+		return nil, fmt.Errorf("sentry: create trusted CA directory: %w", err)
 	}
 
 	// Step 2: Write the CA public key to file
 	keyPath := filepath.Join(c.TrustedCADir, caName+".pub")
+	log.Printf("[CRED-DELIVERY] sentry: writing CA public key to %s", keyPath)
 	if err := c.writeCAPublicKey(keyPath, publicKey); err != nil {
-		return nil, fmt.Errorf("write CA public key: %w", err)
+		return nil, fmt.Errorf("sentry: write CA public key: %w", err)
 	}
 	result.InstalledPath = keyPath
 
 	// Step 3: Update sshd_config if TrustedUserCAKeys is not configured
 	configUpdated, err := c.ensureSshdConfig()
 	if err != nil {
-		return nil, fmt.Errorf("update sshd_config: %w", err)
+		return nil, fmt.Errorf("sentry: update sshd_config: %w", err)
 	}
 	result.ConfigUpdated = configUpdated
 
 	// Step 4: Reload sshd to apply changes
 	if err := c.reloadSshd(); err != nil {
 		// Log warning but don't fail; key is installed
-		return result, fmt.Errorf("reload sshd (key installed but reload failed): %w", err)
+		log.Printf("[CRED-DELIVERY] sentry: credential installed but sshd reload failed: %v", err)
+		return result, fmt.Errorf("sentry: reload sshd (key installed but reload failed): %w", err)
 	}
 	result.SshdReloaded = true
 
+	log.Printf("[CRED-DELIVERY] sentry: SSH CA installation completed successfully at %s", keyPath)
 	return result, nil
 }
 

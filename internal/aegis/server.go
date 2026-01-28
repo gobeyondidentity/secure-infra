@@ -375,7 +375,7 @@ func (s *Server) DistributeCredential(ctx context.Context, req *agentv1.Distribu
 	credType := req.GetCredentialType()
 	credName := req.GetCredentialName()
 	publicKey := req.GetPublicKey()
-	log.Printf("DistributeCredential called: type=%s, name=%s", credType, credName)
+	log.Printf("[CRED-DELIVERY] aegis: received credential push type=%s name=%s", credType, credName)
 
 	// Validate request
 	if credName == "" {
@@ -387,9 +387,20 @@ func (s *Server) DistributeCredential(ctx context.Context, req *agentv1.Distribu
 
 	switch credType {
 	case "ssh-ca":
-		return s.distributeSSHCA(ctx, credName, publicKey)
+		resp, err := s.distributeSSHCA(ctx, credName, publicKey)
+		if err != nil {
+			log.Printf("[CRED-DELIVERY] aegis: credential distribution failed: %v", err)
+			return nil, fmt.Errorf("aegis: failed to distribute credential: %w", err)
+		}
+		if resp.Success {
+			log.Printf("[CRED-DELIVERY] aegis: credential distribution completed successfully")
+		} else {
+			log.Printf("[CRED-DELIVERY] aegis: credential distribution failed: %s", resp.Message)
+		}
+		return resp, nil
 	default:
-		return nil, errUnknownCredentialType
+		log.Printf("[CRED-DELIVERY] aegis: unknown credential type: %s", credType)
+		return nil, fmt.Errorf("aegis: %w: %s", errUnknownCredentialType, credType)
 	}
 }
 
@@ -399,21 +410,24 @@ func (s *Server) DistributeCredential(ctx context.Context, req *agentv1.Distribu
 func (s *Server) distributeSSHCA(ctx context.Context, caName string, publicKey []byte) (*agentv1.DistributeCredentialResponse, error) {
 	// Check if we have a paired host via local API
 	if s.localAPI == nil {
+		log.Printf("[CRED-DELIVERY] aegis: local API not enabled, cannot distribute credential")
 		return &agentv1.DistributeCredentialResponse{
 			Success: false,
-			Message: "Local API not enabled. Host Agent cannot receive credentials.\n" +
+			Message: "aegis: Local API not enabled. Host Agent cannot receive credentials.\n" +
 				"  1. Start agent with --local-api-enabled\n" +
 				"  2. Install host-agent on the host server\n" +
 				"  3. Register host with: host-agent --dpu-addr <dpu-local-api>",
 		}, nil
 	}
 
+	log.Printf("[CRED-DELIVERY] aegis: forwarding ssh-ca '%s' to localapi", caName)
+
 	// Push credential via local API (uses tmfifo or HTTP depending on how host connected)
 	result, err := s.localAPI.PushCredential(ctx, "ssh-ca", caName, publicKey)
 	if err != nil {
 		return &agentv1.DistributeCredentialResponse{
 			Success: false,
-			Message: fmt.Sprintf("Failed to push credential: %v", err),
+			Message: fmt.Sprintf("aegis: failed to push credential: %v", err),
 		}, nil
 	}
 

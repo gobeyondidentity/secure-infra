@@ -2,6 +2,7 @@ package aegis
 
 import (
 	"context"
+	"errors"
 	"os"
 	"strings"
 	"testing"
@@ -422,7 +423,7 @@ func TestServer_DistributeCredential(t *testing.T) {
 			resp, err := server.DistributeCredential(ctx, tt.req)
 
 			if tt.wantErr != nil {
-				if err != tt.wantErr {
+				if !errors.Is(err, tt.wantErr) {
 					t.Errorf("DistributeCredential() error = %v, want %v", err, tt.wantErr)
 				}
 				return

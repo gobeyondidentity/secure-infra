@@ -224,12 +224,15 @@ func (c *Client) handleMessage(msg *transport.Message) error {
 
 // handleCredentialPush processes a CREDENTIAL_PUSH message.
 func (c *Client) handleCredentialPush(msg *transport.Message) error {
+	log.Printf("[CRED-DELIVERY] sentry: received CREDENTIAL_PUSH message")
+
 	var payload CredentialPushPayload
 	if err := json.Unmarshal(msg.Payload, &payload); err != nil {
-		return c.sendCredentialAck(false, "", fmt.Sprintf("parse error: %v", err))
+		log.Printf("[CRED-DELIVERY] sentry: failed to parse credential payload: %v", err)
+		return c.sendCredentialAck(false, "", fmt.Sprintf("sentry: parse error: %v", err))
 	}
 
-	log.Printf("received credential push: type=%s, name=%s",
+	log.Printf("[CRED-DELIVERY] sentry: installing %s credential name=%s",
 		payload.CredentialType, payload.CredentialName)
 
 	var installedPath string
@@ -242,15 +245,15 @@ func (c *Client) handleCredentialPush(msg *transport.Message) error {
 			err = installErr
 		} else {
 			installedPath = result.InstalledPath
-			log.Printf("SSH CA installed at %s (sshd_reloaded=%v, config_updated=%v)",
+			log.Printf("[CRED-DELIVERY] sentry: credential installed at %s (sshd_reloaded=%v, config_updated=%v)",
 				result.InstalledPath, result.SshdReloaded, result.ConfigUpdated)
 		}
 	default:
-		err = fmt.Errorf("unsupported credential type: %s", payload.CredentialType)
+		err = fmt.Errorf("sentry: unsupported credential type: %s", payload.CredentialType)
 	}
 
 	if err != nil {
-		log.Printf("credential installation failed: %v", err)
+		log.Printf("[CRED-DELIVERY] sentry: credential installation failed: %v", err)
 		return c.sendCredentialAck(false, "", err.Error())
 	}
 
