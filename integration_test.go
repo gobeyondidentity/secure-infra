@@ -263,21 +263,21 @@ func TestTMFIFOTransportIntegration(t *testing.T) {
 	logStep(t, 3, "Registering DPU...")
 
 	// Create tenant (ignore error if already exists)
-	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", "qa-tenant", "--insecure")
+	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", "qa-tenant", "--server", "http://localhost:18080")
 
 	// Remove stale DPU registration if exists
-	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "remove", "qa-dpu", "--insecure")
+	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "remove", "qa-dpu", "--server", "http://localhost:18080")
 
 	// Register DPU with aegis's gRPC port (default 18051)
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", "qa-dpu", "--insecure")
+		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", "qa-dpu", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to register DPU: %v", err)
 	}
 
 	// Assign DPU to tenant
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "assign", "qa-tenant", "qa-dpu", "--insecure")
+		"tenant", "assign", "qa-tenant", "qa-dpu", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to assign DPU to tenant: %v", err)
 	}
@@ -397,17 +397,17 @@ func TestCredentialDeliveryE2E(t *testing.T) {
 
 	// Step 3: Register DPU with control plane
 	logStep(t, 3, "Registering DPU...")
-	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", "qa-tenant", "--insecure")
-	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "remove", "qa-dpu", "--insecure")
+	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", "qa-tenant", "--server", "http://localhost:18080")
+	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "remove", "qa-dpu", "--server", "http://localhost:18080")
 
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", "qa-dpu", "--insecure")
+		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", "qa-dpu", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to register DPU: %v", err)
 	}
 
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "assign", "qa-tenant", "qa-dpu", "--insecure")
+		"tenant", "assign", "qa-tenant", "qa-dpu", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to assign DPU to tenant: %v", err)
 	}
@@ -642,7 +642,7 @@ func TestNexusRestartPersistence(t *testing.T) {
 
 	// Step 2: Create tenant
 	logStep(t, 2, "Creating tenant...")
-	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenantName, "--insecure")
+	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create tenant: %v", err)
 	}
@@ -651,7 +651,7 @@ func TestNexusRestartPersistence(t *testing.T) {
 	// Step 3: Create invite code
 	logStep(t, 3, "Creating invite code...")
 	inviteOutput, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"operator", "invite", operatorEmail, tenantName, "--insecure")
+		"operator", "invite", operatorEmail, tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create invite: %v", err)
 	}
@@ -683,7 +683,7 @@ func TestNexusRestartPersistence(t *testing.T) {
 	// Step 5: Register DPU
 	logStep(t, 5, "Registering DPU...")
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", dpuName, "--insecure")
+		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to register DPU: %v", err)
 	}
@@ -692,7 +692,7 @@ func TestNexusRestartPersistence(t *testing.T) {
 	// Step 6: Assign DPU to tenant
 	logStep(t, 6, "Assigning DPU to tenant...")
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "assign", tenantName, dpuName, "--insecure")
+		"tenant", "assign", tenantName, dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to assign DPU to tenant: %v", err)
 	}
@@ -701,19 +701,19 @@ func TestNexusRestartPersistence(t *testing.T) {
 	// Step 7: Capture state BEFORE restart
 	logStep(t, 7, "Capturing state before restart...")
 
-	tenantListBefore, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "list", "--insecure", "-o", "json")
+	tenantListBefore, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "list", "--server", "http://localhost:18080", "-o", "json")
 	if err != nil {
 		t.Fatalf("Failed to list tenants: %v", err)
 	}
 	logInfo(t, "Tenants before: %d entries", countJSONArrayEntries(tenantListBefore))
 
-	dpuListBefore, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "list", "--insecure", "-o", "json")
+	dpuListBefore, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "list", "--server", "http://localhost:18080", "-o", "json")
 	if err != nil {
 		t.Fatalf("Failed to list DPUs: %v", err)
 	}
 	logInfo(t, "DPUs before: %d entries", countJSONArrayEntries(dpuListBefore))
 
-	operatorListBefore, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "operator", "list", "--insecure", "-o", "json")
+	operatorListBefore, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "operator", "list", "--server", "http://localhost:18080", "-o", "json")
 	if err != nil {
 		t.Fatalf("Failed to list operators: %v", err)
 	}
@@ -751,7 +751,7 @@ func TestNexusRestartPersistence(t *testing.T) {
 
 	// Step 9: Verify tenant list persists
 	logStep(t, 9, "Verifying tenant persistence...")
-	tenantListAfter, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "list", "--insecure", "-o", "json")
+	tenantListAfter, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "list", "--server", "http://localhost:18080", "-o", "json")
 	if err != nil {
 		t.Fatalf("Failed to list tenants after restart: %v", err)
 	}
@@ -764,7 +764,7 @@ func TestNexusRestartPersistence(t *testing.T) {
 
 	// Step 10: Verify DPU list persists
 	logStep(t, 10, "Verifying DPU persistence...")
-	dpuListAfter, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "list", "--insecure", "-o", "json")
+	dpuListAfter, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "list", "--server", "http://localhost:18080", "-o", "json")
 	if err != nil {
 		t.Fatalf("Failed to list DPUs after restart: %v", err)
 	}
@@ -777,7 +777,7 @@ func TestNexusRestartPersistence(t *testing.T) {
 
 	// Step 11: Verify operator/invite persists
 	logStep(t, 11, "Verifying operator persistence...")
-	operatorListAfter, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "operator", "list", "--insecure", "-o", "json")
+	operatorListAfter, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "operator", "list", "--server", "http://localhost:18080", "-o", "json")
 	if err != nil {
 		t.Fatalf("Failed to list operators after restart: %v", err)
 	}
@@ -834,7 +834,7 @@ func TestNexusRestartPersistence(t *testing.T) {
 
 	// Get tenant details to check DPU assignment
 	tenantShowOutput, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "show", tenantName, "--insecure")
+		"tenant", "show", tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to show tenant: %v", err)
 	}
@@ -1004,17 +1004,17 @@ func TestAegisRestartSentryReconnection(t *testing.T) {
 
 	// Step 3: Register DPU with control plane
 	logStep(t, 3, "Registering DPU...")
-	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", "qa-tenant", "--insecure")
-	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "remove", "qa-dpu", "--insecure")
+	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", "qa-tenant", "--server", "http://localhost:18080")
+	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "remove", "qa-dpu", "--server", "http://localhost:18080")
 
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", "qa-dpu", "--insecure")
+		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", "qa-dpu", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to register DPU: %v", err)
 	}
 
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "assign", "qa-tenant", "qa-dpu", "--insecure")
+		"tenant", "assign", "qa-tenant", "qa-dpu", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to assign DPU to tenant: %v", err)
 	}
@@ -1376,17 +1376,17 @@ func TestSentryRestartReEnrollment(t *testing.T) {
 
 	// Step 3: Register DPU with control plane
 	logStep(t, 3, "Registering DPU...")
-	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", "qa-tenant", "--insecure")
-	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "remove", "qa-dpu", "--insecure")
+	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", "qa-tenant", "--server", "http://localhost:18080")
+	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "remove", "qa-dpu", "--server", "http://localhost:18080")
 
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", "qa-dpu", "--insecure")
+		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", "qa-dpu", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to register DPU: %v", err)
 	}
 
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "assign", "qa-tenant", "qa-dpu", "--insecure")
+		"tenant", "assign", "qa-tenant", "qa-dpu", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to assign DPU to tenant: %v", err)
 	}
@@ -1670,17 +1670,17 @@ func TestMultiTenantEnrollmentIsolation(t *testing.T) {
 
 	// Step 3: Register DPU with control plane
 	logStep(t, 3, "Registering DPU...")
-	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", "qa-tenant", "--insecure")
-	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "remove", "qa-dpu", "--insecure")
+	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", "qa-tenant", "--server", "http://localhost:18080")
+	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "remove", "qa-dpu", "--server", "http://localhost:18080")
 
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", "qa-dpu", "--insecure")
+		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", "qa-dpu", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to register DPU: %v", err)
 	}
 
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "assign", "qa-tenant", "qa-dpu", "--insecure")
+		"tenant", "assign", "qa-tenant", "qa-dpu", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to assign DPU to tenant: %v", err)
 	}
@@ -1887,14 +1887,14 @@ func TestStateSyncConsistency(t *testing.T) {
 	// Step 2: Create tenant and IMMEDIATELY verify it in list (no delay)
 	logStep(t, 2, "Creating tenant and verifying IMMEDIATE visibility...")
 	t.Log("Creating tenant via bluectl tenant add")
-	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenantName, "--insecure")
+	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create tenant: %v", err)
 	}
 
 	// IMMEDIATELY verify tenant appears in list (the bug was that list worked but other ops failed)
 	t.Log("IMMEDIATELY checking tenant list (no delay)")
-	tenantList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "list", "--insecure")
+	tenantList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "list", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to list tenants: %v", err)
 	}
@@ -1908,7 +1908,7 @@ func TestStateSyncConsistency(t *testing.T) {
 	logStep(t, 3, "Creating operator invite IMMEDIATELY after tenant creation...")
 	t.Log("Creating operator invite (this was the failing operation in the bug)")
 	inviteOutput, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"operator", "invite", operatorEmail, tenantName, "--insecure")
+		"operator", "invite", operatorEmail, tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		// This was the exact bug: tenant exists in list but invite fails with "tenant not found"
 		t.Fatalf("SYNC BUG: Operator invite failed immediately after tenant creation: %v\nOutput: %s", err, inviteOutput)
@@ -1924,7 +1924,7 @@ func TestStateSyncConsistency(t *testing.T) {
 	// Step 4: Verify operator appears in list immediately
 	logStep(t, 4, "Verifying operator visible in list IMMEDIATELY...")
 	t.Log("Checking operator list (no delay)")
-	operatorList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "operator", "list", "--insecure")
+	operatorList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "operator", "list", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to list operators: %v", err)
 	}
@@ -1965,14 +1965,14 @@ func TestStateSyncConsistency(t *testing.T) {
 	logStep(t, 6, "Registering DPU and verifying IMMEDIATE visibility...")
 	t.Log("Registering DPU via bluectl dpu add")
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", dpuName, "--insecure")
+		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to register DPU: %v", err)
 	}
 
 	// IMMEDIATELY verify DPU appears in list (no delay)
 	t.Log("IMMEDIATELY checking DPU list (no delay)")
-	dpuList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "list", "--insecure")
+	dpuList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "list", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to list DPUs: %v", err)
 	}
@@ -1986,7 +1986,7 @@ func TestStateSyncConsistency(t *testing.T) {
 	logStep(t, 7, "Assigning DPU to tenant IMMEDIATELY after registration...")
 	t.Log("Assigning DPU to tenant (this tests read consistency between list and assign)")
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "assign", tenantName, dpuName, "--insecure")
+		"tenant", "assign", tenantName, dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		// This would be a sync bug: DPU exists in list but assign fails with "dpu not found"
 		t.Fatalf("SYNC BUG: Tenant assign failed immediately after DPU registration: %v", err)
@@ -1997,7 +1997,7 @@ func TestStateSyncConsistency(t *testing.T) {
 	logStep(t, 8, "Verifying tenant assignment persisted...")
 	t.Log("Checking tenant show output for DPU assignment")
 	tenantShow, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "show", tenantName, "--insecure")
+		"tenant", "show", tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to show tenant: %v", err)
 	}
@@ -2015,7 +2015,7 @@ func TestStateSyncConsistency(t *testing.T) {
 	operator2 := fmt.Sprintf("sync-op2-%s@test.local", testID)
 
 	t.Log("Creating second tenant for cross-check")
-	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenant2, "--insecure")
+	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenant2, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create second tenant: %v", err)
 	}
@@ -2024,28 +2024,28 @@ func TestStateSyncConsistency(t *testing.T) {
 	t.Log("Running rapid-fire operations (list, invite, show) with no delays")
 
 	// List should work
-	tenantList, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "list", "--insecure")
+	tenantList, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "list", "--server", "http://localhost:18080")
 	if err != nil || !strings.Contains(tenantList, tenant2) {
 		t.Fatalf("SYNC BUG: Second tenant not in list. Error: %v, List:\n%s", err, tenantList)
 	}
 
 	// Invite should work
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"operator", "invite", operator2, tenant2, "--insecure")
+		"operator", "invite", operator2, tenant2, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("SYNC BUG: Second operator invite failed: %v", err)
 	}
 
 	// Show should work
 	tenantShow, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "show", tenant2, "--insecure")
+		"tenant", "show", tenant2, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("SYNC BUG: Tenant show failed for second tenant: %v", err)
 	}
 
 	// Assign existing DPU to second tenant (reassignment)
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "assign", tenant2, dpuName, "--insecure")
+		"tenant", "assign", tenant2, dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("SYNC BUG: DPU reassignment to second tenant failed: %v", err)
 	}
@@ -2132,11 +2132,11 @@ func TestDPURegistrationFlows(t *testing.T) {
 
 	// Step 2: Create tenants for later use
 	logStep(t, 2, "Creating tenants for testing...")
-	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenantA, "--insecure")
+	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenantA, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create tenant A: %v", err)
 	}
-	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenantB, "--insecure")
+	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenantB, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create tenant B: %v", err)
 	}
@@ -2145,7 +2145,7 @@ func TestDPURegistrationFlows(t *testing.T) {
 	// Step 3: Test DPU add with invalid/unreachable address
 	logStep(t, 3, "Testing DPU add with unreachable address (should fail gracefully)...")
 	badOutput, badErr := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "add", "10.255.255.255:18051", "--name", "bad-dpu", "--insecure")
+		"dpu", "add", "10.255.255.255:18051", "--name", "bad-dpu", "--server", "http://localhost:18080")
 
 	if badErr == nil {
 		t.Fatalf("Expected error when adding unreachable DPU, but got success. Output:\n%s", badOutput)
@@ -2177,13 +2177,13 @@ func TestDPURegistrationFlows(t *testing.T) {
 	// Step 5: Test DPU add with valid attestation
 	logStep(t, 5, "Testing DPU add with valid attestation...")
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", dpuName, "--insecure")
+		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to add DPU: %v", err)
 	}
 
 	// Verify DPU appears in list
-	dpuList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "list", "--insecure")
+	dpuList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "list", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to list DPUs: %v", err)
 	}
@@ -2195,14 +2195,14 @@ func TestDPURegistrationFlows(t *testing.T) {
 	// Step 6: Assign DPU to tenant A
 	logStep(t, 6, "Assigning DPU to tenant A...")
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "assign", tenantA, dpuName, "--insecure")
+		"tenant", "assign", tenantA, dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to assign DPU to tenant A: %v", err)
 	}
 
 	// Verify assignment via tenant show
 	tenantShow, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "show", tenantA, "--insecure")
+		"tenant", "show", tenantA, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to show tenant A: %v", err)
 	}
@@ -2233,7 +2233,7 @@ func TestDPURegistrationFlows(t *testing.T) {
 	logStep(t, 8, "Verifying host visible in host list...")
 	time.Sleep(1 * time.Second) // Brief pause for state to propagate
 
-	hostList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "host", "list", "--insecure")
+	hostList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "host", "list", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to list hosts: %v", err)
 	}
@@ -2246,14 +2246,14 @@ func TestDPURegistrationFlows(t *testing.T) {
 	// Step 9: Test DPU reassign to different tenant
 	logStep(t, 9, "Testing DPU reassign to tenant B...")
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "assign", tenantB, dpuName, "--insecure")
+		"tenant", "assign", tenantB, dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to reassign DPU to tenant B: %v", err)
 	}
 
 	// Verify DPU now assigned to tenant B
 	tenantShowB, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "show", tenantB, "--insecure")
+		"tenant", "show", tenantB, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to show tenant B: %v", err)
 	}
@@ -2263,7 +2263,7 @@ func TestDPURegistrationFlows(t *testing.T) {
 
 	// Verify DPU no longer assigned to tenant A
 	tenantShowA, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "show", tenantA, "--insecure")
+		"tenant", "show", tenantA, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to show tenant A after reassign: %v", err)
 	}
@@ -2275,13 +2275,13 @@ func TestDPURegistrationFlows(t *testing.T) {
 	// Step 10: Test DPU remove
 	logStep(t, 10, "Testing DPU remove...")
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "remove", dpuName, "--insecure")
+		"dpu", "remove", dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to remove DPU: %v", err)
 	}
 
 	// Verify DPU no longer in list
-	dpuListAfter, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "list", "--insecure")
+	dpuListAfter, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "dpu", "list", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to list DPUs after removal: %v", err)
 	}
@@ -2299,7 +2299,7 @@ func TestDPURegistrationFlows(t *testing.T) {
 	// - Host may still appear with offline status
 	// - Host may be automatically cleaned up
 	// - Host's DPU reference may show as invalid
-	hostListAfter, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "host", "list", "--insecure")
+	hostListAfter, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "host", "list", "--server", "http://localhost:18080")
 	if err != nil {
 		// Host list command failing after DPU removal is acceptable
 		// since the host's associated DPU no longer exists
@@ -2316,14 +2316,14 @@ func TestDPURegistrationFlows(t *testing.T) {
 
 	// First, add the DPU back
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", dpuName, "--insecure")
+		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to re-add DPU: %v", err)
 	}
 
 	// Try adding the same DPU again (should be idempotent)
 	idempotentOutput, _ := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", dpuName, "--insecure")
+		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", dpuName, "--server", "http://localhost:18080")
 	// Check if output indicates the DPU already exists (idempotent behavior)
 	if strings.Contains(idempotentOutput, "already exists") || strings.Contains(idempotentOutput, "Added") {
 		logOK(t, "Idempotent DPU add behavior verified")
@@ -2334,7 +2334,7 @@ func TestDPURegistrationFlows(t *testing.T) {
 
 	// Final cleanup: remove the re-added DPU
 	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "remove", dpuName, "--insecure")
+		"dpu", "remove", dpuName, "--server", "http://localhost:18080")
 
 	fmt.Printf("\n%s\n", color.New(color.FgGreen, color.Bold).Sprint("PASSED: DPU registration flows test"))
 	t.Log("All DPU registration lifecycle operations verified")
@@ -2424,7 +2424,7 @@ func TestTenantLifecycle(t *testing.T) {
 	t.Log("Testing: bluectl tenant add creates tenant that appears in tenant list")
 
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "add", tenantName, "--insecure")
+		"tenant", "add", tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create tenant '%s': %v", tenantName, err)
 	}
@@ -2432,7 +2432,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Verify tenant appears in list
 	tenantList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "list", "--insecure")
+		"tenant", "list", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to list tenants: %v", err)
 	}
@@ -2449,7 +2449,7 @@ func TestTenantLifecycle(t *testing.T) {
 	t.Log("Testing: Creating tenant with same name should return clear error")
 
 	duplicateOutput, duplicateErr := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "add", tenantName, "--insecure")
+		"tenant", "add", tenantName, "--server", "http://localhost:18080")
 	if duplicateErr == nil {
 		t.Fatalf("Expected error when creating duplicate tenant, but got success. Output:\n%s", duplicateOutput)
 	}
@@ -2471,7 +2471,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Create an empty tenant specifically for this test
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "add", emptyTenantName, "--insecure")
+		"tenant", "add", emptyTenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create empty tenant '%s': %v", emptyTenantName, err)
 	}
@@ -2479,14 +2479,14 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Verify it exists
 	tenantListBefore, _ := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "list", "--insecure")
+		"tenant", "list", "--server", "http://localhost:18080")
 	if !strings.Contains(tenantListBefore, emptyTenantName) {
 		t.Fatalf("Empty tenant '%s' not found before deletion test", emptyTenantName)
 	}
 
 	// Delete the empty tenant
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "remove", emptyTenantName, "--insecure")
+		"tenant", "remove", emptyTenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to delete empty tenant '%s': %v", emptyTenantName, err)
 	}
@@ -2494,7 +2494,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Verify it no longer exists
 	tenantListAfter, _ := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "list", "--insecure")
+		"tenant", "list", "--server", "http://localhost:18080")
 	if strings.Contains(tenantListAfter, emptyTenantName) {
 		t.Fatalf("Empty tenant '%s' still visible after deletion. List:\n%s", emptyTenantName, tenantListAfter)
 	}
@@ -2527,7 +2527,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Register DPU
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", dpuName, "--insecure")
+		"dpu", "add", fmt.Sprintf("%s:18051", dpuIP), "--name", dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to register DPU: %v", err)
 	}
@@ -2535,7 +2535,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Assign DPU to tenant
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "assign", tenantName, dpuName, "--insecure")
+		"tenant", "assign", tenantName, dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to assign DPU to tenant: %v", err)
 	}
@@ -2543,7 +2543,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Verify assignment
 	tenantShow, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "show", tenantName, "--insecure")
+		"tenant", "show", tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to show tenant: %v", err)
 	}
@@ -2557,7 +2557,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Attempt to delete tenant with assigned DPU (should fail)
 	deleteOutput, deleteErr := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "remove", tenantName, "--insecure")
+		"tenant", "remove", tenantName, "--server", "http://localhost:18080")
 	if deleteErr == nil {
 		t.Fatalf("Expected error when deleting tenant with assigned DPU, but got success. Output:\n%s", deleteOutput)
 	}
@@ -2575,7 +2575,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Verify DPU still exists in global list
 	dpuList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "list", "--insecure")
+		"dpu", "list", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to list DPUs: %v", err)
 	}
@@ -2589,7 +2589,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Unassign DPU from tenant
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "unassign", dpuName, "--insecure")
+		"tenant", "unassign", dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to unassign DPU from tenant: %v", err)
 	}
@@ -2597,7 +2597,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Verify DPU no longer has tenant assignment
 	dpuListAfterUnassign, _ := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "list", "--insecure", "-o", "json")
+		"dpu", "list", "--server", "http://localhost:18080", "-o", "json")
 	// DPU should still exist but without tenant ID
 	if !strings.Contains(dpuListAfterUnassign, dpuName) {
 		t.Fatalf("DPU '%s' disappeared after unassignment. List:\n%s", dpuName, dpuListAfterUnassign)
@@ -2606,7 +2606,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Now delete should succeed
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "remove", tenantName, "--insecure")
+		"tenant", "remove", tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to delete tenant after unassigning DPU: %v", err)
 	}
@@ -2614,7 +2614,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Verify tenant no longer exists
 	tenantListFinal, _ := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "list", "--insecure")
+		"tenant", "list", "--server", "http://localhost:18080")
 	if strings.Contains(tenantListFinal, tenantName) {
 		t.Fatalf("Tenant '%s' still visible after deletion. List:\n%s", tenantName, tenantListFinal)
 	}
@@ -2623,7 +2623,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Verify DPU still exists with no tenant assignment
 	dpuListVerify, _ := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "list", "--insecure")
+		"dpu", "list", "--server", "http://localhost:18080")
 	if !strings.Contains(dpuListVerify, dpuName) {
 		t.Fatalf("DPU '%s' missing after tenant deletion. List:\n%s", dpuName, dpuListVerify)
 	}
@@ -2638,7 +2638,7 @@ func TestTenantLifecycle(t *testing.T) {
 	// Create a new tenant for host enrollment test
 	hostTenantName := fmt.Sprintf("host-tenant-%s", testID)
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "add", hostTenantName, "--insecure")
+		"tenant", "add", hostTenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create host tenant: %v", err)
 	}
@@ -2646,7 +2646,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Assign DPU to new tenant
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "assign", hostTenantName, dpuName, "--insecure")
+		"tenant", "assign", hostTenantName, dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to assign DPU to host tenant: %v", err)
 	}
@@ -2674,7 +2674,7 @@ func TestTenantLifecycle(t *testing.T) {
 	// Verify host appears in host list
 	time.Sleep(1 * time.Second)
 	hostList, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"host", "list", "--insecure")
+		"host", "list", "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to list hosts: %v", err)
 	}
@@ -2688,7 +2688,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Unassign DPU from tenant first (required before deletion)
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "unassign", dpuName, "--insecure")
+		"tenant", "unassign", dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to unassign DPU: %v", err)
 	}
@@ -2696,7 +2696,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Delete the tenant
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "remove", hostTenantName, "--insecure")
+		"tenant", "remove", hostTenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to delete host tenant: %v", err)
 	}
@@ -2704,7 +2704,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Verify host record still exists (but tenant association cleared)
 	hostListAfter, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"host", "list", "--insecure")
+		"host", "list", "--server", "http://localhost:18080")
 	if err != nil {
 		// Host list failing after tenant deletion is acceptable
 		t.Logf("Host list after tenant deletion: command returned error (may be expected)")
@@ -2723,7 +2723,7 @@ func TestTenantLifecycle(t *testing.T) {
 	// Create a tenant with an operator invite to test orphan cleanup
 	orphanTenantName := fmt.Sprintf("orphan-tenant-%s", testID)
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "add", orphanTenantName, "--insecure")
+		"tenant", "add", orphanTenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create orphan test tenant: %v", err)
 	}
@@ -2732,7 +2732,7 @@ func TestTenantLifecycle(t *testing.T) {
 	// Create an operator invite for this tenant
 	operatorEmail := fmt.Sprintf("orphan-test-%s@test.local", testID)
 	inviteOutput, inviteErr := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"operator", "invite", operatorEmail, orphanTenantName, "--insecure")
+		"operator", "invite", operatorEmail, orphanTenantName, "--server", "http://localhost:18080")
 	if inviteErr != nil {
 		t.Logf("Note: Could not create invite (may be expected): %v", inviteErr)
 	} else {
@@ -2742,15 +2742,15 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Delete the tenant (should also clean up related invites/operators)
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "remove", orphanTenantName, "--insecure")
+		"tenant", "remove", orphanTenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		// If deletion fails due to operator dependency, remove operator first
 		if strings.Contains(err.Error(), "depend") || strings.Contains(err.Error(), "Operator") {
 			t.Logf("Tenant has operator dependency, removing operator first")
 			_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-				"operator", "remove", operatorEmail, "--insecure")
+				"operator", "remove", operatorEmail, "--server", "http://localhost:18080")
 			_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-				"tenant", "remove", orphanTenantName, "--insecure")
+				"tenant", "remove", orphanTenantName, "--server", "http://localhost:18080")
 			if err != nil {
 				t.Fatalf("Failed to delete orphan test tenant after operator removal: %v", err)
 			}
@@ -2762,7 +2762,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Verify tenant no longer exists
 	finalTenantList, _ := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"tenant", "list", "--insecure")
+		"tenant", "list", "--server", "http://localhost:18080")
 	if strings.Contains(finalTenantList, orphanTenantName) {
 		t.Fatalf("Orphan test tenant '%s' still visible. List:\n%s", orphanTenantName, finalTenantList)
 	}
@@ -2770,7 +2770,7 @@ func TestTenantLifecycle(t *testing.T) {
 
 	// Verify operator invite doesn't orphan (check operator list)
 	operatorList, _ := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"operator", "list", "--insecure")
+		"operator", "list", "--server", "http://localhost:18080")
 	if strings.Contains(operatorList, operatorEmail) {
 		t.Logf("Note: Operator '%s' still exists (may be independent of tenant)", operatorEmail)
 	} else {
@@ -2786,7 +2786,7 @@ func TestTenantLifecycle(t *testing.T) {
 	t.Log("Cleaning up test DPU")
 
 	_, _ = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"dpu", "remove", dpuName, "--insecure")
+		"dpu", "remove", dpuName, "--server", "http://localhost:18080")
 	t.Logf("Removed test DPU: %s", dpuName)
 
 	fmt.Printf("\n%s\n", color.New(color.FgGreen, color.Bold).Sprint("PASSED: Tenant lifecycle test"))
@@ -2861,7 +2861,7 @@ func TestInviteCodeLifecycle(t *testing.T) {
 
 	// Step 2: Create tenant
 	logStep(t, 2, "Creating tenant...")
-	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenantName, "--insecure")
+	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create tenant: %v", err)
 	}
@@ -2874,7 +2874,7 @@ func TestInviteCodeLifecycle(t *testing.T) {
 
 	operatorEmail1 := fmt.Sprintf("op1-%s@test.local", testID)
 	inviteOutput, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"operator", "invite", operatorEmail1, tenantName, "--insecure")
+		"operator", "invite", operatorEmail1, tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create invite: %v", err)
 	}
@@ -2916,7 +2916,7 @@ func TestInviteCodeLifecycle(t *testing.T) {
 
 	operatorEmail2 := fmt.Sprintf("op2-%s@test.local", testID)
 	inviteOutput2, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"operator", "invite", operatorEmail2, tenantName, "--insecure")
+		"operator", "invite", operatorEmail2, tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create second invite: %v", err)
 	}
@@ -2951,7 +2951,7 @@ func TestInviteCodeLifecycle(t *testing.T) {
 
 	operatorEmail3 := fmt.Sprintf("op3-%s@test.local", testID)
 	inviteOutput3, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"operator", "invite", operatorEmail3, tenantName, "--insecure")
+		"operator", "invite", operatorEmail3, tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create third invite: %v", err)
 	}
@@ -2986,7 +2986,7 @@ func TestInviteCodeLifecycle(t *testing.T) {
 	logStep(t, 7, "Testing invite for deleted tenant...")
 
 	tenantName2 := fmt.Sprintf("invite-del-%s", testID)
-	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenantName2, "--insecure")
+	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "add", tenantName2, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create second tenant: %v", err)
 	}
@@ -2994,7 +2994,7 @@ func TestInviteCodeLifecycle(t *testing.T) {
 
 	operatorEmail4 := fmt.Sprintf("op4-%s@test.local", testID)
 	inviteOutput4, err := cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl",
-		"operator", "invite", operatorEmail4, tenantName2, "--insecure")
+		"operator", "invite", operatorEmail4, tenantName2, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Fatalf("Failed to create invite for second tenant: %v", err)
 	}
@@ -3006,7 +3006,7 @@ func TestInviteCodeLifecycle(t *testing.T) {
 	t.Logf("Created invite code: %s for %s", inviteCode4, operatorEmail4)
 
 	// Delete the tenant
-	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "remove", tenantName2, "--insecure")
+	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "/home/ubuntu/bluectl", "tenant", "remove", tenantName2, "--server", "http://localhost:18080")
 	if err != nil {
 		t.Logf("Tenant deletion result: %v (may have constraints)", err)
 	} else {

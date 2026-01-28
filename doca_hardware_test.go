@@ -365,14 +365,14 @@ func TestDOCAComchEnrollmentE2E(t *testing.T) {
 	hwLogStep(t, 5, "Registering DPU with nexus...")
 
 	// Create tenant
-	_, _ = cfg.runCmd(ctx, "./bin/bluectl", "tenant", "add", tenantName, "--insecure")
+	_, _ = cfg.runCmd(ctx, "./bin/bluectl", "tenant", "add", tenantName, "--server", "http://localhost:18080")
 
 	// Remove stale DPU if exists
-	_, _ = cfg.runCmd(ctx, "./bin/bluectl", "dpu", "remove", dpuName, "--insecure")
+	_, _ = cfg.runCmd(ctx, "./bin/bluectl", "dpu", "remove", dpuName, "--server", "http://localhost:18080")
 
 	// Register DPU with aegis's gRPC port
 	bf3GRPCAddr := fmt.Sprintf("%s:%s", cfg.BF3IP, defaultGRPCPort)
-	_, err = cfg.runCmd(ctx, "./bin/bluectl", "dpu", "add", bf3GRPCAddr, "--name", dpuName, "--insecure")
+	_, err = cfg.runCmd(ctx, "./bin/bluectl", "dpu", "add", bf3GRPCAddr, "--name", dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		result.Errors = append(result.Errors, fmt.Sprintf("Failed to register DPU: %v", err))
 		t.Fatalf("Failed to register DPU: %v", err)
@@ -382,7 +382,7 @@ func TestDOCAComchEnrollmentE2E(t *testing.T) {
 	// Step 6: Assign DPU to tenant
 	hwLogStep(t, 6, "Assigning DPU to tenant...")
 
-	_, err = cfg.runCmd(ctx, "./bin/bluectl", "tenant", "assign", tenantName, dpuName, "--insecure")
+	_, err = cfg.runCmd(ctx, "./bin/bluectl", "tenant", "assign", tenantName, dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		result.Errors = append(result.Errors, fmt.Sprintf("Failed to assign DPU: %v", err))
 		t.Fatalf("Failed to assign DPU to tenant: %v", err)
@@ -454,7 +454,7 @@ func TestDOCAComchEnrollmentE2E(t *testing.T) {
 	hwLogStep(t, 9, "Verifying enrollment in nexus...")
 
 	// List hosts via bluectl
-	hostList, err := cfg.runCmd(ctx, "./bin/bluectl", "host", "list", "--insecure", "-o", "json")
+	hostList, err := cfg.runCmd(ctx, "./bin/bluectl", "host", "list", "--server", "http://localhost:18080", "-o", "json")
 	if err != nil {
 		hwLogInfo(t, "Could not list hosts (command may not exist): %v", err)
 	} else {
@@ -587,17 +587,17 @@ func TestDOCAComchCredentialDeliveryE2E(t *testing.T) {
 	// Step 4: Register DPU
 	hwLogStep(t, 4, "Registering DPU with nexus...")
 
-	_, _ = cfg.runCmd(ctx, "./bin/bluectl", "tenant", "add", tenantName, "--insecure")
-	_, _ = cfg.runCmd(ctx, "./bin/bluectl", "dpu", "remove", dpuName, "--insecure")
+	_, _ = cfg.runCmd(ctx, "./bin/bluectl", "tenant", "add", tenantName, "--server", "http://localhost:18080")
+	_, _ = cfg.runCmd(ctx, "./bin/bluectl", "dpu", "remove", dpuName, "--server", "http://localhost:18080")
 
 	bf3GRPCAddr := fmt.Sprintf("%s:%s", cfg.BF3IP, defaultGRPCPort)
-	_, err = cfg.runCmd(ctx, "./bin/bluectl", "dpu", "add", bf3GRPCAddr, "--name", dpuName, "--insecure")
+	_, err = cfg.runCmd(ctx, "./bin/bluectl", "dpu", "add", bf3GRPCAddr, "--name", dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		result.Errors = append(result.Errors, fmt.Sprintf("Failed to register DPU: %v", err))
 		t.Fatalf("Failed to register DPU: %v", err)
 	}
 
-	_, err = cfg.runCmd(ctx, "./bin/bluectl", "tenant", "assign", tenantName, dpuName, "--insecure")
+	_, err = cfg.runCmd(ctx, "./bin/bluectl", "tenant", "assign", tenantName, dpuName, "--server", "http://localhost:18080")
 	if err != nil {
 		result.Errors = append(result.Errors, fmt.Sprintf("Failed to assign DPU: %v", err))
 		t.Fatalf("Failed to assign DPU: %v", err)
@@ -651,7 +651,7 @@ func TestDOCAComchCredentialDeliveryE2E(t *testing.T) {
 	_, _ = cfg.runCmd(ctx, "sudo", "truncate", "-s", "0", "/tmp/sentry.log")
 
 	// Try to create SSH CA via bluectl
-	_, err = cfg.runCmd(ctx, "./bin/bluectl", "ssh-ca", "add", caName, "--tenant", tenantName, "--insecure")
+	_, err = cfg.runCmd(ctx, "./bin/bluectl", "ssh-ca", "add", caName, "--tenant", tenantName, "--server", "http://localhost:18080")
 	if err != nil {
 		// Fall back to direct API call if bluectl command doesn't exist
 		hwLogInfo(t, "bluectl ssh-ca add not available, using direct API call")
