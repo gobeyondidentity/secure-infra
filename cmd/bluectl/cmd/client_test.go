@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -232,5 +233,707 @@ func TestNewNexusClient(t *testing.T) {
 	client = NewNexusClient("http://localhost:8080")
 	if client.baseURL != "http://localhost:8080" {
 		t.Errorf("expected base URL unchanged, got %s", client.baseURL)
+	}
+}
+
+// ----- Tenant Client Tests -----
+
+func TestNexusClient_ListTenants(t *testing.T) {
+	tests := []struct {
+		name       string
+		serverResp []tenantResponse
+		serverCode int
+		wantErr    bool
+		wantCount  int
+	}{
+		{
+			name: "successful list with tenants",
+			serverResp: []tenantResponse{
+				{ID: "tnt_abc123", Name: "Production", Description: "Prod environment", Contact: "ops@example.com", Tags: []string{"prod"}, DPUCount: 2, CreatedAt: "2024-01-01T00:00:00Z", UpdatedAt: "2024-01-01T00:00:00Z"},
+				{ID: "tnt_def456", Name: "Development", Description: "Dev environment", Contact: "dev@example.com", Tags: []string{"dev"}, DPUCount: 1, CreatedAt: "2024-01-01T00:00:00Z", UpdatedAt: "2024-01-01T00:00:00Z"},
+			},
+			serverCode: http.StatusOK,
+			wantErr:    false,
+			wantCount:  2,
+		},
+		{
+			name:       "empty list",
+			serverResp: []tenantResponse{},
+			serverCode: http.StatusOK,
+			wantErr:    false,
+			wantCount:  0,
+		},
+		{
+			name:       "server error",
+			serverCode: http.StatusInternalServerError,
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodGet {
+					t.Errorf("expected GET, got %s", r.Method)
+				}
+				if r.URL.Path != "/api/tenants" {
+					t.Errorf("expected /api/tenants, got %s", r.URL.Path)
+				}
+
+				w.WriteHeader(tt.serverCode)
+				if tt.serverCode == http.StatusOK {
+					json.NewEncoder(w).Encode(tt.serverResp)
+				}
+			}))
+			defer server.Close()
+
+			client := NewNexusClient(server.URL)
+			resp, err := client.ListTenants(context.Background())
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ListTenants() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !tt.wantErr {
+				if len(resp) != tt.wantCount {
+					t.Errorf("expected %d tenants, got %d", tt.wantCount, len(resp))
+				}
+			}
+		})
+	}
+}
+
+func TestNexusClient_CreateTenant(t *testing.T) {
+	tests := []struct {
+		name        string
+		tenantName  string
+		description string
+		contact     string
+		tags        []string
+		serverResp  tenantResponse
+		serverCode  int
+		wantErr     bool
+	}{
+		{
+			name:        "successful create",
+			tenantName:  "Production",
+			description: "Prod environment",
+			contact:     "ops@example.com",
+			tags:        []string{"prod"},
+			serverResp: tenantResponse{
+				ID:          "tnt_abc123",
+				Name:        "Production",
+				Description: "Prod environment",
+				Contact:     "ops@example.com",
+				Tags:        []string{"prod"},
+				DPUCount:    0,
+				CreatedAt:   "2024-01-01T00:00:00Z",
+				UpdatedAt:   "2024-01-01T00:00:00Z",
+			},
+			serverCode: http.StatusCreated,
+			wantErr:    false,
+		},
+		{
+			name:        "conflict - tenant exists",
+			tenantName:  "Production",
+			description: "Prod environment",
+			contact:     "ops@example.com",
+			tags:        []string{"prod"},
+			serverCode:  http.StatusConflict,
+			wantErr:     true,
+		},
+		{
+			name:        "server error",
+			tenantName:  "Production",
+			description: "Prod environment",
+			contact:     "ops@example.com",
+			tags:        []string{"prod"},
+			serverCode:  http.StatusInternalServerError,
+			wantErr:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodPost {
+					t.Errorf("expected POST, got %s", r.Method)
+				}
+				if r.URL.Path != "/api/tenants" {
+					t.Errorf("expected /api/tenants, got %s", r.URL.Path)
+				}
+
+				// Verify request body
+				var req createTenantRequest
+				if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+					t.Errorf("failed to decode request body: %v", err)
+				}
+				if req.Name != tt.tenantName {
+					t.Errorf("expected name %s, got %s", tt.tenantName, req.Name)
+				}
+				if req.Description != tt.description {
+					t.Errorf("expected description %s, got %s", tt.description, req.Description)
+				}
+				if req.Contact != tt.contact {
+					t.Errorf("expected contact %s, got %s", tt.contact, req.Contact)
+				}
+
+				w.WriteHeader(tt.serverCode)
+				if tt.serverCode == http.StatusCreated {
+					json.NewEncoder(w).Encode(tt.serverResp)
+				}
+			}))
+			defer server.Close()
+
+			client := NewNexusClient(server.URL)
+			resp, err := client.CreateTenant(context.Background(), tt.tenantName, tt.description, tt.contact, tt.tags)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CreateTenant() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !tt.wantErr {
+				if resp.ID != tt.serverResp.ID {
+					t.Errorf("expected ID %s, got %s", tt.serverResp.ID, resp.ID)
+				}
+				if resp.Name != tt.serverResp.Name {
+					t.Errorf("expected Name %s, got %s", tt.serverResp.Name, resp.Name)
+				}
+			}
+		})
+	}
+}
+
+func TestNexusClient_GetTenant(t *testing.T) {
+	tests := []struct {
+		name       string
+		tenantID   string
+		serverResp tenantResponse
+		serverCode int
+		wantErr    bool
+	}{
+		{
+			name:     "successful get",
+			tenantID: "tnt_abc123",
+			serverResp: tenantResponse{
+				ID:          "tnt_abc123",
+				Name:        "Production",
+				Description: "Prod environment",
+				Contact:     "ops@example.com",
+				Tags:        []string{"prod"},
+				DPUCount:    2,
+				CreatedAt:   "2024-01-01T00:00:00Z",
+				UpdatedAt:   "2024-01-01T00:00:00Z",
+			},
+			serverCode: http.StatusOK,
+			wantErr:    false,
+		},
+		{
+			name:       "not found",
+			tenantID:   "nonexistent",
+			serverCode: http.StatusNotFound,
+			wantErr:    true,
+		},
+		{
+			name:       "server error",
+			tenantID:   "tnt_abc123",
+			serverCode: http.StatusInternalServerError,
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodGet {
+					t.Errorf("expected GET, got %s", r.Method)
+				}
+				expectedPath := "/api/tenants/" + tt.tenantID
+				if r.URL.Path != expectedPath {
+					t.Errorf("expected %s, got %s", expectedPath, r.URL.Path)
+				}
+
+				w.WriteHeader(tt.serverCode)
+				if tt.serverCode == http.StatusOK {
+					json.NewEncoder(w).Encode(tt.serverResp)
+				}
+			}))
+			defer server.Close()
+
+			client := NewNexusClient(server.URL)
+			resp, err := client.GetTenant(context.Background(), tt.tenantID)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetTenant() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !tt.wantErr {
+				if resp.ID != tt.serverResp.ID {
+					t.Errorf("expected ID %s, got %s", tt.serverResp.ID, resp.ID)
+				}
+				if resp.Name != tt.serverResp.Name {
+					t.Errorf("expected Name %s, got %s", tt.serverResp.Name, resp.Name)
+				}
+			}
+		})
+	}
+}
+
+func TestNexusClient_UpdateTenant(t *testing.T) {
+	tests := []struct {
+		name        string
+		tenantID    string
+		tenantName  string
+		description string
+		contact     string
+		tags        []string
+		serverResp  tenantResponse
+		serverCode  int
+		wantErr     bool
+	}{
+		{
+			name:        "successful update",
+			tenantID:    "tnt_abc123",
+			tenantName:  "Production Updated",
+			description: "Updated description",
+			contact:     "newops@example.com",
+			tags:        []string{"prod", "updated"},
+			serverResp: tenantResponse{
+				ID:          "tnt_abc123",
+				Name:        "Production Updated",
+				Description: "Updated description",
+				Contact:     "newops@example.com",
+				Tags:        []string{"prod", "updated"},
+				DPUCount:    2,
+				CreatedAt:   "2024-01-01T00:00:00Z",
+				UpdatedAt:   "2024-01-02T00:00:00Z",
+			},
+			serverCode: http.StatusOK,
+			wantErr:    false,
+		},
+		{
+			name:        "not found",
+			tenantID:    "nonexistent",
+			tenantName:  "Production Updated",
+			description: "Updated description",
+			contact:     "newops@example.com",
+			tags:        []string{"prod", "updated"},
+			serverCode:  http.StatusNotFound,
+			wantErr:     true,
+		},
+		{
+			name:        "server error",
+			tenantID:    "tnt_abc123",
+			tenantName:  "Production Updated",
+			description: "Updated description",
+			contact:     "newops@example.com",
+			tags:        []string{"prod", "updated"},
+			serverCode:  http.StatusInternalServerError,
+			wantErr:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodPut {
+					t.Errorf("expected PUT, got %s", r.Method)
+				}
+				expectedPath := "/api/tenants/" + tt.tenantID
+				if r.URL.Path != expectedPath {
+					t.Errorf("expected %s, got %s", expectedPath, r.URL.Path)
+				}
+
+				// Verify request body
+				var req updateTenantRequest
+				if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+					t.Errorf("failed to decode request body: %v", err)
+				}
+				if req.Name != tt.tenantName {
+					t.Errorf("expected name %s, got %s", tt.tenantName, req.Name)
+				}
+
+				w.WriteHeader(tt.serverCode)
+				if tt.serverCode == http.StatusOK {
+					json.NewEncoder(w).Encode(tt.serverResp)
+				}
+			}))
+			defer server.Close()
+
+			client := NewNexusClient(server.URL)
+			resp, err := client.UpdateTenant(context.Background(), tt.tenantID, tt.tenantName, tt.description, tt.contact, tt.tags)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UpdateTenant() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !tt.wantErr {
+				if resp.ID != tt.serverResp.ID {
+					t.Errorf("expected ID %s, got %s", tt.serverResp.ID, resp.ID)
+				}
+				if resp.Name != tt.serverResp.Name {
+					t.Errorf("expected Name %s, got %s", tt.serverResp.Name, resp.Name)
+				}
+			}
+		})
+	}
+}
+
+func TestNexusClient_DeleteTenant(t *testing.T) {
+	tests := []struct {
+		name       string
+		tenantID   string
+		serverCode int
+		wantErr    bool
+	}{
+		{
+			name:       "successful delete",
+			tenantID:   "tnt_abc123",
+			serverCode: http.StatusNoContent,
+			wantErr:    false,
+		},
+		{
+			name:       "not found",
+			tenantID:   "nonexistent",
+			serverCode: http.StatusNotFound,
+			wantErr:    true,
+		},
+		{
+			name:       "conflict - has DPUs",
+			tenantID:   "tnt_abc123",
+			serverCode: http.StatusConflict,
+			wantErr:    true,
+		},
+		{
+			name:       "server error",
+			tenantID:   "tnt_abc123",
+			serverCode: http.StatusInternalServerError,
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodDelete {
+					t.Errorf("expected DELETE, got %s", r.Method)
+				}
+				expectedPath := "/api/tenants/" + tt.tenantID
+				if r.URL.Path != expectedPath {
+					t.Errorf("expected %s, got %s", expectedPath, r.URL.Path)
+				}
+
+				w.WriteHeader(tt.serverCode)
+			}))
+			defer server.Close()
+
+			client := NewNexusClient(server.URL)
+			err := client.DeleteTenant(context.Background(), tt.tenantID)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DeleteTenant() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestNexusClient_AssignDPUToTenant(t *testing.T) {
+	tests := []struct {
+		name       string
+		tenantID   string
+		dpuID      string
+		serverCode int
+		wantErr    bool
+	}{
+		{
+			name:       "successful assign",
+			tenantID:   "tnt_abc123",
+			dpuID:      "dpu_xyz789",
+			serverCode: http.StatusOK,
+			wantErr:    false,
+		},
+		{
+			name:       "tenant not found",
+			tenantID:   "nonexistent",
+			dpuID:      "dpu_xyz789",
+			serverCode: http.StatusNotFound,
+			wantErr:    true,
+		},
+		{
+			name:       "DPU not found",
+			tenantID:   "tnt_abc123",
+			dpuID:      "nonexistent",
+			serverCode: http.StatusNotFound,
+			wantErr:    true,
+		},
+		{
+			name:       "server error",
+			tenantID:   "tnt_abc123",
+			dpuID:      "dpu_xyz789",
+			serverCode: http.StatusInternalServerError,
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodPost {
+					t.Errorf("expected POST, got %s", r.Method)
+				}
+				expectedPath := "/api/tenants/" + tt.tenantID + "/dpus"
+				if r.URL.Path != expectedPath {
+					t.Errorf("expected %s, got %s", expectedPath, r.URL.Path)
+				}
+
+				// Verify request body
+				var req assignDPURequest
+				if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+					t.Errorf("failed to decode request body: %v", err)
+				}
+				if req.DPUID != tt.dpuID {
+					t.Errorf("expected dpuId %s, got %s", tt.dpuID, req.DPUID)
+				}
+
+				w.WriteHeader(tt.serverCode)
+				if tt.serverCode == http.StatusOK {
+					json.NewEncoder(w).Encode(dpuResponse{ID: tt.dpuID, TenantID: &tt.tenantID})
+				}
+			}))
+			defer server.Close()
+
+			client := NewNexusClient(server.URL)
+			err := client.AssignDPUToTenant(context.Background(), tt.tenantID, tt.dpuID)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AssignDPUToTenant() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestAssignDPURemote_ResolvesNames(t *testing.T) {
+	// Test data: API returns IDs, but we pass names to assignDPURemote
+	tenantID := "tnt_abc123"
+	tenantName := "Production"
+	dpuID := "dpu_xyz789"
+	dpuName := "bf3-lab"
+
+	tests := []struct {
+		name           string
+		tenantInput    string // What the user passes (name or ID)
+		dpuInput       string // What the user passes (name or ID)
+		expectTenantID string // What should be sent to the API
+		expectDPUID    string // What should be sent to the API
+		wantErr        bool
+		errContains    string
+	}{
+		{
+			name:           "resolve both names to IDs",
+			tenantInput:    tenantName, // "Production"
+			dpuInput:       dpuName,    // "bf3-lab"
+			expectTenantID: tenantID,   // should resolve to "tnt_abc123"
+			expectDPUID:    dpuID,      // should resolve to "dpu_xyz789"
+			wantErr:        false,
+		},
+		{
+			name:           "pass IDs directly",
+			tenantInput:    tenantID, // "tnt_abc123"
+			dpuInput:       dpuID,    // "dpu_xyz789"
+			expectTenantID: tenantID,
+			expectDPUID:    dpuID,
+			wantErr:        false,
+		},
+		{
+			name:           "resolve tenant name, pass DPU ID",
+			tenantInput:    tenantName, // "Production"
+			dpuInput:       dpuID,      // "dpu_xyz789"
+			expectTenantID: tenantID,
+			expectDPUID:    dpuID,
+			wantErr:        false,
+		},
+		{
+			name:           "pass tenant ID, resolve DPU name",
+			tenantInput:    tenantID, // "tnt_abc123"
+			dpuInput:       dpuName,  // "bf3-lab"
+			expectTenantID: tenantID,
+			expectDPUID:    dpuID,
+			wantErr:        false,
+		},
+		{
+			name:        "tenant not found",
+			tenantInput: "nonexistent",
+			dpuInput:    dpuName,
+			wantErr:     true,
+			errContains: "tenant not found",
+		},
+		{
+			name:        "DPU not found",
+			tenantInput: tenantName,
+			dpuInput:    "nonexistent",
+			wantErr:     true,
+			errContains: "DPU not found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var assignCalled bool
+			var receivedTenantID, receivedDPUID string
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				switch {
+				case r.Method == http.MethodGet && r.URL.Path == "/api/tenants":
+					// Return list of tenants for name resolution
+					tenants := []tenantResponse{
+						{ID: tenantID, Name: tenantName, Description: "Prod env"},
+						{ID: "tnt_other", Name: "Development", Description: "Dev env"},
+					}
+					w.WriteHeader(http.StatusOK)
+					json.NewEncoder(w).Encode(tenants)
+
+				case r.Method == http.MethodGet && r.URL.Path == "/api/dpus":
+					// Return list of DPUs for name resolution
+					dpus := []dpuResponse{
+						{ID: dpuID, Name: dpuName, Host: "192.168.1.204", Port: 18051},
+						{ID: "dpu_other", Name: "bf3-dev", Host: "192.168.1.205", Port: 18051},
+					}
+					w.WriteHeader(http.StatusOK)
+					json.NewEncoder(w).Encode(dpus)
+
+				case r.Method == http.MethodPost && len(r.URL.Path) > len("/api/tenants/") && r.URL.Path[len(r.URL.Path)-5:] == "/dpus":
+					// This is the assign call: POST /api/tenants/{tenantID}/dpus
+					assignCalled = true
+					// Extract tenant ID from path: /api/tenants/{tenantID}/dpus
+					path := r.URL.Path
+					path = path[len("/api/tenants/"):] // Remove prefix
+					path = path[:len(path)-5]          // Remove "/dpus" suffix
+					receivedTenantID = path
+
+					// Get DPU ID from request body
+					var req assignDPURequest
+					if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+						t.Errorf("failed to decode assign request: %v", err)
+						w.WriteHeader(http.StatusBadRequest)
+						return
+					}
+					receivedDPUID = req.DPUID
+
+					w.WriteHeader(http.StatusOK)
+					json.NewEncoder(w).Encode(dpuResponse{ID: receivedDPUID, TenantID: &receivedTenantID})
+
+				default:
+					t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+					w.WriteHeader(http.StatusNotFound)
+				}
+			}))
+			defer server.Close()
+
+			err := assignDPURemote(context.Background(), server.URL, tt.tenantInput, tt.dpuInput)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("expected error containing %q, got nil", tt.errContains)
+					return
+				}
+				if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
+					t.Errorf("expected error containing %q, got %q", tt.errContains, err.Error())
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+
+			if !assignCalled {
+				t.Error("expected assign API to be called")
+				return
+			}
+
+			if receivedTenantID != tt.expectTenantID {
+				t.Errorf("expected tenant ID %q in API call, got %q", tt.expectTenantID, receivedTenantID)
+			}
+
+			if receivedDPUID != tt.expectDPUID {
+				t.Errorf("expected DPU ID %q in API call, got %q", tt.expectDPUID, receivedDPUID)
+			}
+		})
+	}
+}
+
+
+func TestNexusClient_UnassignDPUFromTenant(t *testing.T) {
+	tests := []struct {
+		name       string
+		tenantID   string
+		dpuID      string
+		serverCode int
+		wantErr    bool
+	}{
+		{
+			name:       "successful unassign",
+			tenantID:   "tnt_abc123",
+			dpuID:      "dpu_xyz789",
+			serverCode: http.StatusNoContent,
+			wantErr:    false,
+		},
+		{
+			name:       "tenant not found",
+			tenantID:   "nonexistent",
+			dpuID:      "dpu_xyz789",
+			serverCode: http.StatusNotFound,
+			wantErr:    true,
+		},
+		{
+			name:       "DPU not found",
+			tenantID:   "tnt_abc123",
+			dpuID:      "nonexistent",
+			serverCode: http.StatusNotFound,
+			wantErr:    true,
+		},
+		{
+			name:       "DPU not assigned to tenant",
+			tenantID:   "tnt_abc123",
+			dpuID:      "dpu_xyz789",
+			serverCode: http.StatusBadRequest,
+			wantErr:    true,
+		},
+		{
+			name:       "server error",
+			tenantID:   "tnt_abc123",
+			dpuID:      "dpu_xyz789",
+			serverCode: http.StatusInternalServerError,
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodDelete {
+					t.Errorf("expected DELETE, got %s", r.Method)
+				}
+				expectedPath := "/api/tenants/" + tt.tenantID + "/dpus/" + tt.dpuID
+				if r.URL.Path != expectedPath {
+					t.Errorf("expected %s, got %s", expectedPath, r.URL.Path)
+				}
+
+				w.WriteHeader(tt.serverCode)
+			}))
+			defer server.Close()
+
+			client := NewNexusClient(server.URL)
+			err := client.UnassignDPUFromTenant(context.Background(), tt.tenantID, tt.dpuID)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UnassignDPUFromTenant() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }
