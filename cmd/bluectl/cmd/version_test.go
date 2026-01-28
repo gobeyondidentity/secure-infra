@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -39,6 +38,11 @@ func TestVersionCommand_BasicOutput(t *testing.T) {
 }
 
 func TestVersionCommand_CheckFlag_UpdateAvailable(t *testing.T) {
+	// Save and restore original version (may be "dev" in dev builds)
+	originalVersion := version.Version
+	version.Version = "1.0.0"
+	defer func() { version.Version = originalVersion }()
+
 	// Mock server that returns a newer version
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -317,25 +321,4 @@ func TestRootCmdVersionFieldRemoved(t *testing.T) {
 	if rootCmd.Version != "" {
 		t.Errorf("rootCmd.Version should be empty (we use version subcommand), got %q", rootCmd.Version)
 	}
-}
-
-// Helper to capture stderr during tests
-func captureStderr(t *testing.T, fn func()) string {
-	t.Helper()
-
-	oldStderr := os.Stderr
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatal(err)
-	}
-	os.Stderr = w
-
-	fn()
-
-	w.Close()
-	os.Stderr = oldStderr
-
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	return buf.String()
 }

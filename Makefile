@@ -15,22 +15,28 @@ HOST_AGENT_AMD64 := $(BIN_DIR)/host-agent-amd64
 HOST_AGENT_ARM64 := $(BIN_DIR)/host-agent-arm64
 DPUEMU := $(BIN_DIR)/dpuemu
 
+# Version from git tag or "dev"
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+
+# ldflags for embedding version
+LDFLAGS := -X github.com/nmelo/secure-infra/internal/version.Version=$(VERSION)
+
 .PHONY: all agent bluectl server km host-agent dpuemu test clean release help
 
 # Default target: build all binaries
 all: $(BIN_DIR)
 	@echo "Building all binaries..."
-	@go build -o $(AGENT) ./cmd/agent
+	@go build -ldflags "$(LDFLAGS)" -o $(AGENT) ./cmd/aegis
 	@echo "  $(AGENT)"
-	@go build -o $(BLUECTL) ./cmd/bluectl
+	@go build -ldflags "$(LDFLAGS)" -o $(BLUECTL) ./cmd/bluectl
 	@echo "  $(BLUECTL)"
-	@go build -o $(KM) ./cmd/keymaker
+	@go build -ldflags "$(LDFLAGS)" -o $(KM) ./cmd/keymaker
 	@echo "  $(KM)"
-	@go build -o $(SERVER) ./cmd/server
+	@go build -ldflags "$(LDFLAGS)" -o $(SERVER) ./cmd/nexus
 	@echo "  $(SERVER)"
-	@go build -o $(HOST_AGENT) ./cmd/host-agent
+	@go build -ldflags "$(LDFLAGS)" -o $(HOST_AGENT) ./cmd/sentry
 	@echo "  $(HOST_AGENT)"
-	@go build -o $(DPUEMU) ./dpuemu/cmd/dpuemu
+	@go build -ldflags "$(LDFLAGS)" -o $(DPUEMU) ./dpuemu/cmd/dpuemu
 	@echo "  $(DPUEMU)"
 	@echo "Done."
 
@@ -41,46 +47,46 @@ $(BIN_DIR):
 # Build agent for local platform and cross-compile for BlueField (ARM64)
 agent: $(BIN_DIR)
 	@echo "Building agent..."
-	@go build -o $(AGENT) ./cmd/agent
+	@go build -ldflags "$(LDFLAGS)" -o $(AGENT) ./cmd/aegis
 	@echo "  $(AGENT)"
 	@echo "Cross-compiling agent for BlueField (linux/arm64)..."
-	@GOOS=linux GOARCH=arm64 go build -o $(AGENT_ARM64) ./cmd/agent
+	@GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(AGENT_ARM64) ./cmd/aegis
 	@echo "  $(AGENT_ARM64)"
 
 # Build bluectl CLI
 bluectl: $(BIN_DIR)
 	@echo "Building bluectl..."
-	@go build -o $(BLUECTL) ./cmd/bluectl
+	@go build -ldflags "$(LDFLAGS)" -o $(BLUECTL) ./cmd/bluectl
 	@echo "  $(BLUECTL)"
 
 # Build server
 server: $(BIN_DIR)
 	@echo "Building server..."
-	@go build -o $(SERVER) ./cmd/server
+	@go build -ldflags "$(LDFLAGS)" -o $(SERVER) ./cmd/nexus
 	@echo "  $(SERVER)"
 
 # Build keymaker CLI
 km: $(BIN_DIR)
 	@echo "Building km (keymaker)..."
-	@go build -o $(KM) ./cmd/keymaker
+	@go build -ldflags "$(LDFLAGS)" -o $(KM) ./cmd/keymaker
 	@echo "  $(KM)"
 
 # Build host-agent for local platform and cross-compile for Linux hosts
 host-agent: $(BIN_DIR)
 	@echo "Building host-agent..."
-	@go build -o $(HOST_AGENT) ./cmd/host-agent
+	@go build -ldflags "$(LDFLAGS)" -o $(HOST_AGENT) ./cmd/sentry
 	@echo "  $(HOST_AGENT)"
 	@echo "Cross-compiling host-agent for Linux (amd64)..."
-	@GOOS=linux GOARCH=amd64 go build -o $(HOST_AGENT_AMD64) ./cmd/host-agent
+	@GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(HOST_AGENT_AMD64) ./cmd/sentry
 	@echo "  $(HOST_AGENT_AMD64)"
 	@echo "Cross-compiling host-agent for Linux (arm64)..."
-	@GOOS=linux GOARCH=arm64 go build -o $(HOST_AGENT_ARM64) ./cmd/host-agent
+	@GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(HOST_AGENT_ARM64) ./cmd/sentry
 	@echo "  $(HOST_AGENT_ARM64)"
 
 # Build DPU emulator
 dpuemu: $(BIN_DIR)
 	@echo "Building dpuemu..."
-	@go build -o $(DPUEMU) ./dpuemu/cmd/dpuemu
+	@go build -ldflags "$(LDFLAGS)" -o $(DPUEMU) ./dpuemu/cmd/dpuemu
 	@echo "  $(DPUEMU)"
 
 # Run all tests
@@ -99,29 +105,29 @@ release: $(BIN_DIR)
 	@echo "Building release binaries..."
 	@echo ""
 	@echo "darwin/arm64:"
-	@GOOS=darwin GOARCH=arm64 go build -o $(BIN_DIR)/agent-darwin-arm64 ./cmd/agent
+	@GOOS=darwin GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/agent-darwin-arm64 ./cmd/aegis
 	@echo "  $(BIN_DIR)/agent-darwin-arm64"
-	@GOOS=darwin GOARCH=arm64 go build -o $(BIN_DIR)/bluectl-darwin-arm64 ./cmd/bluectl
+	@GOOS=darwin GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/bluectl-darwin-arm64 ./cmd/bluectl
 	@echo "  $(BIN_DIR)/bluectl-darwin-arm64"
-	@GOOS=darwin GOARCH=arm64 go build -o $(BIN_DIR)/km-darwin-arm64 ./cmd/keymaker
+	@GOOS=darwin GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/km-darwin-arm64 ./cmd/keymaker
 	@echo "  $(BIN_DIR)/km-darwin-arm64"
 	@echo ""
 	@echo "linux/amd64:"
-	@GOOS=linux GOARCH=amd64 go build -o $(BIN_DIR)/agent-linux-amd64 ./cmd/agent
+	@GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/agent-linux-amd64 ./cmd/aegis
 	@echo "  $(BIN_DIR)/agent-linux-amd64"
-	@GOOS=linux GOARCH=amd64 go build -o $(BIN_DIR)/bluectl-linux-amd64 ./cmd/bluectl
+	@GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/bluectl-linux-amd64 ./cmd/bluectl
 	@echo "  $(BIN_DIR)/bluectl-linux-amd64"
-	@GOOS=linux GOARCH=amd64 go build -o $(BIN_DIR)/km-linux-amd64 ./cmd/keymaker
+	@GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/km-linux-amd64 ./cmd/keymaker
 	@echo "  $(BIN_DIR)/km-linux-amd64"
-	@GOOS=linux GOARCH=amd64 go build -o $(BIN_DIR)/host-agent-linux-amd64 ./cmd/host-agent
+	@GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/host-agent-linux-amd64 ./cmd/sentry
 	@echo "  $(BIN_DIR)/host-agent-linux-amd64"
 	@echo ""
 	@echo "linux/arm64 (BlueField DPU):"
-	@GOOS=linux GOARCH=arm64 go build -o $(BIN_DIR)/agent-linux-arm64 ./cmd/agent
+	@GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/agent-linux-arm64 ./cmd/aegis
 	@echo "  $(BIN_DIR)/agent-linux-arm64"
-	@GOOS=linux GOARCH=arm64 go build -o $(BIN_DIR)/bluectl-linux-arm64 ./cmd/bluectl
+	@GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/bluectl-linux-arm64 ./cmd/bluectl
 	@echo "  $(BIN_DIR)/bluectl-linux-arm64"
-	@GOOS=linux GOARCH=arm64 go build -o $(BIN_DIR)/km-linux-arm64 ./cmd/keymaker
+	@GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/km-linux-arm64 ./cmd/keymaker
 	@echo "  $(BIN_DIR)/km-linux-arm64"
 	@echo ""
 	@echo "Release build complete."
@@ -463,10 +469,10 @@ qa-build:
 	@$(MAKE) all
 	@echo "=== Cross-compiling Linux binaries ==="
 	@mkdir -p $(QA_WORKSPACE)
-	@GOOS=linux GOARCH=arm64 go build -o $(QA_WORKSPACE)/server ./cmd/server
-	@GOOS=linux GOARCH=arm64 go build -o $(QA_WORKSPACE)/dpuemu ./dpuemu/cmd/dpuemu
-	@GOOS=linux GOARCH=arm64 go build -o $(QA_WORKSPACE)/host-agent ./cmd/host-agent
-	@GOOS=linux GOARCH=arm64 go build -o $(QA_WORKSPACE)/agent ./cmd/agent
+	@GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(QA_WORKSPACE)/server ./cmd/nexus
+	@GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(QA_WORKSPACE)/dpuemu ./dpuemu/cmd/dpuemu
+	@GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(QA_WORKSPACE)/host-agent ./cmd/sentry
+	@GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(QA_WORKSPACE)/agent ./cmd/aegis
 	@$(MAKE) qa-push-binaries
 
 # Push pre-built binaries to QA VMs
@@ -693,9 +699,9 @@ qa-doca-build:
 		. $(BLUEFIELD_USER)@$(BLUEFIELD_IP):$(BLUEFIELD_REMOTE_DIR)/
 	@echo ""
 	@echo "Building with -tags doca..."
-	@$(BLUEFIELD_SSH) "cd $(BLUEFIELD_REMOTE_DIR) && go build -tags doca -o bin/agent-doca ./cmd/agent" 2>&1 || \
+	@$(BLUEFIELD_SSH) "cd $(BLUEFIELD_REMOTE_DIR) && go build -tags doca -o bin/agent-doca ./cmd/aegis" 2>&1 || \
 		(echo ""; echo "NOTE: Build may fail if DOCA SDK not installed or implementation incomplete"; exit 1)
-	@$(BLUEFIELD_SSH) "cd $(BLUEFIELD_REMOTE_DIR) && go build -tags doca -o bin/host-agent-doca ./cmd/host-agent" 2>&1 || true
+	@$(BLUEFIELD_SSH) "cd $(BLUEFIELD_REMOTE_DIR) && go build -tags doca -o bin/host-agent-doca ./cmd/sentry" 2>&1 || true
 	@echo ""
 	@echo "=== DOCA build complete ==="
 	@$(BLUEFIELD_SSH) "ls -la $(BLUEFIELD_REMOTE_DIR)/bin/*-doca 2>/dev/null" || echo "No DOCA binaries built"
