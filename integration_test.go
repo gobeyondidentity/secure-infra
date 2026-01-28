@@ -2928,7 +2928,7 @@ func TestInviteCodeLifecycle(t *testing.T) {
 	t.Logf("Created invite code: %s for %s", inviteCode2, operatorEmail2)
 
 	// Expire the invite via direct database update
-	expireCmd := fmt.Sprintf(`sqlite3 '%s' "UPDATE invite_codes SET expires_at = datetime('now', '-1 hour') WHERE operator_email = '%s' AND status = 'pending'"`,
+	expireCmd := fmt.Sprintf(`sqlite3 '%s' "UPDATE invite_codes SET expires_at = strftime('%%s', 'now', '-1 hour') WHERE operator_email = '%s' AND status = 'pending'"`,
 		dbPath, operatorEmail2)
 	_, err = cfg.multipassExec(ctx, cfg.ServerVM, "bash", "-c", expireCmd)
 	if err != nil {
