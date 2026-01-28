@@ -983,6 +983,8 @@ qa-remote-down:
 
 # Run integration tests on workbench
 qa-remote-test:
+	@echo "=== Fetching latest main on workbench ==="
+	$(WORKBENCH_SSH) "cd ~/secure-infra && git fetch origin && git checkout origin/main"
 	@echo "=== Syncing integration test to workbench ==="
 	scp integration_test.go $(WORKBENCH_USER)@$(WORKBENCH_IP):$(WORKBENCH_DIR)/
 	@echo "=== Running Go integration tests on workbench ==="
