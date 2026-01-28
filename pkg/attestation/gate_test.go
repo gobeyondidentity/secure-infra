@@ -467,3 +467,280 @@ func TestRefreshResult_Failure(t *testing.T) {
 func strPtr(s string) *string {
 	return &s
 }
+
+// Tests for attestation rejection (negative cases)
+// These tests verify the acceptance criteria from bead si-jgp.6
+
+func TestGate_RejectionLeavesNoState(t *testing.T) {
+	// Test: denied enrollment does not create any state (no partial DPU registration)
+	s, cleanup := setupTestStore(t)
+	defer cleanup()
+
+	// Save a failed attestation for a known DPU
+	att := &store.Attestation{
+		DPUName:       "bf3-failed-state-01",
+		Status:        store.AttestationStatusFailed,
+		LastValidated: time.Now(),
+	}
+	if err := s.SaveAttestation(att); err != nil {
+		t.Fatalf("SaveAttestation failed: %v", err)
+	}
+
+	// Record the initial attestation state
+	initialAtt, err := s.GetAttestation("bf3-failed-state-01")
+	if err != nil {
+		t.Fatalf("GetAttestation failed: %v", err)
+	}
+	initialUpdatedAt := initialAtt.UpdatedAt
+
+	// Attempt distribution (should be denied)
+	gate := NewGate(s)
+	decision, err := gate.CanDistribute("bf3-failed-state-01")
+	if err != nil {
+		t.Fatalf("CanDistribute failed: %v", err)
+	}
+
+	if decision.Allowed {
+		t.Fatal("expected distribution to be denied for failed attestation")
+	}
+
+	// Verify no state change occurred: attestation record should be unchanged
+	afterAtt, err := s.GetAttestation("bf3-failed-state-01")
+	if err != nil {
+		t.Fatalf("GetAttestation after denial failed: %v", err)
+	}
+
+	// Attestation should not have been modified by the gate check
+	if !afterAtt.UpdatedAt.Equal(initialUpdatedAt) {
+		t.Errorf("attestation UpdatedAt changed after denial: before=%v, after=%v",
+			initialUpdatedAt, afterAtt.UpdatedAt)
+	}
+	if afterAtt.Status != store.AttestationStatusFailed {
+		t.Errorf("attestation status changed after denial: expected=failed, got=%s", afterAtt.Status)
+	}
+
+	// Verify no new records were created for unknown DPUs
+	_, err = s.GetAttestation("bf3-unknown-never-existed")
+	if err == nil {
+		t.Error("expected error for unknown DPU, but found attestation record")
+	}
+	if !strings.Contains(err.Error(), "not found") {
+		t.Errorf("expected 'not found' error, got: %v", err)
+	}
+}
+
+func TestGate_RejectionDecisionContainsAuditDetails(t *testing.T) {
+	// Test: denied enrollment logged with full details for audit
+	// Verifies GateDecision contains sufficient information for audit logging
+
+	tests := []struct {
+		name              string
+		setupAttestation  *store.Attestation
+		dpuName           string
+		expectedAllowed   bool
+		expectedHasAtt    bool   // should decision.Attestation be populated?
+		expectedReasonPfx string // prefix to check in Reason
+		verifyAuditFields func(t *testing.T, d *GateDecision)
+	}{
+		{
+			name: "failed attestation has full audit details",
+			setupAttestation: &store.Attestation{
+				DPUName:          "bf3-audit-failed",
+				Status:           store.AttestationStatusFailed,
+				LastValidated:    time.Now(),
+				DICEChainHash:    "sha256:abc123",
+				MeasurementsHash: "sha256:def456",
+			},
+			dpuName:           "bf3-audit-failed",
+			expectedAllowed:   false,
+			expectedHasAtt:    true,
+			expectedReasonPfx: "status: failed",
+			verifyAuditFields: func(t *testing.T, d *GateDecision) {
+				// Verify attestation snapshot is included for audit
+				if d.Attestation.DICEChainHash != "sha256:abc123" {
+					t.Errorf("DICEChainHash not preserved: got %s", d.Attestation.DICEChainHash)
+				}
+				if d.Attestation.MeasurementsHash != "sha256:def456" {
+					t.Errorf("MeasurementsHash not preserved: got %s", d.Attestation.MeasurementsHash)
+				}
+				if d.Attestation.Status != store.AttestationStatusFailed {
+					t.Errorf("Status not preserved: got %s", d.Attestation.Status)
+				}
+			},
+		},
+		{
+			name: "stale attestation has timestamp for audit",
+			setupAttestation: &store.Attestation{
+				DPUName:          "bf3-audit-stale",
+				Status:           store.AttestationStatusVerified,
+				LastValidated:    time.Now().Add(-2 * time.Hour),
+				DICEChainHash:    "sha256:old123",
+				MeasurementsHash: "sha256:old456",
+			},
+			dpuName:           "bf3-audit-stale",
+			expectedAllowed:   false,
+			expectedHasAtt:    true,
+			expectedReasonPfx: "stale:",
+			verifyAuditFields: func(t *testing.T, d *GateDecision) {
+				// Verify reason includes age information
+				if !strings.Contains(d.Reason, "h") && !strings.Contains(d.Reason, "m") {
+					t.Errorf("stale reason should include duration, got: %s", d.Reason)
+				}
+				// Verify attestation age can be computed for audit
+				age := d.Attestation.Age()
+				if age < time.Hour {
+					t.Errorf("attestation age should be >1h for audit, got: %v", age)
+				}
+			},
+		},
+		{
+			name:              "unavailable attestation has clear reason for audit",
+			setupAttestation:  nil, // no attestation exists
+			dpuName:           "bf3-audit-unavailable",
+			expectedAllowed:   false,
+			expectedHasAtt:    false,
+			expectedReasonPfx: "attestation unavailable",
+			verifyAuditFields: func(t *testing.T, d *GateDecision) {
+				// For unavailable, we verify the reason is clear and actionable
+				if d.Reason != "attestation unavailable" {
+					t.Errorf("expected exact reason 'attestation unavailable', got: %s", d.Reason)
+				}
+				// Attestation should be nil (fail-secure)
+				if d.Attestation != nil {
+					t.Error("expected nil Attestation for unavailable DPU")
+				}
+			},
+		},
+		{
+			name: "pending attestation has status for audit",
+			setupAttestation: &store.Attestation{
+				DPUName:       "bf3-audit-pending",
+				Status:        store.AttestationStatusPending,
+				LastValidated: time.Now(),
+			},
+			dpuName:           "bf3-audit-pending",
+			expectedAllowed:   false,
+			expectedHasAtt:    true,
+			expectedReasonPfx: "status: pending",
+			verifyAuditFields: func(t *testing.T, d *GateDecision) {
+				// Verify pending status is visible for audit
+				if d.Attestation.Status != store.AttestationStatusPending {
+					t.Errorf("expected pending status, got: %s", d.Attestation.Status)
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s, cleanup := setupTestStore(t)
+			defer cleanup()
+
+			// Setup attestation if provided
+			if tt.setupAttestation != nil {
+				if err := s.SaveAttestation(tt.setupAttestation); err != nil {
+					t.Fatalf("SaveAttestation failed: %v", err)
+				}
+			}
+
+			gate := NewGate(s)
+			decision, err := gate.CanDistribute(tt.dpuName)
+			if err != nil {
+				t.Fatalf("CanDistribute failed: %v", err)
+			}
+
+			// Verify basic decision fields
+			if decision.Allowed != tt.expectedAllowed {
+				t.Errorf("Allowed: got %v, want %v", decision.Allowed, tt.expectedAllowed)
+			}
+
+			if tt.expectedHasAtt && decision.Attestation == nil {
+				t.Error("expected Attestation to be populated for audit")
+			}
+			if !tt.expectedHasAtt && decision.Attestation != nil {
+				t.Error("expected Attestation to be nil")
+			}
+
+			if !strings.HasPrefix(decision.Reason, tt.expectedReasonPfx) {
+				t.Errorf("Reason: got %q, want prefix %q", decision.Reason, tt.expectedReasonPfx)
+			}
+
+			// Run custom audit field verification
+			if tt.verifyAuditFields != nil {
+				tt.verifyAuditFields(t, decision)
+			}
+		})
+	}
+}
+
+func TestGate_MultipleRejectionScenariosNoSideEffects(t *testing.T) {
+	// Comprehensive test: multiple rejection scenarios in sequence
+	// Verifies that consecutive denials don't accumulate state
+	s, cleanup := setupTestStore(t)
+	defer cleanup()
+
+	gate := NewGate(s)
+
+	// Attempt 1: Unknown DPU (should not create any state)
+	decision1, err := gate.CanDistribute("unknown-dpu-1")
+	if err != nil {
+		t.Fatalf("CanDistribute unknown-dpu-1 failed: %v", err)
+	}
+	if decision1.Allowed {
+		t.Error("expected denial for unknown-dpu-1")
+	}
+
+	// Attempt 2: Another unknown DPU
+	decision2, err := gate.CanDistribute("unknown-dpu-2")
+	if err != nil {
+		t.Fatalf("CanDistribute unknown-dpu-2 failed: %v", err)
+	}
+	if decision2.Allowed {
+		t.Error("expected denial for unknown-dpu-2")
+	}
+
+	// Verify neither created any attestation records
+	atts, err := s.ListAttestations()
+	if err != nil {
+		t.Fatalf("ListAttestations failed: %v", err)
+	}
+	if len(atts) != 0 {
+		t.Errorf("expected 0 attestation records, got %d", len(atts))
+		for _, a := range atts {
+			t.Logf("  unexpected attestation: %s (status=%s)", a.DPUName, a.Status)
+		}
+	}
+
+	// Now add a failed attestation and verify denial doesn't change it
+	failedAtt := &store.Attestation{
+		DPUName:       "multi-test-dpu",
+		Status:        store.AttestationStatusFailed,
+		LastValidated: time.Now(),
+	}
+	if err := s.SaveAttestation(failedAtt); err != nil {
+		t.Fatalf("SaveAttestation failed: %v", err)
+	}
+
+	// Multiple denial attempts
+	for i := 0; i < 3; i++ {
+		decision, err := gate.CanDistribute("multi-test-dpu")
+		if err != nil {
+			t.Fatalf("CanDistribute attempt %d failed: %v", i, err)
+		}
+		if decision.Allowed {
+			t.Errorf("attempt %d: expected denial", i)
+		}
+	}
+
+	// Verify only the one attestation exists (no duplicates created)
+	atts, err = s.ListAttestations()
+	if err != nil {
+		t.Fatalf("ListAttestations failed: %v", err)
+	}
+	if len(atts) != 1 {
+		t.Errorf("expected 1 attestation record, got %d", len(atts))
+	}
+	if atts[0].DPUName != "multi-test-dpu" {
+		t.Errorf("unexpected DPU name: %s", atts[0].DPUName)
+	}
+}
