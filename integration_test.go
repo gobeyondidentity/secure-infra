@@ -483,43 +483,41 @@ func TestCredentialDeliveryE2E(t *testing.T) {
 	}
 	logOK(t, "TMFIFO tunnel established")
 
-	// Step 6: Run sentry enrollment (establishes transport connection)
-	logStep(t, 6, "Running sentry enrollment...")
-	sentryCtx, sentryCancel := context.WithTimeout(ctx, 30*time.Second)
-	defer sentryCancel()
-
-	output, err = cfg.multipassExec(sentryCtx, cfg.HostVM, "sudo", "/home/ubuntu/sentry", "--force-tmfifo", "--oneshot")
-	if err != nil {
-		aegisLog, _ := cfg.multipassExec(ctx, cfg.DPUVM, "tail", "-30", "/tmp/aegis.log")
-		fmt.Printf("    Aegis log:\n%s\n", aegisLog)
-		t.Fatalf("%s Sentry enrollment failed: %v", errFmt("x"), err)
-	}
-
-	if !strings.Contains(output, "Enrolled") {
-		t.Fatalf("%s Sentry did not complete enrollment", errFmt("x"))
-	}
-	logOK(t, "Sentry enrolled successfully")
-
-	// Step 7: Start sentry in daemon mode to receive credential pushes
-	logStep(t, 7, "Starting sentry daemon...")
+	// Step 6: Start sentry daemon (will enroll on first connect)
+	// Note: We start daemon directly instead of --oneshot + daemon because
+	// tmfifo char devices don't have connection close semantics. The --oneshot
+	// exit doesn't signal disconnect to aegis, causing auth state mismatch.
+	logStep(t, 6, "Starting sentry daemon (will enroll on connect)...")
 	cfg.killProcess(ctx, cfg.HostVM, "sentry")
 	_, err = cfg.multipassExec(ctx, cfg.HostVM, "bash", "-c",
 		"sudo setsid /home/ubuntu/sentry --force-tmfifo > /tmp/sentry.log 2>&1 < /dev/null &")
 	if err != nil {
 		t.Fatalf("Failed to start sentry daemon: %v", err)
 	}
-	time.Sleep(3 * time.Second)
 
+	// Wait for enrollment to complete (sentry enrolls on first connect)
+	time.Sleep(5 * time.Second)
+
+	// Verify sentry is running and enrolled
 	output, err = cfg.multipassExec(ctx, cfg.HostVM, "pgrep", "-x", "sentry")
 	if err != nil || strings.TrimSpace(output) == "" {
 		logs, _ := cfg.multipassExec(ctx, cfg.HostVM, "cat", "/tmp/sentry.log")
 		t.Fatalf("Sentry not running. Logs:\n%s", logs)
 	}
-	logOK(t, "Sentry daemon started")
 
-	// Step 8: Push credential directly to aegis localapi
+	// Check sentry log for enrollment confirmation
+	sentryLog, _ := cfg.multipassExec(ctx, cfg.HostVM, "cat", "/tmp/sentry.log")
+	if !strings.Contains(sentryLog, "Enrolled") && !strings.Contains(sentryLog, "enrolled") {
+		aegisLog, _ := cfg.multipassExec(ctx, cfg.DPUVM, "tail", "-30", "/tmp/aegis.log")
+		fmt.Printf("    Sentry log:\n%s\n", sentryLog)
+		fmt.Printf("    Aegis log:\n%s\n", aegisLog)
+		t.Fatalf("%s Sentry did not complete enrollment", errFmt("x"))
+	}
+	logOK(t, "Sentry daemon started and enrolled")
+
+	// Step 7: Push credential directly to aegis localapi
 	// Note: bluectl ssh-ca commands don't exist yet, so we push directly to localapi
-	logStep(t, 8, "Pushing SSH CA credential via aegis localapi...")
+	logStep(t, 7, "Pushing SSH CA credential via aegis localapi...")
 
 	// Clear logs before push to capture fresh markers
 	_, _ = cfg.multipassExec(ctx, cfg.DPUVM, "bash", "-c", "sudo truncate -s 0 /tmp/aegis.log")
@@ -547,8 +545,8 @@ func TestCredentialDeliveryE2E(t *testing.T) {
 	// Allow time for credential to propagate through the system
 	time.Sleep(3 * time.Second)
 
-	// Step 10: Verify logging markers in aegis
-	logStep(t, 9, "Verifying credential delivery logging markers...")
+	// Step 8: Verify logging markers in aegis
+	logStep(t, 8, "Verifying credential delivery logging markers...")
 
 	aegisLog, err := cfg.multipassExec(ctx, cfg.DPUVM, "cat", "/tmp/aegis.log")
 	if err != nil {
@@ -592,8 +590,8 @@ func TestCredentialDeliveryE2E(t *testing.T) {
 		}
 	}
 
-	// Step 11: Verify credential file exists with correct permissions
-	logStep(t, 10, "Verifying credential installation on host...")
+	// Step 9: Verify credential file exists with correct permissions
+	logStep(t, 9, "Verifying credential installation on host...")
 
 	output, err = cfg.multipassExec(ctx, cfg.HostVM, "ls", "-la", caPath)
 	if err != nil {
