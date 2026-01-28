@@ -333,14 +333,20 @@ func (s *Server) SetActiveTransport(t transport.Transport) {
 	s.transportAuthenticated = true
 }
 
-// ClearActiveTransport clears the active transport and resets authentication state.
+// ClearActiveTransport clears the active transport and resets authentication state,
+// but only if the provided transport matches the current active transport.
+// This prevents a race where an old connection's cleanup clears a newer connection's state.
 // This must be called when a connection closes or errors to prevent sending
 // credentials on an unauthenticated or dead connection.
-func (s *Server) ClearActiveTransport() {
+func (s *Server) ClearActiveTransport(t transport.Transport) {
 	s.transportMu.Lock()
 	defer s.transportMu.Unlock()
-	s.activeTransport = nil
-	s.transportAuthenticated = false
+	// Only clear if this is the current active transport
+	// This prevents old connection cleanup from clearing newer connections
+	if s.activeTransport == t {
+		s.activeTransport = nil
+		s.transportAuthenticated = false
+	}
 }
 
 // IsTransportAuthenticated returns whether the active transport has completed authentication.
