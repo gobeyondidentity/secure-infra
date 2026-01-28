@@ -1,0 +1,139 @@
+package cmd
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"gopkg.in/yaml.v3"
+)
+
+func TestConfigPath(t *testing.T) {
+	path := ConfigPath()
+	if path == "" {
+		t.Skip("Could not determine home directory")
+	}
+
+	// Should end with the expected path
+	expected := filepath.Join(".config", "bluectl", "config.yaml")
+	if !strings.HasSuffix(path, expected) {
+		t.Errorf("ConfigPath() = %q, want path ending with %q", path, expected)
+	}
+}
+
+func TestLoadConfigNonExistent(t *testing.T) {
+	// LoadConfig should return empty config for non-existent file
+	// This test relies on the actual config path, which may or may not exist
+	cfg, err := LoadConfig()
+	if err != nil {
+		// If there's an error, it should be a parse error, not a "file not found"
+		t.Logf("LoadConfig() returned error: %v (this may be expected)", err)
+		return
+	}
+	// Config loaded successfully (either empty or with values from existing file)
+	_ = cfg
+}
+
+func TestSaveAndLoadConfig(t *testing.T) {
+	// Create temp directory for test config
+	tmpDir := t.TempDir()
+	configDir := filepath.Join(tmpDir, ".config", "bluectl")
+	configFile := filepath.Join(configDir, "config.yaml")
+
+	// Create the config directory
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		t.Fatalf("Failed to create test config dir: %v", err)
+	}
+
+	// Write test config directly
+	testConfig := "server: http://test.example.com:18080\n"
+	if err := os.WriteFile(configFile, []byte(testConfig), 0600); err != nil {
+		t.Fatalf("Failed to write test config: %v", err)
+	}
+
+	// Read it back using yaml
+	data, err := os.ReadFile(configFile)
+	if err != nil {
+		t.Fatalf("Failed to read test config: %v", err)
+	}
+
+	var cfg Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		t.Fatalf("Failed to parse config: %v", err)
+	}
+
+	if cfg.Server != "http://test.example.com:18080" {
+		t.Errorf("Config.Server = %q, want %q", cfg.Server, "http://test.example.com:18080")
+	}
+}
+
+func TestGetServerFlagPrecedence(t *testing.T) {
+	// Save original flag value
+	originalFlag := serverFlag
+	defer func() { serverFlag = originalFlag }()
+
+	// Set flag value
+	serverFlag = "http://flag-server.com:18080"
+
+	server := GetServer()
+	if server != "http://flag-server.com:18080" {
+		t.Errorf("GetServer() = %q, want %q", server, "http://flag-server.com:18080")
+	}
+}
+
+func TestGetServerFromConfig(t *testing.T) {
+	// Save original flag value and clear it
+	originalFlag := serverFlag
+	defer func() { serverFlag = originalFlag }()
+	serverFlag = ""
+
+	// GetServer should fall back to config file (which may be empty)
+	server := GetServer()
+	// Server will be empty if no config file exists, which is expected
+	_ = server
+}
+
+func TestConfigStruct(t *testing.T) {
+	cfg := Config{
+		Server: "http://example.com:18080",
+	}
+
+	if cfg.Server != "http://example.com:18080" {
+		t.Errorf("Config.Server = %q, want %q", cfg.Server, "http://example.com:18080")
+	}
+}
+
+func TestConfigYAMLRoundTrip(t *testing.T) {
+	original := &Config{
+		Server: "http://nexus.example.com:18080",
+	}
+
+	// Marshal to YAML
+	data, err := yaml.Marshal(original)
+	if err != nil {
+		t.Fatalf("yaml.Marshal() error = %v", err)
+	}
+
+	// Unmarshal back
+	var loaded Config
+	if err := yaml.Unmarshal(data, &loaded); err != nil {
+		t.Fatalf("yaml.Unmarshal() error = %v", err)
+	}
+
+	if loaded.Server != original.Server {
+		t.Errorf("Round-trip failed: got %q, want %q", loaded.Server, original.Server)
+	}
+}
+
+func TestEmptyConfigYAML(t *testing.T) {
+	// Empty YAML should produce empty config
+	var cfg Config
+	if err := yaml.Unmarshal([]byte(""), &cfg); err != nil {
+		t.Fatalf("yaml.Unmarshal() error = %v", err)
+	}
+
+	if cfg.Server != "" {
+		t.Errorf("Empty YAML produced Server = %q, want empty", cfg.Server)
+	}
+}

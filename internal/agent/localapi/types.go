@@ -149,7 +149,12 @@ type CredentialPushResult struct {
 
 // QueuedCredential represents a credential waiting to be retrieved by the Host Agent.
 type QueuedCredential struct {
-	CredType string
-	CredName string
-	Data     []byte
+	CredType string `json:"type"`
+	CredName string `json:"name"`
+	Data     []byte `json:"data"`
+}
+
+// CredentialsPendingResponse is the JSON response from GET /local/v1/credentials/pending.
+type CredentialsPendingResponse struct {
+	Credentials []*QueuedCredential `json:"credentials"`
 }

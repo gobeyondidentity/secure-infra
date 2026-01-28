@@ -42,6 +42,7 @@ func main() {
 	docaPCIAddr := flag.String("doca-pci-addr", "", "PCI address of BlueField device (e.g., \"0000:01:00.0\")")
 	docaServerName := flag.String("doca-server-name", "secure-infra", "ComCh server name to connect to")
 	authKeyPath := flag.String("auth-key", "/etc/secureinfra/host-agent.key", "Path to host authentication key")
+	pollInterval := flag.Duration("poll-interval", 30*time.Second, "Credential polling interval (HTTP transport only)")
 	flag.Parse()
 
 	if *showVersion {
@@ -100,18 +101,18 @@ func main() {
 	stopCh := make(chan struct{})
 
 	// Run with the selected transport
-	runWithTransport(t, hostname, p, *interval, *oneshot, *dpuAgent, *authKeyPath, sigCh, stopCh)
+	runWithTransport(t, hostname, p, *interval, *oneshot, *dpuAgent, *authKeyPath, *pollInterval, sigCh, stopCh)
 }
 
 // runWithTransport runs the Host Agent using the provided transport.
 // This unified function handles both tmfifo and network transports.
-func runWithTransport(t transport.Transport, hostname string, p *posture.Posture, interval time.Duration, oneshot bool, dpuAgentURL string, authKeyPath string, sigCh <-chan os.Signal, stopCh chan struct{}) {
+func runWithTransport(t transport.Transport, hostname string, p *posture.Posture, interval time.Duration, oneshot bool, dpuAgentURL string, authKeyPath string, pollInterval time.Duration, sigCh <-chan os.Signal, stopCh chan struct{}) {
 	ctx := context.Background()
 
 	// For network transport, we use the legacy HTTP-based enrollment
 	// until the full Transport-based protocol is implemented on the server side.
 	if t.Type() == transport.TransportNetwork {
-		runNetworkModeLegacy(dpuAgentURL, hostname, p, interval, oneshot, sigCh, stopCh)
+		runNetworkModeLegacy(dpuAgentURL, hostname, p, interval, oneshot, pollInterval, sigCh, stopCh)
 		return
 	}
 
@@ -178,7 +179,7 @@ func runWithTransport(t transport.Transport, hostname string, p *posture.Posture
 // runNetworkModeLegacy runs the Host Agent using legacy HTTP for DPU communication.
 // This preserves the existing network mode behavior until the Transport-based
 // protocol is fully implemented on the server side.
-func runNetworkModeLegacy(dpuAgent, hostname string, p *posture.Posture, interval time.Duration, oneshot bool, sigCh <-chan os.Signal, stopCh chan struct{}) {
+func runNetworkModeLegacy(dpuAgent, hostname string, p *posture.Posture, interval time.Duration, oneshot bool, pollInterval time.Duration, sigCh <-chan os.Signal, stopCh chan struct{}) {
 	log.Printf("Hostname: %s", hostname)
 
 	// Register with DPU Agent via HTTP
@@ -195,19 +196,28 @@ func runNetworkModeLegacy(dpuAgent, hostname string, p *posture.Posture, interva
 	}
 
 	// Create ticker for periodic posture collection
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
+	postureTicker := time.NewTicker(interval)
+	defer postureTicker.Stop()
 
-	log.Printf("Host Agent running. Posture reports every %s.", interval)
+	// Create ticker for credential polling (fallback when ComCh unavailable)
+	credentialTicker := time.NewTicker(pollInterval)
+	defer credentialTicker.Stop()
+
+	log.Printf("Host Agent running. Posture reports every %s, credential polling every %s.", interval, pollInterval)
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-postureTicker.C:
 			p := posture.Collect()
 			if err := reportPosture(dpuAgent, hostname, p); err != nil {
 				log.Printf("Warning: posture report failed: %v", err)
 			} else {
 				log.Printf("Posture reported: hash=%s", p.Hash())
+			}
+
+		case <-credentialTicker.C:
+			if err := pollAndInstallCredentials(dpuAgent); err != nil {
+				log.Printf("Warning: credential poll failed: %v", err)
 			}
 
 		case sig := <-sigCh:
@@ -476,4 +486,84 @@ func postureToPayload(p *posture.Posture) *posturePayload {
 		KernelVersion:  p.KernelVersion,
 		TPMPresent:     p.TPMPresent,
 	}
+}
+
+// credentialsPendingResponse is the JSON response from GET /local/v1/credentials/pending
+type credentialsPendingResponse struct {
+	Credentials []pendingCredential `json:"credentials"`
+}
+
+// pendingCredential represents a credential from the pending queue
+type pendingCredential struct {
+	Type string `json:"type"`
+	Name string `json:"name"`
+	Data []byte `json:"data"`
+}
+
+// pollAndInstallCredentials polls for pending credentials and installs them locally.
+func pollAndInstallCredentials(dpuAgent string) error {
+	url := dpuAgent + "/local/v1/credentials/pending"
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to poll credentials: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		var errResp errorResponse
+		if json.Unmarshal(respBody, &errResp) == nil && errResp.Error != "" {
+			return fmt.Errorf("credential poll failed: %s", errResp.Error)
+		}
+		return fmt.Errorf("credential poll failed: HTTP %d", resp.StatusCode)
+	}
+
+	var credsResp credentialsPendingResponse
+	if err := json.NewDecoder(resp.Body).Decode(&credsResp); err != nil {
+		return fmt.Errorf("failed to parse credentials response: %w", err)
+	}
+
+	if len(credsResp.Credentials) == 0 {
+		return nil // No pending credentials
+	}
+
+	log.Printf("Received %d pending credential(s)", len(credsResp.Credentials))
+
+	for _, cred := range credsResp.Credentials {
+		if err := installCredential(cred.Type, cred.Name, cred.Data); err != nil {
+			log.Printf("Warning: failed to install credential %s (%s): %v", cred.Name, cred.Type, err)
+		} else {
+			log.Printf("Installed credential: %s (%s)", cred.Name, cred.Type)
+		}
+	}
+
+	return nil
+}
+
+// installCredential installs a credential based on its type.
+func installCredential(credType, credName string, data []byte) error {
+	switch credType {
+	case "ssh-ca":
+		return installSSHCA(credName, data)
+	default:
+		return fmt.Errorf("unsupported credential type: %s", credType)
+	}
+}
+
+// installSSHCA installs an SSH CA public key for host authentication.
+func installSSHCA(name string, data []byte) error {
+	// Install to /etc/ssh/trusted_user_ca_keys.d/<name>.pub
+	caDir := "/etc/ssh/trusted_user_ca_keys.d"
+	if err := os.MkdirAll(caDir, 0755); err != nil {
+		return fmt.Errorf("failed to create CA directory: %w", err)
+	}
+
+	caPath := filepath.Join(caDir, name+".pub")
+	if err := os.WriteFile(caPath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write CA key: %w", err)
+	}
+
+	log.Printf("SSH CA installed: %s", caPath)
+	return nil
 }

@@ -43,6 +43,11 @@ var dpuListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List registered DPUs",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Use remote Nexus server if configured
+		if serverURL := GetServer(); serverURL != "" {
+			return listDPUsRemote(cmd.Context(), serverURL)
+		}
+
 		dpus, err := dpuStore.List()
 		if err != nil {
 			return err
@@ -79,6 +84,43 @@ var dpuListCmd = &cobra.Command{
 	},
 }
 
+func listDPUsRemote(ctx context.Context, serverURL string) error {
+	client := NewNexusClient(serverURL)
+	dpus, err := client.ListDPUs(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to list DPUs from server: %w", err)
+	}
+
+	// Return empty array for JSON/YAML when no DPUs
+	if outputFormat != "table" {
+		if len(dpus) == 0 {
+			fmt.Println("[]")
+			return nil
+		}
+		return formatOutput(dpus)
+	}
+
+	if len(dpus) == 0 {
+		fmt.Println("No DPUs registered. Use 'bluectl dpu add' to register one.")
+		return nil
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(w, "NAME\tHOST\tPORT\tSTATUS*\tLAST SEEN")
+	for _, dpu := range dpus {
+		lastSeen := "never"
+		if dpu.LastSeen != nil {
+			lastSeen = *dpu.LastSeen
+		}
+		fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\n",
+			dpu.Name, dpu.Host, dpu.Port, dpu.Status, lastSeen)
+	}
+	w.Flush()
+	fmt.Println()
+	fmt.Println("* Status reflects last known state. Use 'bluectl dpu health <name>' for live status.")
+	return nil
+}
+
 var dpuAddCmd = &cobra.Command{
 	Use:   "add <host>",
 	Short: "Register a new DPU",
@@ -110,6 +152,11 @@ Examples:
 		port, _ := cmd.Flags().GetInt("port")
 		name, _ := cmd.Flags().GetString("name")
 		offline, _ := cmd.Flags().GetBool("offline")
+
+		// Use remote Nexus server if configured
+		if serverURL := GetServer(); serverURL != "" {
+			return addDPURemote(cmd.Context(), serverURL, name, host, port, offline)
+		}
 
 		// Check for duplicate address:port - idempotent: return success if exists
 		existing, err := dpuStore.GetDPUByAddress(host, port)
@@ -203,17 +250,81 @@ Examples:
 	},
 }
 
+func addDPURemote(ctx context.Context, serverURL, name, host string, port int, offline bool) error {
+	// When using remote server, we always require --name since the server
+	// handles connectivity checks and may not be able to reach the DPU directly
+	if name == "" {
+		// Try to get name from DPU if we can reach it
+		if !offline {
+			fmt.Printf("Checking connectivity to %s:%d...\n", host, port)
+			checkCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			defer cancel()
+
+			grpcClient, err := grpcclient.NewClient(fmt.Sprintf("%s:%d", host, port))
+			if err != nil {
+				return fmt.Errorf("cannot connect to DPU agent at %s:%d: %w\n\nUse --name to specify a name manually", host, port, err)
+			}
+			defer grpcClient.Close()
+
+			info, err := grpcClient.GetSystemInfo(checkCtx)
+			if err != nil {
+				return fmt.Errorf("failed to get DPU system info: %w\n\nUse --name to specify a name manually", err)
+			}
+			name = info.Hostname
+			fmt.Printf("Using hostname from agent: %s\n", name)
+		} else {
+			return fmt.Errorf("--name is required when using --offline or when server cannot reach DPU")
+		}
+	}
+
+	if name == "" {
+		return fmt.Errorf("could not determine DPU name. Use --name to specify one")
+	}
+
+	client := NewNexusClient(serverURL)
+	dpu, err := client.AddDPU(ctx, name, host, port)
+	if err != nil {
+		return fmt.Errorf("failed to add DPU to server: %w", err)
+	}
+
+	if outputFormat == "json" || outputFormat == "yaml" {
+		return formatOutput(map[string]any{
+			"status": "created",
+			"dpu":    dpu,
+		})
+	}
+
+	fmt.Printf("Added DPU '%s' at %s:%d.\n", dpu.Name, dpu.Host, dpu.Port)
+	fmt.Println()
+	fmt.Printf("Next: Assign to a tenant with 'bluectl tenant assign <tenant> %s'\n", dpu.Name)
+	return nil
+}
+
 var dpuRemoveCmd = &cobra.Command{
 	Use:   "remove <name-or-id>",
 	Short: "Remove a registered DPU",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Use remote Nexus server if configured
+		if serverURL := GetServer(); serverURL != "" {
+			return removeDPURemote(cmd.Context(), serverURL, args[0])
+		}
+
 		if err := dpuStore.Remove(args[0]); err != nil {
 			return err
 		}
 		fmt.Printf("Removed DPU '%s'\n", args[0])
 		return nil
 	},
+}
+
+func removeDPURemote(ctx context.Context, serverURL, nameOrID string) error {
+	client := NewNexusClient(serverURL)
+	if err := client.RemoveDPU(ctx, nameOrID); err != nil {
+		return fmt.Errorf("failed to remove DPU from server: %w", err)
+	}
+	fmt.Printf("Removed DPU '%s'\n", nameOrID)
+	return nil
 }
 
 var dpuInfoCmd = &cobra.Command{

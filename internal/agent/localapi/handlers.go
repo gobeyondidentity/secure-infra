@@ -237,6 +237,27 @@ func (s *Server) handleCert(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handleCredentialsPending returns queued credentials for the Host Agent.
+// GET /local/v1/credentials/pending
+// Used as fallback when ComCh/tmfifo push is unavailable.
+func (s *Server) handleCredentialsPending(w http.ResponseWriter, r *http.Request) {
+	// Verify a host is paired
+	hostID := s.getPairedHostID()
+	if hostID == "" {
+		s.writeError(w, http.StatusPreconditionFailed, "host not registered; call /local/v1/register first")
+		return
+	}
+
+	// Get and clear queued credentials
+	creds := s.GetQueuedCredentials()
+
+	log.Printf("Local API: returning %d pending credentials to host", len(creds))
+
+	s.writeJSON(w, http.StatusOK, CredentialsPendingResponse{
+		Credentials: creds,
+	})
+}
+
 // handleCredentialPush handles credential distribution to the Host Agent.
 // POST /local/v1/credential
 // This endpoint is called by the DPU Agent gRPC handler when km distribute triggers.

@@ -113,6 +113,7 @@ func NewServer(cfg *Config) (*Server, error) {
 	mux.HandleFunc("POST /local/v1/posture", s.handlePosture)
 	mux.HandleFunc("POST /local/v1/cert", s.handleCert)
 	mux.HandleFunc("POST /local/v1/credential", s.handleCredentialPush)
+	mux.HandleFunc("GET /local/v1/credentials/pending", s.handleCredentialsPending)
 
 	s.server = &http.Server{
 		Handler:      s.loggingMiddleware(s.localhostMiddleware(mux)),

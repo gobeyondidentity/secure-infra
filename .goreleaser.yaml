@@ -48,7 +48,7 @@ builds:
 
   - id: host-agent
     main: ./cmd/host-agent
-    binary: host-agent
+    binary: sentry
     env:
       - CGO_ENABLED=0
     goos:
@@ -207,7 +207,7 @@ brews:
     description: "Sentry host agent for Secure Infrastructure attestation"
     license: "Apache-2.0"
     install: |
-      bin.install "host-agent" => "sentry"
+      bin.install "sentry"
     test: |
       system "#{bin}/sentry", "--help"
 

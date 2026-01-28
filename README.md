@@ -2,7 +2,7 @@
 
 **v0.6.6** | [Demo](scripts/demo) | [Quickstart](docs/guides/quickstart-emulator.md) | [Hardware Setup](docs/guides/setup-hardware.md) | [Changelog](CHANGELOG.md)
 
-![Demo](assets/demo.gif)
+![Demo](assets/demo-v2.gif)
 
 Automated credential lifecycle for AI infrastructure. No manual rotation. No secret sprawl. Credentials refresh automatically when you reimage nodes.
 

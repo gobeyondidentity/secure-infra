@@ -23,6 +23,23 @@ chmod 750 /var/lib/secureinfra
 mkdir -p /etc/secureinfra
 chmod 755 /etc/secureinfra
 
+# Generate self-signed TLS certificates if not present
+CERT_DIR="/etc/secureinfra"
+CERT_FILE="$CERT_DIR/server.crt"
+KEY_FILE="$CERT_DIR/server.key"
+
+if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
+    echo "Generating self-signed TLS certificates..."
+    openssl req -x509 -newkey rsa:4096 -keyout "$KEY_FILE" -out "$CERT_FILE" \
+        -sha256 -days 365 -nodes \
+        -subj "/CN=secureinfra/O=Beyond Identity/C=US" \
+        -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
+    chmod 600 "$KEY_FILE"
+    chmod 644 "$CERT_FILE"
+    chown secureinfra:secureinfra "$KEY_FILE" "$CERT_FILE"
+    echo "TLS certificates generated at $CERT_DIR"
+fi
+
 # Reload systemd to pick up new unit files
 if command -v systemctl >/dev/null 2>&1; then
     systemctl daemon-reload
