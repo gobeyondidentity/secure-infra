@@ -70,7 +70,7 @@ func main() {
 
 	// Build transport configuration
 	transportCfg := &transport.Config{
-		TmfifoPath:     "", // Use default
+		TmfifoDPUAddr:  *dpuAgent, // TCP address for tmfifo (default 192.168.100.2:9444)
 		DPUAddr:        *dpuAgent,
 		Hostname:       hostname,
 		ForceTmfifo:    *forceTmfifo,
