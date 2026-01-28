@@ -2,6 +2,8 @@
 
 **v0.6.6** | [Demo](scripts/demo) | [Quickstart](docs/guides/quickstart-emulator.md) | [Hardware Setup](docs/guides/setup-hardware.md) | [Changelog](CHANGELOG.md)
 
+<video src="assets/demo.mp4" controls width="100%"></video>
+
 Automated credential lifecycle for AI infrastructure. No manual rotation. No secret sprawl. Credentials refresh automatically when you reimage nodes.
 
 ## Overview
@@ -23,8 +25,6 @@ This works because credentials are tied to specific hardware via NVIDIA BlueFiel
 ## Quick Start
 
 > **See it in action:** Run `./scripts/demo` to watch the full credential lifecycle in 2 minutes.
-
-<video src="assets/demo.mp4" controls width="100%"></video>
 
 Choose your path:
 
