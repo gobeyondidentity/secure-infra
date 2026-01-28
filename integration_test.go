@@ -1137,42 +1137,40 @@ func TestAegisRestartSentryReconnection(t *testing.T) {
 	}
 	logOK(t, "TMFIFO tunnel established")
 
-	// Step 6: Run sentry enrollment (establishes initial transport connection)
-	logStep(t, 6, "Running sentry enrollment...")
-	sentryCtx, sentryCancel := context.WithTimeout(ctx, 30*time.Second)
-	defer sentryCancel()
-
-	output, err = cfg.multipassExec(sentryCtx, cfg.HostVM, "sudo", "/home/ubuntu/sentry", "--force-tmfifo", "--oneshot")
-	if err != nil {
-		aegisLog, _ := cfg.multipassExec(ctx, cfg.DPUVM, "tail", "-30", "/tmp/aegis.log")
-		fmt.Printf("    Aegis log:\n%s\n", aegisLog)
-		t.Fatalf("%s Sentry enrollment failed: %v", errFmt("x"), err)
-	}
-
-	if !strings.Contains(output, "Enrolled") {
-		t.Fatalf("%s Sentry did not complete enrollment", errFmt("x"))
-	}
-	logOK(t, "Sentry enrolled successfully")
-
-	// Step 7: Start sentry daemon to receive credential pushes
-	logStep(t, 7, "Starting sentry daemon...")
+	// Step 6: Start sentry daemon (will enroll on first connect)
+	// Note: We start daemon directly instead of --oneshot + daemon because
+	// tmfifo char devices don't have connection close semantics. The --oneshot
+	// exit doesn't signal disconnect to aegis, causing auth state mismatch.
+	logStep(t, 6, "Starting sentry daemon (will enroll on connect)...")
 	cfg.killProcess(ctx, cfg.HostVM, "sentry")
 	_, err = cfg.multipassExec(ctx, cfg.HostVM, "bash", "-c",
 		"sudo setsid /home/ubuntu/sentry --force-tmfifo > /tmp/sentry.log 2>&1 < /dev/null &")
 	if err != nil {
 		t.Fatalf("Failed to start sentry daemon: %v", err)
 	}
-	time.Sleep(3 * time.Second)
 
+	// Wait for enrollment to complete (sentry enrolls on first connect)
+	time.Sleep(5 * time.Second)
+
+	// Verify sentry is running and enrolled
 	output, err = cfg.multipassExec(ctx, cfg.HostVM, "pgrep", "-x", "sentry")
 	if err != nil || strings.TrimSpace(output) == "" {
 		logs, _ := cfg.multipassExec(ctx, cfg.HostVM, "cat", "/tmp/sentry.log")
 		t.Fatalf("Sentry not running. Logs:\n%s", logs)
 	}
-	logOK(t, "Sentry daemon started")
 
-	// Step 8: Push first credential (before any restart) to verify baseline
-	logStep(t, 8, "Pushing first credential (baseline)...")
+	// Check sentry log for enrollment confirmation
+	sentryLog, _ := cfg.multipassExec(ctx, cfg.HostVM, "cat", "/tmp/sentry.log")
+	if !strings.Contains(sentryLog, "Enrolled") && !strings.Contains(sentryLog, "enrolled") {
+		aegisLog, _ := cfg.multipassExec(ctx, cfg.DPUVM, "tail", "-30", "/tmp/aegis.log")
+		fmt.Printf("    Sentry log:\n%s\n", sentryLog)
+		fmt.Printf("    Aegis log:\n%s\n", aegisLog)
+		t.Fatalf("%s Sentry did not complete enrollment", errFmt("x"))
+	}
+	logOK(t, "Sentry daemon started and enrolled")
+
+	// Step 7: Push first credential (before any restart) to verify baseline
+	logStep(t, 7, "Pushing first credential (baseline)...")
 	_, _ = cfg.multipassExec(ctx, cfg.DPUVM, "bash", "-c", "sudo truncate -s 0 /tmp/aegis.log")
 	_, _ = cfg.multipassExec(ctx, cfg.HostVM, "bash", "-c", "sudo truncate -s 0 /tmp/sentry.log")
 
@@ -1194,8 +1192,8 @@ func TestAegisRestartSentryReconnection(t *testing.T) {
 	}
 	logOK(t, "First credential delivered successfully (baseline)")
 
-	// Step 9: Kill aegis (simulate restart)
-	logStep(t, 9, "Killing aegis (simulating restart)...")
+	// Step 8: Kill aegis (simulate restart)
+	logStep(t, 8, "Killing aegis (simulating restart)...")
 	killTime := time.Now()
 	cfg.killProcess(ctx, cfg.DPUVM, "aegis")
 	time.Sleep(1 * time.Second)
@@ -1207,8 +1205,8 @@ func TestAegisRestartSentryReconnection(t *testing.T) {
 	}
 	logOK(t, "Aegis stopped")
 
-	// Step 10: Verify sentry detects disconnect within 10s
-	logStep(t, 10, "Verifying sentry detects disconnect within 10s...")
+	// Step 9: Verify sentry detects disconnect within 10s
+	logStep(t, 9, "Verifying sentry detects disconnect within 10s...")
 	disconnectDetected := false
 	for i := 0; i < 10; i++ {
 		time.Sleep(time.Second)
@@ -1226,8 +1224,8 @@ func TestAegisRestartSentryReconnection(t *testing.T) {
 		t.Errorf("%s Sentry did not detect disconnect within 10s", errFmt("x"))
 	}
 
-	// Step 11: Restart aegis
-	logStep(t, 11, "Restarting aegis...")
+	// Step 10: Restart aegis
+	logStep(t, 10, "Restarting aegis...")
 	restartTime := time.Now()
 	_, err = cfg.multipassExec(ctx, cfg.DPUVM, "bash", "-c",
 		fmt.Sprintf("sudo setsid /home/ubuntu/aegis -local-api -allow-tmfifo-net -control-plane http://%s:18080 -dpu-name qa-dpu >> /tmp/aegis.log 2>&1 < /dev/null &", serverIP))
@@ -1243,8 +1241,8 @@ func TestAegisRestartSentryReconnection(t *testing.T) {
 	}
 	logOK(t, "Aegis restarted")
 
-	// Step 12: Verify sentry reconnects within 30s
-	logStep(t, 12, "Verifying sentry reconnects within 30s...")
+	// Step 11: Verify sentry reconnects within 30s
+	logStep(t, 11, "Verifying sentry reconnects within 30s...")
 	reconnected := false
 	for i := 0; i < 30; i++ {
 		time.Sleep(time.Second)
@@ -1262,8 +1260,8 @@ func TestAegisRestartSentryReconnection(t *testing.T) {
 		t.Fatalf("%s Sentry did not reconnect within 30s", errFmt("x"))
 	}
 
-	// Step 13: Verify sentry did NOT re-enroll (session resumed)
-	logStep(t, 13, "Verifying session resumed (no re-enrollment)...")
+	// Step 12: Verify sentry did NOT re-enroll (session resumed)
+	logStep(t, 12, "Verifying session resumed (no re-enrollment)...")
 	sentryLog, _ := cfg.multipassExec(ctx, cfg.HostVM, "cat", "/tmp/sentry.log")
 
 	// After initial enrollment, there should be no new "Enrolling" or "Enrolled" messages
@@ -1275,8 +1273,8 @@ func TestAegisRestartSentryReconnection(t *testing.T) {
 		logOK(t, "Session resumed without re-enrollment")
 	}
 
-	// Step 14: Push second credential (after first reconnection)
-	logStep(t, 14, "Pushing second credential (after reconnection)...")
+	// Step 13: Push second credential (after first reconnection)
+	logStep(t, 13, "Pushing second credential (after reconnection)...")
 	curlCmd = fmt.Sprintf(`curl -s -X POST http://localhost:9443/local/v1/credential -H "Content-Type: application/json" -d '{"credential_type":"ssh-ca","credential_name":"%s","data":"%s"}'`, caName2, testCAKeyB64)
 	output, err = cfg.multipassExec(ctx, cfg.DPUVM, "bash", "-c", curlCmd)
 	if err != nil || !strings.Contains(output, `"success":true`) {
@@ -1292,13 +1290,13 @@ func TestAegisRestartSentryReconnection(t *testing.T) {
 	}
 	logOK(t, "Second credential delivered after reconnection")
 
-	// Step 15-16: Second restart cycle (test sequential reconnections)
-	logStep(t, 15, "Second restart cycle: killing aegis...")
+	// Step 14-15: Second restart cycle (test sequential reconnections)
+	logStep(t, 14, "Second restart cycle: killing aegis...")
 	cfg.killProcess(ctx, cfg.DPUVM, "aegis")
 	time.Sleep(1 * time.Second)
 	logOK(t, "Aegis stopped (second time)")
 
-	logStep(t, 16, "Second restart cycle: restarting aegis...")
+	logStep(t, 15, "Second restart cycle: restarting aegis...")
 	_, err = cfg.multipassExec(ctx, cfg.DPUVM, "bash", "-c",
 		fmt.Sprintf("sudo setsid /home/ubuntu/aegis -local-api -allow-tmfifo-net -control-plane http://%s:18080 -dpu-name qa-dpu >> /tmp/aegis.log 2>&1 < /dev/null &", serverIP))
 	if err != nil {
@@ -1324,13 +1322,13 @@ func TestAegisRestartSentryReconnection(t *testing.T) {
 		t.Fatalf("%s Second reconnection failed", errFmt("x"))
 	}
 
-	// Step 17-18: Third restart cycle
-	logStep(t, 17, "Third restart cycle: killing aegis...")
+	// Step 16-17: Third restart cycle
+	logStep(t, 16, "Third restart cycle: killing aegis...")
 	cfg.killProcess(ctx, cfg.DPUVM, "aegis")
 	time.Sleep(1 * time.Second)
 	logOK(t, "Aegis stopped (third time)")
 
-	logStep(t, 18, "Third restart cycle: restarting aegis...")
+	logStep(t, 17, "Third restart cycle: restarting aegis...")
 	_, err = cfg.multipassExec(ctx, cfg.DPUVM, "bash", "-c",
 		fmt.Sprintf("sudo setsid /home/ubuntu/aegis -local-api -allow-tmfifo-net -control-plane http://%s:18080 -dpu-name qa-dpu >> /tmp/aegis.log 2>&1 < /dev/null &", serverIP))
 	if err != nil {
@@ -1356,8 +1354,8 @@ func TestAegisRestartSentryReconnection(t *testing.T) {
 		t.Fatalf("%s Third reconnection failed", errFmt("x"))
 	}
 
-	// Step 19: Push third credential (after multiple reconnections)
-	logStep(t, 19, "Pushing third credential (after multiple reconnections)...")
+	// Step 18: Push third credential (after multiple reconnections)
+	logStep(t, 18, "Pushing third credential (after multiple reconnections)...")
 	curlCmd = fmt.Sprintf(`curl -s -X POST http://localhost:9443/local/v1/credential -H "Content-Type: application/json" -d '{"credential_type":"ssh-ca","credential_name":"%s","data":"%s"}'`, caName3, testCAKeyB64)
 	output, err = cfg.multipassExec(ctx, cfg.DPUVM, "bash", "-c", curlCmd)
 	if err != nil || !strings.Contains(output, `"success":true`) {
@@ -1373,8 +1371,8 @@ func TestAegisRestartSentryReconnection(t *testing.T) {
 	}
 	logOK(t, "Third credential delivered after multiple reconnections")
 
-	// Step 20: Verify all reconnection events are logged
-	logStep(t, 20, "Verifying reconnection logging for observability...")
+	// Step 19: Verify all reconnection events are logged
+	logStep(t, 19, "Verifying reconnection logging for observability...")
 	sentryLog, _ = cfg.multipassExec(ctx, cfg.HostVM, "cat", "/tmp/sentry.log")
 
 	expectedMarkers := []string{
