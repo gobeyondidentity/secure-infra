@@ -2974,11 +2974,11 @@ func TestInviteCodeLifecycle(t *testing.T) {
 	// Try to use revoked invite
 	bindResult4, _ := tryBindInvite(cfg, ctx, serverIP, inviteCode3, "fp-4", "device-4")
 
-	// Revoked invites return "already been used" since status != pending
-	if !strings.Contains(bindResult4, "already been used") {
-		t.Fatalf("Criterion 5 FAILED: Expected 'already been used' error for revoked invite, got: %s", bindResult4)
+	// Revoked invites return specific error message
+	if !strings.Contains(bindResult4, "has been revoked") {
+		t.Fatalf("Criterion 5 FAILED: Expected 'has been revoked' error for revoked invite, got: %s", bindResult4)
 	}
-	logOK(t, "Criterion 5: Revoked invite rejected with 'already been used'")
+	logOK(t, "Criterion 5: Revoked invite rejected with 'has been revoked'")
 
 	// =========================================================================
 	// Criterion 6: Invite for deleted tenant -> rejected
