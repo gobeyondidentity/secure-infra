@@ -570,7 +570,7 @@ func TestCredentialDeliveryE2E(t *testing.T) {
 	}
 
 	// Check for [CRED-DELIVERY] markers in sentry
-	sentryLog, err := cfg.multipassExec(ctx, cfg.HostVM, "cat", "/tmp/sentry.log")
+	sentryLog, err = cfg.multipassExec(ctx, cfg.HostVM, "cat", "/tmp/sentry.log")
 	if err != nil {
 		t.Fatalf("Failed to read sentry log: %v", err)
 	}
