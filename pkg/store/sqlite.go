@@ -399,6 +399,18 @@ func (s *Store) migrate() error {
 		collected_at INTEGER NOT NULL,
 		FOREIGN KEY (host_id) REFERENCES agent_hosts(id) ON DELETE CASCADE
 	);
+
+	-- Credential Queue (aegis state persistence: queued credentials awaiting delivery)
+	CREATE TABLE IF NOT EXISTS credential_queue (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		dpu_name TEXT NOT NULL,
+		cred_type TEXT NOT NULL,
+		cred_name TEXT NOT NULL,
+		data BLOB NOT NULL,
+		queued_at INTEGER NOT NULL
+	);
+	CREATE INDEX IF NOT EXISTS idx_credential_queue_dpu ON credential_queue(dpu_name);
+	CREATE INDEX IF NOT EXISTS idx_credential_queue_queued ON credential_queue(queued_at);
 	`
 	if _, err := s.db.Exec(schema); err != nil {
 		return err
