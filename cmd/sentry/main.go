@@ -37,6 +37,7 @@ func main() {
 	certDir := flag.String("cert-dir", "/etc/ssh", "Directory for SSH host certificates")
 	showVersion := flag.Bool("version", false, "Show version and exit")
 	forceTmfifo := flag.Bool("force-tmfifo", false, "Fail if tmfifo is not available (no network fallback)")
+	tmfifoAddr := flag.String("tmfifo-addr", "", "DPU address for tmfifo TCP (default 192.168.100.2:9444)")
 	forceNetwork := flag.Bool("force-network", false, "Use network enrollment even if tmfifo is available")
 	forceComCh := flag.Bool("force-comch", false, "Force DOCA ComCh transport (requires BlueField PCIe connection)")
 	docaPCIAddr := flag.String("doca-pci-addr", "", "PCI address of BlueField device (e.g., \"0000:01:00.0\")")
@@ -70,7 +71,7 @@ func main() {
 
 	// Build transport configuration
 	transportCfg := &transport.Config{
-		TmfifoDPUAddr:  *dpuAgent, // TCP address for tmfifo (default 192.168.100.2:9444)
+		TmfifoDPUAddr:  *tmfifoAddr, // TCP address for tmfifo (auto-detects 192.168.100.2:9444 if empty)
 		DPUAddr:        *dpuAgent,
 		Hostname:       hostname,
 		ForceTmfifo:    *forceTmfifo,
