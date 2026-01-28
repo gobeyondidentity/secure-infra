@@ -223,6 +223,9 @@ Examples:
 			if deps.TrustRelationships > 0 {
 				fmt.Fprintf(os.Stderr, "  Trust relationships: %d\n", deps.TrustRelationships)
 			}
+			if deps.Invites > 0 {
+				fmt.Fprintf(os.Stderr, "  Pending invites: %d\n", deps.Invites)
+			}
 			fmt.Fprintf(os.Stderr, "\nTo see details: bluectl tenant show %s\n", tenant.Name)
 			return fmt.Errorf("tenant has dependencies that must be removed first")
 		}

@@ -769,11 +769,12 @@ type TenantDependencies struct {
 	Operators          []string // Operator emails in tenant
 	CAs                []string // SSH CA names in tenant
 	TrustRelationships int      // Count of trust relationships
+	Invites            int      // Count of pending invite codes
 }
 
 // HasAny returns true if the tenant has any dependencies.
 func (d *TenantDependencies) HasAny() bool {
-	return len(d.DPUs) > 0 || len(d.Operators) > 0 || len(d.CAs) > 0 || d.TrustRelationships > 0
+	return len(d.DPUs) > 0 || len(d.Operators) > 0 || len(d.CAs) > 0 || d.TrustRelationships > 0 || d.Invites > 0
 }
 
 // GetTenantDependencies returns all entities that reference the given tenant.
@@ -848,6 +849,14 @@ func (s *Store) GetTenantDependencies(tenantID string) (*TenantDependencies, err
 		return nil, fmt.Errorf("failed to count trust relationships: %w", err)
 	}
 	deps.TrustRelationships = trustCount
+
+	// Query pending invite codes count
+	var inviteCount int
+	err = s.db.QueryRow(`SELECT COUNT(*) FROM invite_codes WHERE tenant_id = ? AND status = 'pending'`, tenantID).Scan(&inviteCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count invites: %w", err)
+	}
+	deps.Invites = inviteCount
 
 	return deps, nil
 }

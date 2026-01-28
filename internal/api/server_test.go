@@ -7,7 +7,9 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/nmelo/secure-infra/internal/version"
 	"github.com/nmelo/secure-infra/pkg/store"
@@ -407,6 +409,51 @@ func TestTenantDelete_WithDPUs(t *testing.T) {
 
 	if w.Code != http.StatusConflict {
 		t.Errorf("expected status 409, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// TestTenantDelete_WithInvites tests that deleting a tenant with pending invites fails.
+func TestTenantDelete_WithInvites(t *testing.T) {
+	server, mux := setupTestServer(t)
+
+	// Create a tenant
+	tenantBody := `{"name": "Tenant With Invites"}`
+	req := httptest.NewRequest("POST", "/api/tenants", bytes.NewBufferString(tenantBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	var tenant tenantResponse
+	json.NewDecoder(w.Body).Decode(&tenant)
+
+	// Create a pending invite for the tenant
+	invite := &store.InviteCode{
+		ID:            "inv_test",
+		CodeHash:      "testhash123",
+		OperatorEmail: "newuser@example.com",
+		TenantID:      tenant.ID,
+		Role:          "operator",
+		CreatedBy:     "admin@example.com",
+		ExpiresAt:     time.Now().Add(24 * time.Hour),
+		Status:        "pending",
+	}
+	if err := server.store.CreateInviteCode(invite); err != nil {
+		t.Fatalf("failed to create invite: %v", err)
+	}
+
+	// Try to delete tenant
+	req = httptest.NewRequest("DELETE", "/api/tenants/"+tenant.ID, nil)
+	w = httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusConflict {
+		t.Errorf("expected status 409, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Verify error message mentions invites
+	body := w.Body.String()
+	if !strings.Contains(body, "invites") {
+		t.Errorf("expected error to mention invites, got: %s", body)
 	}
 }
 
