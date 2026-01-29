@@ -812,3 +812,133 @@ func (c *NexusClient) DeleteAgentHost(ctx context.Context, id string) error {
 
 	return nil
 }
+
+// ----- SSH CA Methods -----
+
+// sshCAResponse matches the API response for SSH CA operations.
+type sshCAResponse struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	KeyType       string `json:"keyType"`
+	PublicKey     string `json:"publicKey,omitempty"`
+	CreatedAt     string `json:"createdAt"`
+	Distributions int    `json:"distributions"`
+}
+
+// ListSSHCAs retrieves all SSH CAs from the Nexus server.
+func (c *NexusClient) ListSSHCAs(ctx context.Context) ([]sshCAResponse, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/api/credentials/ssh-cas", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("server returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var cas []sshCAResponse
+	if err := json.NewDecoder(resp.Body).Decode(&cas); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return cas, nil
+}
+
+// GetSSHCA retrieves an SSH CA by name from the Nexus server.
+func (c *NexusClient) GetSSHCA(ctx context.Context, name string) (*sshCAResponse, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/api/credentials/ssh-cas/"+name, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("SSH CA not found: %s", name)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("server returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var ca sshCAResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ca); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &ca, nil
+}
+
+// ----- Authorization Methods -----
+
+// grantAuthorizationRequest is the request body for granting authorization.
+type grantAuthorizationRequest struct {
+	OperatorEmail string   `json:"operator_email"`
+	TenantID      string   `json:"tenant_id"`
+	CAIDs         []string `json:"ca_ids"`
+	DeviceIDs     []string `json:"device_ids"`
+}
+
+// authorizationResponse matches the API response for authorization operations.
+type authorizationResponse struct {
+	ID          string   `json:"id"`
+	OperatorID  string   `json:"operator_id"`
+	TenantID    string   `json:"tenant_id"`
+	CAIDs       []string `json:"ca_ids"`
+	CANames     []string `json:"ca_names"`
+	DeviceIDs   []string `json:"device_ids"`
+	DeviceNames []string `json:"device_names"`
+	CreatedAt   string   `json:"created_at"`
+	CreatedBy   string   `json:"created_by"`
+}
+
+// GrantAuthorization creates an authorization for an operator to access CAs and devices.
+func (c *NexusClient) GrantAuthorization(ctx context.Context, email, tenantID string, caIDs, deviceIDs []string) (*authorizationResponse, error) {
+	reqBody := grantAuthorizationRequest{
+		OperatorEmail: email,
+		TenantID:      tenantID,
+		CAIDs:         caIDs,
+		DeviceIDs:     deviceIDs,
+	}
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/api/v1/authorizations", bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("server returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var auth authorizationResponse
+	if err := json.NewDecoder(resp.Body).Decode(&auth); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &auth, nil
+}

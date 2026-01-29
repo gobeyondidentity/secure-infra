@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -254,20 +255,79 @@ Examples:
 		caName := args[2]
 		devicesArg := args[3]
 
-		_, err := requireServer()
+		serverURL, err := requireServer()
 		if err != nil {
 			return err
 		}
 
-		// For now, print an informational message since this requires authorization API
-		fmt.Printf("Grant authorization:\n")
+		client := NewNexusClient(serverURL)
+		ctx := cmd.Context()
+
+		// Resolve tenant name to ID
+		tenants, err := client.ListTenants(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to list tenants: %w", err)
+		}
+
+		var tenantID string
+		for _, t := range tenants {
+			if t.Name == tenantName || t.ID == tenantName {
+				tenantID = t.ID
+				break
+			}
+		}
+		if tenantID == "" {
+			return fmt.Errorf("tenant not found: %s", tenantName)
+		}
+
+		// Resolve CA name to ID
+		ca, err := client.GetSSHCA(ctx, caName)
+		if err != nil {
+			return fmt.Errorf("CA not found: %s", caName)
+		}
+
+		// Resolve device names to IDs
+		var deviceIDs []string
+		if devicesArg == "all" {
+			deviceIDs = []string{"all"}
+		} else {
+			deviceNames := strings.Split(devicesArg, ",")
+			dpus, err := client.ListDPUs(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to list DPUs: %w", err)
+			}
+
+			for _, name := range deviceNames {
+				name = strings.TrimSpace(name)
+				found := false
+				for _, d := range dpus {
+					if d.Name == name || d.ID == name {
+						deviceIDs = append(deviceIDs, d.ID)
+						found = true
+						break
+					}
+				}
+				if !found {
+					return fmt.Errorf("device not found: %s", name)
+				}
+			}
+		}
+
+		// Grant authorization
+		resp, err := client.GrantAuthorization(ctx, email, tenantID, []string{ca.ID}, deviceIDs)
+		if err != nil {
+			return fmt.Errorf("failed to grant authorization: %w", err)
+		}
+
+		if outputFormat == "json" || outputFormat == "yaml" {
+			return formatOutput(resp)
+		}
+
+		fmt.Println("Authorization granted:")
 		fmt.Printf("  Operator: %s\n", email)
 		fmt.Printf("  Tenant:   %s\n", tenantName)
 		fmt.Printf("  CA:       %s\n", caName)
 		fmt.Printf("  Devices:  %s\n", devicesArg)
-		fmt.Println()
-		fmt.Println("Note: Authorization grant via API not yet implemented.")
-		fmt.Println("Use the Nexus web interface or API directly.")
 		return nil
 	},
 }
