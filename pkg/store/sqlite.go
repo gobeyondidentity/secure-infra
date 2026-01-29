@@ -568,6 +568,28 @@ func (s *Store) UpdateStatus(idOrName, status string) error {
 	return nil
 }
 
+// SetDPULabels updates the labels for a DPU.
+func (s *Store) SetDPULabels(idOrName string, labels map[string]string) error {
+	labelsJSON, err := json.Marshal(labels)
+	if err != nil {
+		return fmt.Errorf("failed to marshal labels: %w", err)
+	}
+
+	result, err := s.db.Exec(
+		`UPDATE dpus SET labels = ? WHERE id = ? OR name = ?`,
+		string(labelsJSON), idOrName, idOrName,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to set DPU labels: %w", err)
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("DPU not found: %s", idOrName)
+	}
+	return nil
+}
+
 func (s *Store) scanDPU(row *sql.Row) (*DPU, error) {
 	var dpu DPU
 	var lastSeen sql.NullInt64
